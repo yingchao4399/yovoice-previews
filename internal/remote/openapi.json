@@ -1,0 +1,320 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "yovoice API",
+    "version": "1",
+    "description": "Inference API served by `yovoice serve` and by the desktop app's local API. Every endpoint except this documentation requires `Authorization: Bearer <token>`.\n\nOnly one upload or generation runs at a time; busy requests return 409 and are not queued. Use asynchronous jobs (`PUT /v1/jobs/{requestId}`) for long generations. See the [API / MCP deployment guide](https://github.com/leemysw/yovoice/blob/main/docs/api.md)."
+  },
+  "security": [{ "bearer": [] }],
+  "tags": [
+    { "name": "Status", "description": "Engine, models and voices" },
+    { "name": "Voices", "description": "Reference audio for voice cloning" },
+    { "name": "Jobs", "description": "Asynchronous generation with idempotent request IDs" },
+    { "name": "Generation", "description": "Synchronous generation and audio download" },
+    { "name": "MCP", "description": "Model Context Protocol over streamable HTTP" }
+  ],
+  "paths": {
+    "/v1/status": {
+      "get": {
+        "tags": ["Status"],
+        "summary": "Engine and activity status",
+        "operationId": "getStatus",
+        "responses": {
+          "200": { "description": "Current status", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Status" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "tags": ["Status"],
+        "summary": "Model catalog, installed models and generation options",
+        "operationId": "listModels",
+        "responses": {
+          "200": { "description": "Models", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Models" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/v1/voices": {
+      "get": {
+        "tags": ["Voices"],
+        "summary": "Saved reference voices",
+        "operationId": "listVoices",
+        "responses": {
+          "200": { "description": "Voices", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Voice" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Voices"],
+        "summary": "Upload reference audio",
+        "description": "Upload 1–60 seconds of audio, at most 20 MB. Common formats are converted automatically. Use the returned `id` as `voiceId`.",
+        "operationId": "uploadVoice",
+        "parameters": [
+          { "name": "name", "in": "query", "description": "Display name of the voice", "schema": { "type": "string" }, "example": "narrator" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } }
+        },
+        "responses": {
+          "200": { "description": "Saved voice", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Voice" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "$ref": "#/components/responses/Busy" },
+          "413": { "description": "Audio is larger than 20 MB or longer than allowed", "content": { "text/plain": { "schema": { "type": "string" } } } }
+        }
+      }
+    },
+    "/v1/jobs/{requestId}": {
+      "parameters": [
+        { "name": "requestId", "in": "path", "required": true, "description": "Random 32-character hexadecimal ID chosen by the client, for example `openssl rand -hex 16`", "schema": { "type": "string", "pattern": "^[0-9a-f]{32}$" }, "example": "3f2a9c1e7b6d4e0f8a5c2b1d9e7f6a3c" }
+      ],
+      "put": {
+        "tags": ["Jobs"],
+        "summary": "Submit a generation job",
+        "description": "Starts a generation and returns immediately. Retrying with the same ID and the same body returns the existing job instead of generating again. The same ID with a different body, or any new job while the engine is busy, returns 409.",
+        "operationId": "submitJob",
+        "requestBody": { "$ref": "#/components/requestBodies/Generation" },
+        "responses": {
+          "200": { "description": "Job state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "$ref": "#/components/responses/Busy" }
+        }
+      },
+      "get": {
+        "tags": ["Jobs"],
+        "summary": "Query a job",
+        "description": "Poll until `status` is no longer `running`. Only the latest 100 jobs are kept in memory, and records are lost when the server restarts.",
+        "operationId": "getJob",
+        "responses": {
+          "200": { "description": "Job state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Jobs"],
+        "summary": "Cancel a job",
+        "description": "Requests cancellation and returns the current state. Poll until the job reaches a terminal state.",
+        "operationId": "cancelJob",
+        "responses": {
+          "200": { "description": "Job state", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Job" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/v1/generate": {
+      "post": {
+        "tags": ["Generation"],
+        "summary": "Generate synchronously",
+        "description": "Waits for the generation and returns the WAV. Clients and proxies need a timeout longer than the server's generation limit (30 minutes by default); prefer jobs for long texts.",
+        "operationId": "generate",
+        "requestBody": { "$ref": "#/components/requestBodies/Generation" },
+        "responses": {
+          "200": { "$ref": "#/components/responses/Audio" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "$ref": "#/components/responses/Busy" },
+          "500": { "description": "Generation failed", "content": { "text/plain": { "schema": { "type": "string" } } } },
+          "504": { "description": "Generation exceeded the server's time limit", "content": { "text/plain": { "schema": { "type": "string" } } } }
+        }
+      }
+    },
+    "/v1/audio/{id}": {
+      "get": {
+        "tags": ["Generation"],
+        "summary": "Download generated audio",
+        "operationId": "getAudio",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "description": "Generation `id` from a completed job or the `X-Yovoice-Generation-ID` header", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Audio" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/mcp": {
+      "post": {
+        "tags": ["MCP"],
+        "summary": "MCP endpoint",
+        "description": "Streamable HTTP transport for MCP clients such as Cursor and Claude Code. It exposes the same capabilities as tools. Connect with an MCP client rather than calling it by hand; see the deployment guide for client configuration.",
+        "operationId": "mcp",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "description": "JSON-RPC 2.0 message" } } } },
+        "responses": {
+          "200": { "description": "JSON-RPC response or event stream" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearer": { "type": "http", "scheme": "bearer", "description": "The token passed to `yovoice serve` through `YOVOICE_API_TOKEN`, or shown in the desktop app's local API settings" }
+    },
+    "requestBodies": {
+      "Generation": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/GenerationRequest" },
+            "example": { "text": "Hello, welcome.", "modelId": "index-2.5-q8", "voiceId": "YOUR_VOICE_ID" }
+          }
+        }
+      }
+    },
+    "responses": {
+      "Audio": {
+        "description": "WAV audio",
+        "headers": { "X-Yovoice-Generation-ID": { "description": "Generation ID, usable with `/v1/audio/{id}`", "schema": { "type": "string" } } },
+        "content": { "audio/wav": { "schema": { "type": "string", "format": "binary" } } }
+      },
+      "BadRequest": { "description": "Invalid parameters", "content": { "text/plain": { "schema": { "type": "string" } } } },
+      "Unauthorized": { "description": "Missing or invalid bearer token", "content": { "text/plain": { "schema": { "type": "string" } } } },
+      "Busy": { "description": "Another upload or generation is running, or the request ID was reused with different parameters", "content": { "text/plain": { "schema": { "type": "string" } } } },
+      "NotFound": { "description": "Not found; job records expire after 100 newer jobs or a server restart", "content": { "text/plain": { "schema": { "type": "string" } } } }
+    },
+    "schemas": {
+      "GenerationRequest": {
+        "type": "object",
+        "required": ["text"],
+        "additionalProperties": false,
+        "description": "Text plus voice settings. Omitted fields use the app defaults; unknown fields are rejected. Which fields apply depends on the model family: see `generationOptions` from `/v1/models` and the model guide.",
+        "properties": {
+          "text": { "type": "string", "description": "Text to speak, or the style description for music models" },
+          "modelId": { "type": "string", "description": "Installed model ID from `/v1/models`" },
+          "voiceId": { "type": "string", "nullable": true, "description": "Reference voice ID from `/v1/voices`; optional for models with voice design" },
+          "mode": { "type": "string", "description": "Voice source mode" },
+          "voiceMode": { "type": "string", "description": "Voice mode for models that support cloning and design" },
+          "voxMode": { "type": "string", "description": "VoxCPM voice mode" },
+          "voiceDescription": { "type": "string", "description": "Natural-language voice description for voice design" },
+          "referenceText": { "type": "string", "description": "Transcript of the reference audio" },
+          "speaker": { "type": "string", "description": "Built-in speaker for models with preset voices" },
+          "language": { "type": "string" },
+          "synthesisLanguage": { "type": "string" },
+          "lyrics": { "type": "string", "description": "Lyrics with section markers for music models" },
+          "instrumental": { "type": "boolean", "description": "Generate music without vocals" },
+          "abc": { "type": "string", "description": "YuE2 melody score in its native ABC dialect; with chords the song follows the harmony, melody only lets the model arrange freely" },
+          "emotionVoiceId": { "type": "string", "nullable": true, "description": "Voice whose emotion is copied" },
+          "emotionText": { "type": "string", "description": "Emotion described in text" },
+          "inferEmotion": { "type": "boolean", "description": "Infer emotion from the text" },
+          "emotionStrength": { "type": "number" },
+          "emotions": { "type": "array", "items": { "type": "number" }, "description": "Emotion vector" },
+          "randomEmotion": { "type": "boolean" },
+          "speed": { "type": "number" },
+          "omniSpeed": { "type": "number" },
+          "guidanceScale": { "type": "number" },
+          "inferenceSteps": { "type": "integer" },
+          "temperature": { "type": "number" },
+          "topP": { "type": "number" },
+          "topK": { "type": "integer" },
+          "repetitionPenalty": { "type": "number" },
+          "maxTokens": { "type": "integer" },
+          "intervalSilenceMs": { "type": "integer", "description": "Silence between sentences in milliseconds" },
+          "doSample": { "type": "boolean" },
+          "numBeams": { "type": "integer" },
+          "lengthPenalty": { "type": "number" },
+          "seed": { "type": "integer", "nullable": true, "description": "Fixed random seed; null for a random one" },
+          "modelOptions": {
+            "type": "object",
+            "description": "Advanced options grouped by model family, for example `{\"qwen3_tts\":{\"temperature\":0.7}}`",
+            "additionalProperties": { "type": "object", "additionalProperties": true }
+          }
+        }
+      },
+      "Job": {
+        "type": "object",
+        "required": ["requestId", "status"],
+        "properties": {
+          "requestId": { "type": "string" },
+          "status": { "type": "string", "enum": ["running", "completed", "failed", "cancelled", "timed_out"] },
+          "id": { "type": "string", "description": "Generation ID once completed" },
+          "duration": { "type": "number", "description": "Audio length in seconds" },
+          "downloadPath": { "type": "string", "description": "Path to download the WAV, for example `/v1/audio/{id}`" },
+          "path": { "type": "string", "description": "Absolute local path; only in local stdio mode" },
+          "error": { "type": "string", "description": "Reason for `failed`, `cancelled` or `timed_out`" }
+        }
+      },
+      "Voice": {
+        "type": "object",
+        "required": ["id", "name", "fileName", "duration"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "fileName": { "type": "string" },
+          "duration": { "type": "number", "description": "Length in seconds" },
+          "referenceText": { "type": "string" },
+          "source": { "type": "string" },
+          "sourceGenerationId": { "type": "string" }
+        }
+      },
+      "Activity": {
+        "type": "object",
+        "nullable": true,
+        "description": "Running or last background operation",
+        "properties": {
+          "kind": { "type": "string" },
+          "status": { "type": "string" },
+          "code": { "type": "string", "description": "Message code for the current step" },
+          "params": { "type": "object", "additionalProperties": true },
+          "received": { "type": "integer", "format": "int64" },
+          "total": { "type": "integer", "format": "int64" },
+          "errorCode": { "type": "string", "nullable": true },
+          "errorParams": { "type": "object", "additionalProperties": true },
+          "modelId": { "type": "string", "nullable": true },
+          "requestId": { "type": "string" },
+          "startedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Status": {
+        "type": "object",
+        "properties": {
+          "ready": { "type": "boolean", "description": "Whether an engine runtime is installed and usable" },
+          "engineVersion": { "type": "string", "description": "Recommended audio.cpp version" },
+          "engineMinimum": { "type": "string", "description": "Oldest supported audio.cpp version" },
+          "runtimeVersion": { "type": "string", "nullable": true, "description": "Installed audio.cpp version" },
+          "activity": { "$ref": "#/components/schemas/Activity" },
+          "modelActivity": { "$ref": "#/components/schemas/Activity" }
+        }
+      },
+      "Models": {
+        "type": "object",
+        "properties": {
+          "catalog": {
+            "type": "array",
+            "description": "Models this version can install",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "family": { "type": "string", "example": "index_tts2" },
+                "task": { "type": "string" },
+                "version": { "type": "string" },
+                "precision": { "type": "string" }
+              }
+            }
+          },
+          "installed": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "path": { "type": "string" },
+                "managed": { "type": "boolean" }
+              }
+            }
+          },
+          "generationOptions": { "type": "object", "additionalProperties": true, "description": "Advanced controls by model family, used for `modelOptions`" }
+        }
+      }
+    }
+  }
+}

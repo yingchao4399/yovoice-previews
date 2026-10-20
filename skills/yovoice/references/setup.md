@@ -1,0 +1,60 @@
+# 引擎与模型
+
+所有选项放在子命令和位置参数之后。以下命令默认使用 `~/.yovoice`；独立数据目录需在每条命令后添加同一个 `--data-dir /absolute/path`。
+
+## 安装推理引擎
+
+```sh
+yovoice status --json
+yovoice setup
+```
+
+`setup` 下载并校验 audio.cpp v0.9.1，不下载模型。默认 Mac 使用 Metal，Windows/Linux 使用 CPU。
+
+| 平台 | 可选后端 | 命令 |
+| --- | --- | --- |
+| macOS Apple Silicon | Metal、CPU | `yovoice setup --backend metal` 或 `--backend cpu` |
+| Windows x64 | CPU、Vulkan、CUDA 12.4、CUDA 13.3 | `yovoice setup --backend cpu`、`--backend vulkan`、`--backend cuda`（12.4）或 `--backend cuda13`（13.3） |
+| Linux x64 | CPU、Vulkan | `yovoice setup --backend cpu` 或 `--backend vulkan` |
+
+GPU 后端需要兼容的硬件与系统驱动。Linux 使用上游 Ubuntu x64 portable 包；不提供 Linux ARM64 包。切换后端或升级 yovoice 后内核版本变化时，重新执行 `setup`（`status` 中 `state.runtimeVersion` 与 `engineVersion` 不一致即需要更新）。下载地址为 [audio.cpp v0.9.1 Releases](https://github.com/0xShug0/audio.cpp/releases/tag/v0.9.1)，CLI 自动选择平台包并校验 SHA-256，无需手动解压。
+
+## 下载或登记模型
+
+先查询本地安装状态，再选模型：
+
+```sh
+yovoice models list --json
+yovoice models download index-2.5-q8
+```
+
+| 模型 ID | 大小（约） | 语言 |
+| --- | --- | --- |
+| `index-2.5-q8` | 3.50 GB | 中文、英语、日语、西班牙语、阿拉伯语 |
+| `index-2.5-f16` | 4.55 GB | 同上 |
+| `index-2-q8` | 3.63 GB | 中文、英语 |
+| `index-2-f16` | 4.65 GB | 中文、英语 |
+| `voxcpm2-q8` | 2.96 GB | 自动识别 30 种语言，48 kHz 输出 |
+| `voxcpm2-bf16` | 4.77 GB | 同上 |
+
+默认使用 ModelScope；可指定下载来源：
+
+```sh
+yovoice models download index-2.5-q8 --source modelscope
+yovoice models download index-2.5-q8 --source huggingface
+yovoice models download index-2.5-q8 --source mirror
+```
+
+下载前说明所选模型大小、来源及模型使用协议，并遵循用户授权。下载支持断点续传并校验摘要；失败后可重复同一命令。不要同时在同一数据目录启动多个命令。
+
+模型只能通过 `models download` 安装，不支持导入本地 GGUF。完成后用 `models list --json` 确认，不自行修改状态文件。
+
+## 音频转换器
+
+App 与 CLI 安装包均内置由 FFmpeg 8.1.2 源码裁剪构建的转换器，只保留音频解码、重采样和 WAV 输出，不包含视频编解码、网络协议或播放器。转换完全离线，不需要下载额外组件或安装系统 FFmpeg。CLI 解压时保留可执行文件同级的 `tools/` 目录。
+
+VoxCPM2 可在无参考音频时进行声音设计，也支持克隆及参考原文辅助的精细克隆，详见[音频与生成模式](audio.md#voxcpm2)。IndexTTS 遵循应用提供的模型协议；VoxCPM2 遵循 [Apache-2.0](https://github.com/OpenBMB/VoxCPM/blob/main/LICENSE)。
+
+OmniVoice：`omnivoice-q8` / `omnivoice-bf16`；Qwen3-TTS 1.7B Base：`qwen3-tts-base-q8` / `qwen3-tts-base-bf16`。使用 `yovoice models download MODEL --source modelscope` 下载；也支持 `huggingface`、`mirror`，下载后自动校验 SHA-256。OmniVoice 权重仅限非商业用途（CC-BY-NC）。
+
+全部模型变体、精度和文件大小见[模型能力参考](models.md#下载与精度)。

@@ -1,0 +1,8 @@
+{
+  "version": "v0.1.0",
+  "archives": {
+    "ocho-v0.1.0-darwin-arm64.tar.gz": "1e4b7db94fed52b7e423bd492db4c8cc976d1b762abb85d40f97e0e34be49d37",
+    "ocho-v0.1.0-windows-amd64.zip": "48554eff9309e69cce8bf874fe78cd635877e2ecb9c5eb386acc32e9a018255c",
+    "ocho-v0.1.0-linux-amd64.tar.gz": "496eca46307335d29b9113a0cf145214a53ede0d6b6939ef8620c6a5af30802a"
+  }
+}

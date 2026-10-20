@@ -1,0 +1,160 @@
+# 模型选择
+
+[English](models.md) · 简体中文
+
+根据是否已有参考录音，以及需要内置音色还是设计音色来选择模型。所有模型均完整生成后播放。
+
+| 模型 | 主要用途 | 输入要求 |
+| --- | --- | --- |
+| IndexTTS 2.0 / 2.5 | 音色克隆、情绪控制 | 必须提供参考音频；2.0 支持中英，2.5 增加日语、西班牙语、阿拉伯语 |
+| VoxCPM2 | 声音设计、音色克隆 | 设计描述可选；精细克隆使用参考音频及其原文 |
+| OmniVoice | 属性设计、音色克隆 | 设计使用预定义属性；克隆需音频和匹配原文 |
+| Qwen3-TTS Base · 0.6B / 1.7B | 音色克隆 | 必须提供参考音频，原文可选 |
+| Qwen3-TTS CustomVoice · 1.7B | 内置音色与演绎控制 | 音色 ID，可选风格描述 |
+| Qwen3-TTS VoiceDesign · 1.7B | 声音设计 | 必须填写声音描述 |
+| Breeze TTS 2 | 中英声音设计、音色克隆与演绎指导 | 设计描述可选；克隆需音频和完整原文；建议使用显卡 |
+| Kokoro | 轻量内置音色 | 音色 ID，无需参考音频 |
+
+通过 `yovoice models list --json` 查询模型 ID、精度、文件大小、音色和高级参数定义。App 的设置中也可查看模型。引擎和模型下载见 [CLI 指南](cli_zh.md)。
+
+## 模型文件与硬件
+
+| 模型 | 参数量 | 模型文件大小（按精度） | 核心能力 |
+| --- | --- | --- | --- |
+| IndexTTS 2.0 | — | Q8 · 3.63 GB<br>F16 · 4.65 GB<br>ORIG · 8.08 GB | 中英音色克隆、情绪控制、参考演绎 |
+| IndexTTS 2.5 | — | Q8 · 3.50 GB<br>F16 · 4.55 GB<br>ORIG · 7.89 GB | 多语言音色克隆、情绪控制、发音调整 |
+| VoxCPM2 | 2B | Q8 · 2.96 GB<br>BF16 · 4.77 GB<br>ORIG · 4.96 GB | 文字设计音色、音色克隆、参考原文辅助的精细克隆 |
+| OmniVoice | 0.6B | Q8 · 1.35 GB<br>BF16 · 1.64 GB<br>F16 · 1.64 GB | 属性设计音色、音色克隆、非语言声音标签 |
+| Qwen3-TTS Base | 0.6B | Q8 · 1.99 GB<br>BF16 · 2.52 GB | 参考音色克隆、可选原文辅助、多语言生成 |
+| Qwen3-TTS Base | 1.7B | Q8 · 2.70 GB<br>BF16 · 4.20 GB<br>ORIG · 4.54 GB | 参考音色克隆、可选原文辅助、多语言生成 |
+| Qwen3-TTS CustomVoice | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | 9 种内置音色、文字控制风格与情绪 |
+| Qwen3-TTS VoiceDesign | 1.7B | Q8 · 2.82 GB<br>BF16 · 4.18 GB | 自然语言描述设计音色，无需参考音频 |
+| Breeze TTS 2 | 约 3B | Q4 · 3.79 GB<br>Q8 · 5.08 GB<br>BF16 · 7.34 GB | 中英自然语言设计音色、音色克隆与演绎指导；建议使用显卡，需要 v0.9.1 内核 |
+| Kokoro-82M 1.0 Official | 82M | Q8 · 189.55 MB<br>BF16 · 211.95 MB | 49 种内置音色、多语言生成，不含日语 |
+| Kokoro-82M 1.1-zh | 82M | Q8 · 255.32 MB | 100 种中文音色及 3 种英文音色；实验性 |
+| ACE-Step 1.5 Turbo | — | Q8 · 6.19 GB<br>BF16 · 10.09 GB | 根据风格描述和歌词生成歌曲或纯音乐，支持 50 多种演唱语言；需要 v0.9.1 内核 |
+| ACE-Step 1.5 XL Turbo | — | Q8 · 10.71 GB<br>BF16 · 15.28 GB | 更大的 ACE-Step 模型，歌曲与纯音乐质量更高；需要 v0.9.1 内核 |
+| YuE2 3B | 3B | Q4 · 2.93 GB<br>Q8 · 4.53 GB<br>BF16 · 7.53 GB | 根据歌词和风格生成整首带人声歌曲，长度由歌词决定，也可按旋律谱生成纯音乐；需要 v0.9.1 内核 |
+| SheetSage2 | — | F32 · 2.71 GB | 把歌曲的旋律与和弦扒成谱，配合 YuE2 做翻唱；需要 v0.9.1 内核 |
+
+| 创作场景 | 推荐配置 | 适用模型推荐 |
+| --- | --- | --- |
+| 🟢 **轻量极速朗读与旁白** | 任何 CPU / 4GB+ 内存 | **Kokoro-82M** (Q8 仅 189 MB，毫秒级合成，纯 CPU 也能飞快运行) |
+| 🟡 **高音质克隆与声音设计** | 4GB ~ 6GB 显存 / Apple Silicon 8GB+ | **VoxCPM2** (2B, 48kHz)、**IndexTTS 2.0/2.5**、**Qwen3-TTS** |
+| 🔴 **整首歌生成与伴奏演奏** | 12GB+ 显存 / Apple Silicon 16GB+ | **ACE-Step 1.5 Turbo** (Q8 6GB / BF16 10GB)、**ACE-Step 1.5 XL Turbo**、**YuE2 3B** |
+
+## 音色克隆
+
+```sh
+yovoice generate --model index-2.5-q8 --text-file narration.txt --reference voice.wav --output index.wav
+yovoice generate --model voxcpm2-q8 --text-file narration.txt --reference voice.wav --reference-text "参考音频中实际说出的内容。" --output vox.wav
+yovoice generate --model omnivoice-q8 --text-file narration.txt --reference voice.wav --reference-text "参考音频中实际说出的内容。" --output omni.wav
+yovoice generate --model qwen3-tts-base-0.6b-q8 --text-file narration.txt --reference voice.wav --output qwen.wav
+yovoice generate --model breeze-tts-2-q8 --text-file narration.txt --reference voice.wav --reference-text "参考音频中实际说出的内容。" --voice-description "语速稍快，语气轻松" --output breeze.wav
+```
+
+VoxCPM2 省略 `--reference-text` 时使用普通克隆。Qwen3-TTS Base 添加准确原文后可进行原文辅助克隆。OmniVoice 与 Breeze TTS 2 克隆始终需要匹配的原文；Breeze 的 `--voice-description` 在克隆时作为演绎指导，保留音色并调整语速、情绪和语气。
+
+参考录音应人声清晰、只有一位说话人且背景噪声较少，长度为 1–60 秒、大小不超过 20 MB。
+
+## 声音设计与内置音色
+
+```sh
+yovoice generate --model voxcpm2-q8 --voice-description "温暖平静的成年旁白" --text-file narration.txt --output vox-design.wav
+yovoice generate --model omnivoice-q8 --voice-description "女, 青年, 中音调" --text-file narration.txt --output omni-design.wav
+yovoice generate --model breeze-tts-2-q8 --voice-description "温暖的女声，语速平稳，吐字清晰" --text-file narration.txt --output breeze-design.wav
+yovoice generate --model qwen3-tts-voicedesign-q8 --voice-description "低沉、富有磁性的成年旁白" --text-file narration.txt --output qwen-design.wav
+yovoice generate --model qwen3-tts-customvoice-q8 --speaker Serena --voice-description "温柔轻声，语速舒缓" --language zh --text-file narration.txt --output custom.wav
+```
+
+Qwen3-TTS CustomVoice 的音色为 `Vivian`、`Serena`、`Uncle_Fu`、`Dylan`、`Eric`、`Ryan`、`Aiden`、`Ono_Anna`、`Sohee`。
+
+OmniVoice 设计使用逗号分隔的预定义属性，不接受自由描述。同一类别最多选一个：
+
+- 性别：男、女。
+- 年龄：儿童、少年、青年、中年、老年。
+- 音调：极低音调、低音调、中音调、高音调、极高音调。
+- 发声方式：耳语。
+
+描述留空时自动选择音色。Kokoro 音色和模型差异见下方 [Kokoro](#kokoro) 章节。
+
+## 演绎与高级参数
+
+IndexTTS 可通过 `--emotion-text`、`--emotion-reference` 或 `--emotion-vector` 选择演绎方式。情绪向量的八维顺序为高兴、愤怒、悲伤、害怕、厌恶、低落、惊讶、平静。`--emotion-strength` 控制强度，`--speed` 控制语速。IndexTTS 2.5 还支持正文中的发音标注。
+
+VoxCPM2 通过声音描述表达语速、情绪和方言，也可使用 `--guidance-scale`、`--inference-steps`、`--seed` 调整生成。精细克隆沿用参考音频的演绎，不叠加设计描述。
+
+VoxCPM2 以每秒 6.25 帧自回归生成，整段过长时音色会发散甚至爆音，长段内音高和音量也会逐渐下沉。YoVoice 默认每段 200 字、上限 400 字；默认的续写策略会把上一段作为下一段的提示，保持前后衔接。克隆时希望每段都直接对齐参考音频，可把“长文生成策略”改为“独立生成”（`stateless`）。
+
+OmniVoice 支持 `--speed`、`--language`、`--guidance-scale`、`--inference-steps`，正文可插入 `[laughter]`、`[sigh]` 等声音标签。Qwen3-TTS 支持 `--language auto|zh|en|ja|ko|de|fr|ru|pt|es|it`。
+
+### Breeze TTS 2 与拖音
+
+Breeze TTS 2 自然度高，但自回归生成在以下情况下容易拖音、重复或在句尾拖出长段静音，YoVoice 已按此调整默认值：
+
+- **段落过长。** 模型以每秒 12.5 帧生成，官方上下文为 2048 帧；audio.cpp 默认每段 600 字、单段上限 1500 帧（120 秒），中文长段会超出训练长度。YoVoice 默认每段 160 字、单段上限 900 帧（约 72 秒），可在高级设置的 `text_chunk_size`、`max_tokens` 调整。
+- **非 bf16 推理。** 官方实现全程以 bf16 运行，fp32 激活容易发音错误和重复。YoVoice 在 CUDA、Vulkan 和 Metal 上都开启 bf16 参考路径（Metal 约慢 20%）；CPU 后端无法开启，长文更容易拖音，建议使用显卡。
+- **参考音频与原文。** 克隆参考宜为 5–15 秒、无背景噪声、不循环的干净人声，原文须逐字一致（重复的话也要写上）。
+- **调教顺序。** 仍有拖音时，先缩短分段（如 80–120 字），再把 `temperature` 降到 0.6–0.8；需要更贴合描述时把 `guidance_scale` 调到 3–4（耗时约翻倍）。语速、情绪用描述表达，例如“语速稍快，语气轻松”，与正文使用同一种语言。
+
+长文不带参考音频生成时，v0.9.1 内核会为每段单独挑选音色，前后音色可能不一致；需要稳定音色时，先用短句设计满意的声音，保存为音色后改用克隆。
+
+App 在高级设置中展示可用参数。CLI 使用可重复的 `--option KEY=JSON`，具体参数及范围通过 `models list --json` 查询：
+
+```sh
+yovoice generate --model qwen3-tts-customvoice-q8 --speaker Serena --text-file narration.txt --option 'temperature=0.7' --option 'text_chunk_size=512' --output advanced.wav
+```
+
+## Kokoro
+
+Kokoro 使用内置音色生成语音，不需要参考录音。
+
+### 选择模型
+
+| 模型 ID | 大小 | 音色与语言 | 安装方式 |
+| --- | --- | --- | --- |
+| `kokoro-82m-q8` | 约 190 MB | 49 个音色，支持日语以外的多种语言 | 下载 |
+| `kokoro-82m-bf16` | 约 212 MB | 音色与 Q8 相同 | 下载 |
+| `kokoro-1.1-zh-q8` | 约 255 MB | 100 个中文和 3 个英文音色，实验性支持 | 下载 |
+
+官方模型支持中文、英语（美式与英式）、西班牙语、法语、印地语、意大利语和巴西葡萄牙语。1.1-zh 的音色 ID 与 1.0 不通用。
+
+### 生成语音
+
+```sh
+yovoice models download kokoro-82m-q8
+yovoice generate --model kokoro-82m-q8 --speaker zf_xiaobei --text "你好，欢迎使用。" --output hello.wav
+```
+
+通过 `yovoice models list --json` 查看可用音色 ID。语言随音色选择；官方模型的中文音色可用 `zf_xiaobei`，1.1-zh 可用 `zf_001`。
+
+默认按 64 个字符分段，需要时可通过 `--option 'text_chunk_size=120'` 调整；单段仍受引擎音素数量上限限制。
+
+Kokoro 不支持音色克隆或文字情绪控制。请保留 CLI 安装包中的 `tools/` 目录。安装引擎和模型后，生成过程可离线运行。完整多语言模型首次加载可能较慢。
+
+## 音乐生成
+
+桌面端的“音乐生成”作品可用 ACE-Step 1.5 Turbo 或 XL Turbo 生成歌曲与纯音乐，或用 YuE2 3B 生成歌曲和按谱演奏的纯音乐，均需要 v0.9.1 及以上的推理内核。
+
+- **风格**：一句描述加若干标签，例如 `city pop, warm synths, chill, female vocals`，最多 512 字。
+- **歌词**：用 `[verse]`、`[chorus]`、`[bridge]` 等标记段落，最多 4000 字；打开“纯音乐”后只生成伴奏，歌词仍会保留。
+- **时长与语言**：时长可选自动或 10–300 秒；演唱语言需与歌词一致。
+- **编曲细节**：速度（30–300 BPM）、调性、拍号默认由模型规划，也可手动指定。
+
+YuE2 生成带人声的歌曲时必须填写歌词，歌曲长度由歌词决定。它也可以按一份可编辑的旋律谱生成：
+
+- **先写旋律谱**：YuE2 先按歌词写出人声旋律与和弦（ABC 谱），暂不演唱。可以在轨道视图或 ABC 谱面里查看和修改，调整速度、只保留旋律、导入 `.abc` 文件，或让创作助手改谱（需要接入 AI 服务）。之后按谱生成：带和弦时保留你定的和声，只有旋律时由 YuE2 自由编配伴奏。
+- **从歌曲提取（翻唱）**：安装 SheetSage2 后选择一首 10 分钟以内的歌曲，扒出旋律、去掉原曲和弦，YuE2 按你写的风格和歌词重新演唱；不保留原唱的音色和唱法。
+- **纯音乐**：YuE2 先写谱，再把人声旋律交给乐器演奏，和弦、速度和调不变。歌词可以不填，写 `[Verse]`、`[Chorus]` 等段落标记可以安排结构；已有的谱也按同样方式转换，旋律谱菜单里可以直接转好。
+- **生成方式**：“按旋律谱”按谱生成（没有谱时先写谱）；“自由发挥”不经过谱直接生成，结果没有可编辑的谱。高级设置里可以调推理步数以及写谱和演唱的采样参数。
+- 每个版本都保存当时用的谱，复用版本时一并恢复。
+
+续写、局部重绘和分轨提取暂未开放。
+
+## 编曲音色库
+
+“编曲”作品与 `yovoice score render` 使用 MuseScore General 音色库（`musescore-general-sf2`，SF2 · 约 216 MB），包含 128 种 General MIDI 乐器和鼓组；另可选 GeneralUser GS（`generaluser-gs-sf2`，约 32 MB）和 SGM-V2.01（`sgm-v2-sf2`，约 247 MB）。不需要推理内核。用法见[编曲](score_zh.md)。
+
+## 使用协议
+
+OmniVoice 权重使用 CC-BY-NC 协议，YuE2 权重使用 CC BY-NC 4.0 协议，均仅限非商业用途。Breeze TTS 2 权重使用 [BreezeBlue 研究与非商业许可](https://huggingface.co/BreezeBlue/Breeze-TTS-2)，生成结果同样不可商用。IndexTTS 有独立的[模型协议](../web/public/model-license.txt)。商业使用前请确认所选模型发布方的使用条款。
