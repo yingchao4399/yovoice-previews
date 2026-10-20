@@ -14,43 +14,52 @@ import (
 // voiceSettingsInput 是右侧检查器里「声音设置」和各模型高级参数的全部可调项，作品与角色共用。
 // 只改给出的字段；校验交给 SaveDraft / SaveCharacter（与界面保存同一套规则）。
 type voiceSettingsInput struct {
-	ModelID           *string                   `json:"modelId,omitempty" jsonschema:"模型 ID，先用 list_models 确认已安装"`
-	VoiceID           *string                   `json:"voiceId,omitempty" jsonschema:"参考音色 ID，先用 list_voices 查询；空字符串清除"`
-	VoiceMode         *string                   `json:"voiceMode,omitempty" jsonschema:"OmniVoice / Qwen3-TTS 的声音来源：design（用描述设计声音）或 clone（克隆参考音频）"`
-	VoxMode           *string                   `json:"voxMode,omitempty" jsonschema:"VoxCPM2 的声音来源：design、clone 或 continuation（续写参考音频）"`
-	VoiceDescription  *string                   `json:"voiceDescription,omitempty" jsonschema:"声音设计 / 语音方向的描述文字（OmniVoice 的属性组合、Qwen3-TTS 与 VoxCPM2 的声音设计描述等）"`
-	ReferenceText     *string                   `json:"referenceText,omitempty" jsonschema:"参考音频对应的文字，克隆和续写需要"`
-	Speaker           *string                   `json:"speaker,omitempty" jsonschema:"Qwen3-TTS CustomVoice 内置说话人，或 Kokoro 的音色名"`
-	Mode              *string                   `json:"mode,omitempty" jsonschema:"IndexTTS 的声音来源：speaker、reference、vector 或 text（用文字描述情绪）"`
-	EmotionVoiceID    *string                   `json:"emotionVoiceId,omitempty" jsonschema:"IndexTTS 的情绪参考音色 ID；空字符串清除"`
-	EmotionText       *string                   `json:"emotionText,omitempty" jsonschema:"IndexTTS 的情绪描述文字"`
-	InferEmotion      *bool                     `json:"inferEmotion,omitempty" jsonschema:"IndexTTS 根据正文自动识别情绪"`
-	EmotionStrength   *float64                  `json:"emotionStrength,omitempty" jsonschema:"情绪强度 0-1"`
-	Emotions          []float64                 `json:"emotions,omitempty" jsonschema:"IndexTTS 情绪向量，固定 8 个 0-1 的数：高兴、愤怒、悲伤、恐惧、反感、低落、惊讶、平静"`
-	RandomEmotion     *bool                     `json:"randomEmotion,omitempty" jsonschema:"IndexTTS 随机情绪"`
-	Language          *string                   `json:"language,omitempty" jsonschema:"IndexTTS 的文本语言：zh、en；2.5 另有 ja、es、ar"`
-	SynthesisLanguage *string                   `json:"synthesisLanguage,omitempty" jsonschema:"OmniVoice、Qwen3-TTS、Kokoro 等的合成语言，如 auto、zh、en"`
-	Speed             *float64                  `json:"speed,omitempty" jsonschema:"语速 0.5-2"`
-	OmniSpeed         *float64                  `json:"omniSpeed,omitempty" jsonschema:"OmniVoice 的语速 0.5-2；0 表示按默认"`
-	Seed              *int                      `json:"seed,omitempty" jsonschema:"随机种子 0-2147483647；传 -1 恢复每次随机"`
-	Temperature       *float64                  `json:"temperature,omitempty" jsonschema:"采样温度 0.05-2"`
-	TopP              *float64                  `json:"topP,omitempty" jsonschema:"top_p 0.01-1"`
-	TopK              *int                      `json:"topK,omitempty" jsonschema:"top_k 1-200"`
-	RepetitionPenalty *float64                  `json:"repetitionPenalty,omitempty" jsonschema:"重复惩罚 0.1-20"`
-	MaxTokens         *int                      `json:"maxTokens,omitempty" jsonschema:"每段最大 token 50-4000"`
-	IntervalSilenceMs *int                      `json:"intervalSilenceMs,omitempty" jsonschema:"句间停顿毫秒 0-2000"`
-	DoSample          *bool                     `json:"doSample,omitempty" jsonschema:"启用采样"`
-	NumBeams          *int                      `json:"numBeams,omitempty" jsonschema:"beam 数 1-10"`
-	LengthPenalty     *float64                  `json:"lengthPenalty,omitempty" jsonschema:"长度惩罚 -2 到 2"`
-	GuidanceScale     *float64                  `json:"guidanceScale,omitempty" jsonschema:"VoxCPM2 的引导强度 0.5-5"`
-	InferenceSteps    *int                      `json:"inferenceSteps,omitempty" jsonschema:"VoxCPM2 的推理步数 0-50"`
-	ModelOptions      map[string]map[string]any `json:"modelOptions,omitempty" jsonschema:"各模型家族的高级参数，形如 {\"omnivoice\":{\"num_inference_steps\":32}}；每个模型能用哪些字段、键与取值范围见 yovoice-voice skill 里该模型的参考文档，只改给出的键"`
+	Music             *schema.MusicCreationOptions `json:"music,omitempty" jsonschema:"仅音乐生成：duration包含mode（auto或fixed）及seconds（15至600）；ACE最长300秒，YuE是规划目标；voice可取auto或male或female或reference，仅演唱方向，不是音色克隆"`
+	ModelID           *string                      `json:"modelId,omitempty" jsonschema:"模型 ID，先用 list_models 确认已安装"`
+	VoiceID           *string                      `json:"voiceId,omitempty" jsonschema:"参考音色 ID，先用 list_voices 查询；空字符串清除"`
+	VoiceMode         *string                      `json:"voiceMode,omitempty" jsonschema:"OmniVoice / Qwen3-TTS 的声音来源：design（用描述设计声音）或 clone（克隆参考音频）"`
+	VoxMode           *string                      `json:"voxMode,omitempty" jsonschema:"VoxCPM2 的声音来源：design、clone 或 continuation（续写参考音频）"`
+	VoiceDescription  *string                      `json:"voiceDescription,omitempty" jsonschema:"声音设计 / 语音方向的描述文字（OmniVoice 的属性组合、Qwen3-TTS 与 VoxCPM2 的声音设计描述等）"`
+	ReferenceText     *string                      `json:"referenceText,omitempty" jsonschema:"参考音频对应的文字，克隆和续写需要"`
+	Speaker           *string                      `json:"speaker,omitempty" jsonschema:"Qwen3-TTS CustomVoice 内置说话人，或 Kokoro 的音色名"`
+	Mode              *string                      `json:"mode,omitempty" jsonschema:"IndexTTS 的声音来源：speaker、reference、vector 或 text（用文字描述情绪）"`
+	EmotionVoiceID    *string                      `json:"emotionVoiceId,omitempty" jsonschema:"IndexTTS 的情绪参考音色 ID；空字符串清除"`
+	EmotionText       *string                      `json:"emotionText,omitempty" jsonschema:"IndexTTS 的情绪描述文字"`
+	InferEmotion      *bool                        `json:"inferEmotion,omitempty" jsonschema:"IndexTTS 根据正文自动识别情绪"`
+	EmotionStrength   *float64                     `json:"emotionStrength,omitempty" jsonschema:"情绪强度 0-1"`
+	Emotions          []float64                    `json:"emotions,omitempty" jsonschema:"IndexTTS 情绪向量，固定 8 个 0-1 的数：高兴、愤怒、悲伤、恐惧、反感、低落、惊讶、平静"`
+	RandomEmotion     *bool                        `json:"randomEmotion,omitempty" jsonschema:"IndexTTS 随机情绪"`
+	Language          *string                      `json:"language,omitempty" jsonschema:"IndexTTS 的文本语言：zh、en；2.5 另有 ja、es、ar"`
+	SynthesisLanguage *string                      `json:"synthesisLanguage,omitempty" jsonschema:"OmniVoice、Qwen3-TTS、Kokoro 等的合成语言，如 auto、zh、en"`
+	Speed             *float64                     `json:"speed,omitempty" jsonschema:"语速 0.5-2"`
+	OmniSpeed         *float64                     `json:"omniSpeed,omitempty" jsonschema:"OmniVoice 的语速 0.5-2；0 表示按默认"`
+	Seed              *int                         `json:"seed,omitempty" jsonschema:"随机种子 0-2147483647；传 -1 恢复每次随机"`
+	Temperature       *float64                     `json:"temperature,omitempty" jsonschema:"采样温度 0.05-2"`
+	TopP              *float64                     `json:"topP,omitempty" jsonschema:"top_p 0.01-1"`
+	TopK              *int                         `json:"topK,omitempty" jsonschema:"top_k 1-200"`
+	RepetitionPenalty *float64                     `json:"repetitionPenalty,omitempty" jsonschema:"重复惩罚 0.1-20"`
+	MaxTokens         *int                         `json:"maxTokens,omitempty" jsonschema:"每段最大 token 50-4000"`
+	IntervalSilenceMs *int                         `json:"intervalSilenceMs,omitempty" jsonschema:"句间停顿毫秒 0-2000"`
+	DoSample          *bool                        `json:"doSample,omitempty" jsonschema:"启用采样"`
+	NumBeams          *int                         `json:"numBeams,omitempty" jsonschema:"beam 数 1-10"`
+	LengthPenalty     *float64                     `json:"lengthPenalty,omitempty" jsonschema:"长度惩罚 -2 到 2"`
+	GuidanceScale     *float64                     `json:"guidanceScale,omitempty" jsonschema:"VoxCPM2 的引导强度 0.5-5"`
+	InferenceSteps    *int                         `json:"inferenceSteps,omitempty" jsonschema:"VoxCPM2 的推理步数 0-50"`
+	ModelOptions      map[string]map[string]any    `json:"modelOptions,omitempty" jsonschema:"各模型家族的高级参数，形如 {\"omnivoice\":{\"num_inference_steps\":32}}；每个模型能用哪些字段、键与取值范围见 yovoice-voice skill 里该模型的参考文档，只改给出的键"`
 }
 
 // applyVoiceSettings 把补丁写进合成设置，返回改动了哪些项；校验交给保存时的统一规则。
 func (w *Workbench) applyVoiceSettings(s *schema.SynthesisSettings, in voiceSettingsInput, kind string) ([]string, error) {
 	var changed []string
 	patch := func(name string) { changed = append(changed, name) }
+	if in.Music != nil {
+		if kind != "music" {
+			return nil, fmt.Errorf("音乐创作设置只能用于音乐生成作品")
+		}
+		copy := *in.Music
+		s.Music = &copy
+		patch("音乐目标与演唱方向")
+	}
 	voice := func(value *string) (*string, error) {
 		id := strings.TrimSpace(*value)
 		if id != "" && !w.voiceExists(id) {

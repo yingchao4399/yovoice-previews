@@ -4701,5 +4701,164 @@
   },
   "@yovoice.music.lyricsTooLong": {
     "defaultMessage": "The replacement exceeds 4,000 characters. Shorten it or select a smaller fragment."
+  },
+  "@yovoice.resources.downloadTitle": {
+    "defaultMessage": "Instrument download list"
+  },
+  "@yovoice.resources.downloadScope": {
+    "defaultMessage": "Only this fixed CC0 list is approved. Files, note ranges and articulations are checked afterwards. Question answers do not grant download permission."
+  },
+  "@yovoice.resources.confirmDownload": {
+    "defaultMessage": "Confirm download"
+  },
+  "@yovoice.resources.downloadProgress": {
+    "defaultMessage": "Instrument download progress"
+  },
+  "@yovoice.resources.retryRemaining": {
+    "defaultMessage": "Retry remaining items"
+  },
+  "@yovoice.resources.downloadState.awaiting_approval": {
+    "defaultMessage": "Awaiting confirmation"
+  },
+  "@yovoice.resources.downloadState.queued": {
+    "defaultMessage": "Queued"
+  },
+  "@yovoice.resources.downloadState.running": {
+    "defaultMessage": "Downloading"
+  },
+  "@yovoice.resources.downloadState.completed": {
+    "defaultMessage": "Completed"
+  },
+  "@yovoice.resources.downloadState.failed": {
+    "defaultMessage": "Failed"
+  },
+  "@yovoice.resources.downloadState.paused": {
+    "defaultMessage": "Paused"
+  },
+  "@yovoice.resources.downloadState.cancelled": {
+    "defaultMessage": "Cancelled"
+  },
+  "@yovoice.resources.preview": {
+    "defaultMessage": "Resource preview"
+  },
+  "@yovoice.resources.pick": {
+    "defaultMessage": "Choose library audio"
+  },
+  "@yovoice.resources.search": {
+    "defaultMessage": "Search audio or samples"
+  },
+  "@yovoice.resources.category": {
+    "defaultMessage": "Resource category"
+  },
+  "@yovoice.resources.use": {
+    "defaultMessage": "Use selected audio"
+  },
+  "@yovoice.resources.back": {
+    "defaultMessage": "Back to audio list · {name}"
+  },
+  "@yovoice.resources.results": {
+    "defaultMessage": "Resources · {count}"
+  },
+  "@yovoice.resources.samples": {
+    "defaultMessage": "View individual samples"
+  },
+  "@yovoice.resources.audition": {
+    "defaultMessage": "Preview · {name}"
+  },
+  "@yovoice.resources.empty": {
+    "defaultMessage": "No matching library resources"
+  },
+  "@yovoice.resources.more": {
+    "defaultMessage": "Load more"
+  },
+  "@yovoice.resources.licenseUnknown": {
+    "defaultMessage": "No license recorded; check the source"
+  },
+  "@yovoice.resources.workChanged": {
+    "defaultMessage": "Work changed; select the reference again"
+  },
+  "@yovoice.resources.kind.all": {
+    "defaultMessage": "All local audio"
+  },
+  "@yovoice.resources.kind.audio": {
+    "defaultMessage": "Works and AI audio"
+  },
+  "@yovoice.resources.kind.voice": {
+    "defaultMessage": "Voice library"
+  },
+  "@yovoice.resources.kind.instrument": {
+    "defaultMessage": "Instruments"
+  },
+  "@yovoice.resources.kind.sample": {
+    "defaultMessage": "Individual samples"
+  },
+  "@yovoice.resources.origin.real": {
+    "defaultMessage": "Recorded sample"
+  },
+  "@yovoice.resources.origin.ai": {
+    "defaultMessage": "AI generated"
+  },
+  "@yovoice.resources.origin.generated": {
+    "defaultMessage": "App generated"
+  },
+  "@yovoice.resources.origin.imported": {
+    "defaultMessage": "User imported"
+  },
+  "@yovoice.resources.status.ready": {
+    "defaultMessage": "Ready locally"
+  },
+  "@yovoice.resources.status.repair": {
+    "defaultMessage": "File needs repair"
+  },
+  "@yovoice.resources.status.review": {
+    "defaultMessage": "Needs review"
+  },
+  "@yovoice.music.referenceVoice": {
+    "defaultMessage": "Vocal reference audio"
+  },
+  "@yovoice.music.referenceAccompaniment": {
+    "defaultMessage": "Accompaniment reference"
+  },
+  "@yovoice.music.referenceSemanticHint": {
+    "defaultMessage": "The music model uses the description below as style guidance, not the audio as a native condition or voice clone. References are not mixed automatically."
+  },
+  "@yovoice.music.referenceLibrary": {
+    "defaultMessage": "Choose from library"
+  },
+  "@yovoice.music.referenceUpload": {
+    "defaultMessage": "Upload audio"
+  },
+  "@yovoice.music.referenceAddMaterial": {
+    "defaultMessage": "Add as track material"
+  },
+  "@yovoice.music.referenceClear": {
+    "defaultMessage": "Clear reference"
+  },
+  "@yovoice.music.referenceVoiceDescription": {
+    "defaultMessage": "Vocal timbre guidance"
+  },
+  "@yovoice.music.referenceMusicDescription": {
+    "defaultMessage": "Accompaniment guidance"
+  },
+  "@yovoice.music.exportVersion": {
+    "defaultMessage": "Version to export"
+  },
+  "@yovoice.music.exportFixed": {
+    "defaultMessage": "Export a copy at a fixed duration"
+  },
+  "@yovoice.music.exportSeconds": {
+    "defaultMessage": "Export duration (seconds)"
+  },
+  "@yovoice.music.exportPad": {
+    "defaultMessage": "Allow silence padding if the source is shorter"
+  },
+  "@yovoice.music.exportFixedHint": {
+    "defaultMessage": "The original is retained. Longer audio is trimmed with a short ending fade. Shorter audio is padded only when allowed; padding is not generated content."
+  },
+  "@yovoice.music.exportAudioCopy": {
+    "defaultMessage": "Export audio copy"
+  },
+  "@yovoice.music.exportDesktopHint": {
+    "defaultMessage": "Fixed-duration processing requires the desktop app. Original-length audio can still be exported in preview."
   }
 }

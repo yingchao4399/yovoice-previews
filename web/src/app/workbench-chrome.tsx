@@ -364,7 +364,8 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   useEffect(() => {
     if (!ready) return;
     const items = historyForProject(draft, { drafts: state.drafts, history: state.history });
-    const latest = items[0];
+    // 快速语音的菜单可切换全部历史，但新建空作品不能自动播放别的作品。
+    const latest = projectKind(draft) === 'text' ? items.find(item => item.settings.id === draft.id) : items[0];
     const key = `${draft.id}/${latest?.id ?? ''}`;
     // 切换作品或生成了新版本时跳到最新版；删除版本露出的旧版本不抢占仍然存在的当前选择。
     const surfaced = !!latest && previousHistory.current?.startsWith(`${draft.id}/`) && knownHistory.current.has(latest.id);

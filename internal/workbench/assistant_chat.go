@@ -101,17 +101,25 @@ func (w *Workbench) SendAssistant(text string, context AssistantContext) error {
 func (w *Workbench) sendAssistantToSession(sessionID, text string, context AssistantContext) error {
 	// 用户消息立即入库：标题取首条用户消息，会话时间随之更新。
 	now := time.Now().UTC()
-	_ = w.Store.Update(func(s *schema.State) {
+	found := false
+	err := w.Store.Update(func(s *schema.State) {
 		session := assistantSessionByID(*s, sessionID)
 		if session == nil {
 			return
 		}
+		found = true
 		session.Messages = append(session.Messages, schema.AssistantMessage{ID: schema.NewID(), Role: "user", Text: text, CreatedAt: now})
 		session.UpdatedAt = now
 		if session.Title == "" {
 			session.Title = sessionTitle(text)
 		}
 	}, true)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return fmt.Errorf("原会话已删除，不能续接到其他会话")
+	}
 	w.chat.mu.Lock()
 	if w.chat.stopped {
 		w.chat.mu.Unlock()

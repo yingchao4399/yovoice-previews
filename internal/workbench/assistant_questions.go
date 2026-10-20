@@ -72,7 +72,7 @@ func (w *Workbench) registerQuestionTool(server *mcp.Server) {
 					case *mcp.CallToolParams:
 						name = p.Name
 					}
-					if !slices.Contains([]string{"ask_user", "search_resources", "arrangement_inventory", "inspect_arrangement", "list_works", "get_work", "list_models", "list_voices", "list_characters", "status", "get_app_status", "get_recent_errors", "get_generation_status", "arrangement_jobs"}, name) {
+					if !slices.Contains([]string{"ask_user", "search_resources", "resource_downloads", "arrangement_inventory", "inspect_arrangement", "list_works", "get_work", "list_models", "list_voices", "list_characters", "status", "get_app_status", "get_recent_errors", "get_generation_status", "arrangement_jobs"}, name) {
 						return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{&mcp.TextContent{Text: "awaiting_user: 当前会话还有待回答的问题，请先请用户回答或取消问答卡，不能代用户作决定。"}}}, nil
 					}
 				}

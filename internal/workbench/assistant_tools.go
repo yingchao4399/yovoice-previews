@@ -25,6 +25,8 @@ var assistantTools = []string{
 	"arrangement_inventory", "inspect_arrangement", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "render_arrangement",
 	"search_resources",
 	"add_resource_clip",
+	"apply_resource_band",
+	"propose_resource_download", "resource_downloads",
 	"ask_user",
 }
 
@@ -49,6 +51,7 @@ func (w *Workbench) newAssistantServer() *mcp.Server {
 	w.registerAgentTools(server)
 	w.registerArrangementTools(server)
 	w.registerQuestionTool(server)
+	w.registerResourceDownloadTools(server)
 	return server
 }
 

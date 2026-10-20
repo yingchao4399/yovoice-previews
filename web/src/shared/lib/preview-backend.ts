@@ -5,6 +5,8 @@ import { encodeWav } from './sound';
 import { CallError } from './call-error';
 import { isUiLocale } from '../i18n/locale';
 import { auditedMethods, encodeError, previewExportLogs, previewLog, previewQueryLogs } from './preview-logs';
+import { previewResources } from './preview-resources';
+import type { ResourceQuery } from '../resource';
 
 // 浏览器预览的本地后端：只保存编辑和音频数据，不模拟桌面推理或模型安装。
 // 作品状态存于 localStorage（主副本加恢复备份），音频存于 IndexedDB。
@@ -126,6 +128,21 @@ function previewAssets(state: State): Asset[] {
 }
 
 async function dispatch<T>(method: string, data: unknown): Promise<T> {
+  if (method === 'resources.search') {
+    const result = previewResources(preview(), data as ResourceQuery);
+    for (const item of result.items) if (item.fileName && !await blobStore(item.fileName)) { item.status = 'repair'; item.issue = 'FILE_MISSING'; }
+    return result as T;
+  }
+  if (method === 'resources.import') {
+    const resource = previewResources(preview(), { query: (data as { id: string }).id, limit: 100 }).items.find(item => item.id === (data as { id: string }).id);
+    if (!resource?.fileName || !resource.mediaKind) throw new CallError('@yovoice.error.audioMissing');
+    const blob = await blobStore(resource.fileName);
+    if (!blob) throw new CallError('@yovoice.error.audioBlobMissing');
+    const id = crypto.randomUUID().replaceAll('-', '');
+    const asset: AudioAsset = { id, name: resource.name, fileName: `import-${id}.wav`, duration: resource.duration ?? 0, origin: resource.origin, sourceResourceId: resource.id, license: resource.license, licenseUrl: resource.licenseUrl, sourceUrl: resource.sourceUrl, author: resource.author };
+    await blobStore(asset.fileName, blob);
+    return asset as T;
+  }
   if (method === 'assets.list') return previewAssets(preview()) as T;
   if (method === 'assets.image') throw new CallError('@yovoice.error.audioMissing');
   if (method === 'assets.delete') {
@@ -553,8 +570,9 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
     const cards = (state.assistantSessions?.sessions ?? []).flatMap(session => session.messages.flatMap(message => message.blocks ?? [])).map(block => block.card).filter(card => card?.proposal?.id === id);
     const proposal = cards[0]?.proposal;
     if (!proposal || proposal.state !== 'pending') throw new CallError('@yovoice.error.requestInvalid');
+    if (confirm && proposal.downloads) throw new CallError('@yovoice.error.previewDesktopOnly');
     if (confirm && proposal.action === 'delete_work') state.drafts = state.drafts.filter(d => d.id !== proposal.target);
-    for (const card of cards) card!.proposal = { ...proposal, state: confirm ? 'confirmed' : 'dismissed' };
+    for (const card of cards) card!.proposal = { ...proposal, state: confirm ? 'confirmed' : 'dismissed', ...(proposal.downloads && !confirm ? { downloads: { ...proposal.downloads, state: 'cancelled' } } : {}) };
     publish();
     return true as T;
   }

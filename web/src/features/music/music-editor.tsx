@@ -12,6 +12,7 @@ import { isUntitled, isYuE, type Draft, type State, type UiLocale } from '../../
 import { createMusicDraft, instrumentalSections, lyricSections, splitTags } from './music-draft';
 import { MelodyScore } from './melody-score';
 import { LyricsTool, type LyricsSelection } from './lyrics-tool';
+import { MusicReference } from './music-reference';
 
 // 音乐创作区：从上到下是“风格 → 歌词”，生成的版本在“版本记录”里查看；让 AI 写风格和歌词走创作助手。
 // 纯音乐与填写歌词是并列的两种模式。YuE2 还可以先出旋律谱、改谱后再生成。
@@ -142,6 +143,7 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
       <TextArea ref={expandedLyrics} className="music-lyrics music-lyrics-expanded" label={t('@yovoice.music.lyrics')} isLabelHidden value={draft.lyrics ?? ''} maxLength={4000} rows={20} hasSpellCheck={false}
         placeholder={t(draft.instrumental ? '@yovoice.music.structurePlaceholder' : '@yovoice.music.lyricsPlaceholder')} onChange={value => change({ lyrics: value.slice(0, 4000) })} />
     </AppDialog> : null}
+    <MusicReference key={`reference:${draft.id}`} draft={draft} kind="accompaniment" change={change} />
     {/* YuE2 的流程是“歌词 → 旋律谱 → 整首歌”，谱放在歌词之后。 */}
     {yue ? <MelodyScore draft={draft} state={state} change={change} onError={onError} /> : null}
   </VStack>;

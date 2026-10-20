@@ -6,12 +6,20 @@
 
 ### English
 
+### 简体中文
+
+## [0.3.1-preview.4] - 2026-10-21
+
+### English
+
 - Add quick history switching beside the full history page, with uniform collapsed rows and per-item or bulk expansion.
 - Keep the music editor scrollable above the resizable audio panel; add hand-tool panning and horizontal scrolling to track views.
 - Add persistent Ocho question cards with selectable and custom answers, deferred replies and original-session continuation.
 - Introduce shared resource inventory queries covering individual samples, generated audio, band presets, music models and audited CC0 candidates.
 - Reuse local library audio as editable timeline material while preserving the original; respect real/AI source constraints.
+- Require a scoped confirmation for AI-requested CC0 downloads, show per-item and byte progress, and resume confirmed batches while retaining completed items.
 - Unify target duration with AI automatic and custom values; add male/female singing guidance and previewed lyric generation or optimization with undo.
+- Pick and preview library audio or individual samples as vocal/accompaniment references, import local references without speech resampling, and explicitly add accompaniment as editable material. Preserve source and license metadata when reusing audio; reuse suitable local AI samples and band combinations.
 
 ### 简体中文
 
@@ -20,7 +28,9 @@
 - Ocho 新增持久问答卡，支持点选、自定义、稍后回答及原会话续接。
 - 新增共用库存查询，覆盖单个采样、已生成音频、乐队组合、音乐模型与已审核 CC0 候选。
 - 库内音频可复用为独立的可编辑时间线素材，保留原文件并遵守真实／AI 来源限制。
+- AI 请求 CC0 音源时先展示固定清单供确认，提供逐项与字节进度；批量任务可恢复，失败保留已完成项目。
 - 统一目标时长，支持 AI 自动与自定义；增加男／女声演唱方向、歌词生成与优化预览及撤销。
+- 音色与配乐参考可搜索试听库内音频和单个采样，音乐上传保留原采样率与声道；参考可显式加入可编辑音轨。复用时保留来源与许可，并优先使用适用的本地 AI 单音采样及乐队组合。
 
 ## [0.3.1-preview.3] - 2026-10-20
 

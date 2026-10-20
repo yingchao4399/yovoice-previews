@@ -24,7 +24,7 @@ var audited = map[string]bool{
 	"model.forget": true, "runtime.install": true, "ai.provider.save": true, "ai.provider.delete": true, "ai.provider.use": true,
 	"ai.test": true, "ai.connect": true, "ai.codex.login": true, "melody.plan": true, "melody.cover": true, "melody.dismiss": true, "ai.dismiss": true,
 	"operation.cancel": true, "model.cancel": true, "ai.cancel": true, "logs.export": true, "assets.delete": true,
-	"assistant.proposal": true, "assistant.forget": true, "assistant.answer": true, "resources.clip": true,
+	"assistant.proposal": true, "assistant.forget": true, "assistant.answer": true, "assistant.download.control": true, "resources.clip": true, "resources.import": true, "music.reference.import": true,
 }
 
 // Call 解码桌面界面的 RPC 请求并调用应用服务；耗时操作由 Workbench 调度，结果通过状态事件广播。
@@ -136,13 +136,16 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return true, w.UpdateVoice(p.ID, p.Name, p.ReferenceText)
 	case "voice.import":
 		return w.ImportVoice(ctx, p.Path, "")
-	case "voice.record", "timeline.import":
+	case "voice.record", "timeline.import", "music.reference.import":
 		b, e := base64.StdEncoding.DecodeString(p.Base64)
 		if e != nil {
 			return nil, e
 		}
 		if method == "timeline.import" {
 			return w.ImportTimelineFrom(ctx, bytes.NewReader(b), p.Name)
+		}
+		if method == "music.reference.import" {
+			return w.ImportMusicReferenceFrom(ctx, bytes.NewReader(b), p.Name)
 		}
 		return w.ImportVoiceFrom(ctx, bytes.NewReader(b), p.Name)
 	case "instrument.sample.import":
@@ -172,6 +175,22 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			return nil, e
 		}
 		return w.AddResourceClip(ctx, input)
+	case "resources.import":
+		return w.ImportResourceAudio(ctx, p.ID)
+	case "resources.region":
+		var input workbench.ResourceRegionInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.ResourceRegion(ctx, input)
+	case "resources.discard":
+		return true, w.DiscardAudioAsset(p.ID)
+	case "resources.band":
+		var input workbench.ResourceBandInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.ApplyResourceBand(input)
 	case "instrument.search":
 		return w.SearchInstrumentCandidates(ctx, p.Name)
 	case "instrument.auto.find":
@@ -381,6 +400,15 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			return nil, e
 		}
 		return true, w.AnswerAssistantQuestion(input)
+	case "assistant.download.control":
+		var input struct {
+			ID     string `json:"id"`
+			Action string `json:"action"`
+		}
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return true, w.ControlResourceDownload(input.ID, input.Action)
 	case "assistant.cancel":
 		w.CancelAssistant()
 		return true, nil

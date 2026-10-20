@@ -3,6 +3,8 @@ package workbench
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,6 +16,7 @@ func TestResourceClipPreservesAudioAndSurvivesOriginalDeletion(t *testing.T) {
 	must(t, e)
 	defer w.Close()
 	d := schema.DefaultDraft()
+	d.Kind, d.ModelID = "music", "yue2-3b-q8"
 	must(t, w.SaveDraft(d))
 	id := schema.NewID()
 	file := id + ".wav"
@@ -37,6 +40,37 @@ func TestResourceClipPreservesAudioAndSurvivesOriginalDeletion(t *testing.T) {
 	must(t, e)
 	if !bytes.Equal(data, wav()) || !w.Store.Read().MediaRefs()["outputs"][asset.FileName] {
 		t.Fatal("原记录删除或清理损坏了工程素材")
+	}
+	resource, e := w.ResolveResource("asset:" + d.ID + "/" + asset.ID)
+	must(t, e)
+	if resource.Origin != "ai" || asset.SourceResourceID != "generation:"+id {
+		t.Fatal("复制后删除原历史仍须保留AI来源和原身份", resource, asset)
+	}
+}
+
+func TestResourceReferenceCopiesOneSampleAndRetainsLicenseWithoutAddingTracks(t *testing.T) {
+	w, e := New(t.TempDir())
+	must(t, e)
+	defer w.Close()
+	source := inspectionSource(t, w, "箫", 72)
+	data := wav()
+	must(t, os.WriteFile(filepath.Join(w.Store.Root, "instruments", source.Samples[0].FileName), data, 0600))
+	hash := sha256.Sum256(data)
+	source.Samples[0].SHA256, source.Samples[0].Duration = hex.EncodeToString(hash[:]), 1
+	source.Verification, source.License, source.Author = "user", "CC0-1.0", "sample author"
+	must(t, w.Store.Update(func(s *schema.State) { s.InstrumentSources = []schema.InstrumentSource{source} }, true))
+	id := "sample:" + source.ID + "/" + source.Samples[0].ID
+	before := len(w.Store.Read().Drafts)
+	asset, e := w.ImportResourceAudio(context.Background(), id)
+	must(t, e)
+	if asset.Origin != "real" || asset.SourceResourceID != id || asset.License != source.License || asset.Author != source.Author {
+		t.Fatal("单样本来源丢失", asset)
+	}
+	if len(w.Store.Read().Drafts) != before {
+		t.Fatal("选择参考不能自动创建作品或音轨")
+	}
+	if asset.Duration != source.Samples[0].Duration {
+		t.Fatal("未读取完整采样")
 	}
 }
 

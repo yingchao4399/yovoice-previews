@@ -15,6 +15,10 @@ import (
 
 // 上传素材属于作品时间线，不写入生成记录或参考音频库。
 func (w *Workbench) importTimelineAudio(ctx context.Context, path, name string) (schema.AudioAsset, error) {
+	return w.importAudioAsset(ctx, path, name, false)
+}
+
+func (w *Workbench) importAudioAsset(ctx context.Context, path, name string, music bool) (schema.AudioAsset, error) {
 	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
 	duration, err := audio.Duration(path)
@@ -25,7 +29,11 @@ func (w *Workbench) importTimelineAudio(ctx context.Context, path, name string) 
 		}
 		converted := filepath.Join(w.Store.Root, "downloads", schema.NewID()+".wav")
 		defer os.Remove(converted)
-		if e = audio.ConvertWithLimit(ctx, converter, path, converted, 3600); e != nil {
+		convert := audio.ConvertWithLimit
+		if music {
+			convert = audio.ConvertMusicWithLimit
+		}
+		if e = convert(ctx, converter, path, converted, 3600); e != nil {
 			return schema.AudioAsset{}, e
 		}
 		path = converted
@@ -47,14 +55,21 @@ func (w *Workbench) importTimelineAudio(ctx context.Context, path, name string) 
 	if err != nil {
 		return schema.AudioAsset{}, err
 	}
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return schema.AudioAsset{}, err
-	}
-	if err = os.WriteFile(dest, data, 0600); err != nil {
+	if _, err = copyFileChunked(ctx, path, dest, func(int64) {}); err != nil {
+		_ = os.Remove(dest)
 		return schema.AudioAsset{}, err
 	}
 	return asset, nil
+}
+
+// ImportMusicReferenceFrom 复用托管素材约定，音乐压缩格式解码时保留声道与采样率。
+func (w *Workbench) ImportMusicReferenceFrom(ctx context.Context, r io.Reader, name string) (schema.AudioAsset, error) {
+	path, err := w.receive(r)
+	if err != nil {
+		return schema.AudioAsset{}, err
+	}
+	defer os.Remove(path)
+	return w.importAudioAsset(ctx, path, name, true)
 }
 
 // 保存时核对真实源文件，不能用客户端提交的时长绕过裁剪范围校验。

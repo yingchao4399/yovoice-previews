@@ -4203,5 +4203,164 @@
   },
   "@yovoice.music.lyricsTooLong": {
     "defaultMessage": "替换后超过4000字，请缩短结果或选择更小的片段。"
+  },
+  "@yovoice.resources.downloadTitle": {
+    "defaultMessage": "音源下载清单"
+  },
+  "@yovoice.resources.downloadScope": {
+    "defaultMessage": "只下载这份固定 CC0 清单；下载后仍会检查文件、音域和奏法。普通问答回答不授予下载权限。"
+  },
+  "@yovoice.resources.confirmDownload": {
+    "defaultMessage": "确认下载"
+  },
+  "@yovoice.resources.downloadProgress": {
+    "defaultMessage": "音源下载进度"
+  },
+  "@yovoice.resources.retryRemaining": {
+    "defaultMessage": "重试剩余项目"
+  },
+  "@yovoice.resources.downloadState.awaiting_approval": {
+    "defaultMessage": "等待确认"
+  },
+  "@yovoice.resources.downloadState.queued": {
+    "defaultMessage": "排队中"
+  },
+  "@yovoice.resources.downloadState.running": {
+    "defaultMessage": "下载中"
+  },
+  "@yovoice.resources.downloadState.completed": {
+    "defaultMessage": "已完成"
+  },
+  "@yovoice.resources.downloadState.failed": {
+    "defaultMessage": "未完成"
+  },
+  "@yovoice.resources.downloadState.paused": {
+    "defaultMessage": "已暂停"
+  },
+  "@yovoice.resources.downloadState.cancelled": {
+    "defaultMessage": "已取消"
+  },
+  "@yovoice.resources.preview": {
+    "defaultMessage": "资源试听"
+  },
+  "@yovoice.resources.pick": {
+    "defaultMessage": "选择库内音频"
+  },
+  "@yovoice.resources.search": {
+    "defaultMessage": "搜索音频或采样"
+  },
+  "@yovoice.resources.category": {
+    "defaultMessage": "资源类别"
+  },
+  "@yovoice.resources.use": {
+    "defaultMessage": "使用所选音频"
+  },
+  "@yovoice.resources.back": {
+    "defaultMessage": "返回音频列表 · {name}"
+  },
+  "@yovoice.resources.results": {
+    "defaultMessage": "资源 · {count}"
+  },
+  "@yovoice.resources.samples": {
+    "defaultMessage": "查看单个采样"
+  },
+  "@yovoice.resources.audition": {
+    "defaultMessage": "试听 · {name}"
+  },
+  "@yovoice.resources.empty": {
+    "defaultMessage": "没有匹配的库内资源"
+  },
+  "@yovoice.resources.more": {
+    "defaultMessage": "加载更多"
+  },
+  "@yovoice.resources.licenseUnknown": {
+    "defaultMessage": "未登记许可，请核对来源"
+  },
+  "@yovoice.resources.workChanged": {
+    "defaultMessage": "作品已切换，请重新选择参考音频"
+  },
+  "@yovoice.resources.kind.all": {
+    "defaultMessage": "全部本地音频"
+  },
+  "@yovoice.resources.kind.audio": {
+    "defaultMessage": "作品与AI音频"
+  },
+  "@yovoice.resources.kind.voice": {
+    "defaultMessage": "声音库"
+  },
+  "@yovoice.resources.kind.instrument": {
+    "defaultMessage": "乐器音源"
+  },
+  "@yovoice.resources.kind.sample": {
+    "defaultMessage": "单个采样"
+  },
+  "@yovoice.resources.origin.real": {
+    "defaultMessage": "真实采样"
+  },
+  "@yovoice.resources.origin.ai": {
+    "defaultMessage": "AI生成"
+  },
+  "@yovoice.resources.origin.generated": {
+    "defaultMessage": "应用生成"
+  },
+  "@yovoice.resources.origin.imported": {
+    "defaultMessage": "用户导入"
+  },
+  "@yovoice.resources.status.ready": {
+    "defaultMessage": "本地可用"
+  },
+  "@yovoice.resources.status.repair": {
+    "defaultMessage": "文件需修复"
+  },
+  "@yovoice.resources.status.review": {
+    "defaultMessage": "待核验"
+  },
+  "@yovoice.music.referenceVoice": {
+    "defaultMessage": "参考音色音频"
+  },
+  "@yovoice.music.referenceAccompaniment": {
+    "defaultMessage": "参考配乐"
+  },
+  "@yovoice.music.referenceSemanticHint": {
+    "defaultMessage": "当前音乐模型按下方描述参考风格，不直接读取此音频，也不保证克隆原音色。参考文件不会自动混入成曲。"
+  },
+  "@yovoice.music.referenceLibrary": {
+    "defaultMessage": "从库中选择"
+  },
+  "@yovoice.music.referenceUpload": {
+    "defaultMessage": "上传本地音频"
+  },
+  "@yovoice.music.referenceAddMaterial": {
+    "defaultMessage": "作为素材加入音轨"
+  },
+  "@yovoice.music.referenceClear": {
+    "defaultMessage": "移除此参考"
+  },
+  "@yovoice.music.referenceVoiceDescription": {
+    "defaultMessage": "音色参考描述"
+  },
+  "@yovoice.music.referenceMusicDescription": {
+    "defaultMessage": "配乐参考描述"
+  },
+  "@yovoice.music.exportVersion": {
+    "defaultMessage": "导出版本"
+  },
+  "@yovoice.music.exportFixed": {
+    "defaultMessage": "按指定时长导出副本"
+  },
+  "@yovoice.music.exportSeconds": {
+    "defaultMessage": "导出长度（秒）"
+  },
+  "@yovoice.music.exportPad": {
+    "defaultMessage": "原音频较短时允许补静音"
+  },
+  "@yovoice.music.exportFixedHint": {
+    "defaultMessage": "原音频保留。较长音频会裁剪并在末尾淡出；较短音频仅在勾选后补静音，不代表模型已生成这些内容。"
+  },
+  "@yovoice.music.exportAudioCopy": {
+    "defaultMessage": "导出音频副本"
+  },
+  "@yovoice.music.exportDesktopHint": {
+    "defaultMessage": "定长处理在桌面版中可用；浏览器预览仍可导出原长度音频。"
   }
 }

@@ -26,6 +26,7 @@ test('音乐时长与演唱方向可保存，纯音乐保留设置；歌词工�
   await expect(dialog).toContainText('山风吹过弦');
   await expect(dialog.getByRole('textbox', { name: '歌词要求' })).toHaveValue('chinese folk');
   await dialog.getByRole('button', { name: '取消', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
   await expect(lyrics).toHaveValue(state.drafts[0].lyrics!);
   await page.getByRole('combobox', { name: '目标时长', exact: true }).click();
   await page.getByRole('option', { name: 'AI 自动', exact: true }).click();

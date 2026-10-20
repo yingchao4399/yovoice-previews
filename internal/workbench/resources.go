@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strings"
 	"yovoice/internal/catalog"
+	"yovoice/internal/schema"
 )
 
 // ResourceQuery 是界面与助手共用的库存查询。只查托管记录，不联网、不猜测路径。
@@ -20,29 +21,35 @@ type ResourceQuery struct {
 }
 
 type ResourceItem struct {
-	ID           string   `json:"id"`
-	Kind         string   `json:"kind"`
-	Name         string   `json:"name"`
-	ParentID     string   `json:"parentId,omitempty"`
-	SourceID     string   `json:"sourceId,omitempty"`
-	SampleID     string   `json:"sampleId,omitempty"`
-	CatalogID    string   `json:"catalogId,omitempty"`
-	Instrument   string   `json:"instrument,omitempty"`
-	Origin       string   `json:"origin,omitempty"`
-	Status       string   `json:"status"`
-	Issue        string   `json:"issue,omitempty"`
-	Usage        string   `json:"usage,omitempty"`
-	MediaKind    string   `json:"mediaKind,omitempty"`
-	FileName     string   `json:"fileName,omitempty"`
-	Duration     float64  `json:"duration,omitempty"`
-	RootPitch    *int     `json:"rootPitch,omitempty"`
-	Articulation string   `json:"articulation,omitempty"`
-	VelocityLow  int      `json:"velocityLow,omitempty"`
-	VelocityHigh int      `json:"velocityHigh,omitempty"`
-	License      string   `json:"license,omitempty"`
-	Bytes        int64    `json:"bytes,omitempty"`
-	Manifest     string   `json:"manifest,omitempty"`
-	MemberIDs    []string `json:"memberIds,omitempty"`
+	ID           string            `json:"id"`
+	Kind         string            `json:"kind"`
+	Name         string            `json:"name"`
+	ParentID     string            `json:"parentId,omitempty"`
+	SourceID     string            `json:"sourceId,omitempty"`
+	SampleID     string            `json:"sampleId,omitempty"`
+	CatalogID    string            `json:"catalogId,omitempty"`
+	Instrument   string            `json:"instrument,omitempty"`
+	Origin       string            `json:"origin,omitempty"`
+	Status       string            `json:"status"`
+	Issue        string            `json:"issue,omitempty"`
+	Usage        string            `json:"usage,omitempty"`
+	MediaKind    string            `json:"mediaKind,omitempty"`
+	FileName     string            `json:"fileName,omitempty"`
+	Duration     float64           `json:"duration,omitempty"`
+	RootPitch    *int              `json:"rootPitch,omitempty"`
+	Articulation string            `json:"articulation,omitempty"`
+	VelocityLow  int               `json:"velocityLow,omitempty"`
+	VelocityHigh int               `json:"velocityHigh,omitempty"`
+	License      string            `json:"license,omitempty"`
+	Bytes        int64             `json:"bytes,omitempty"`
+	Manifest     string            `json:"manifest,omitempty"`
+	MemberIDs    []string          `json:"memberIds,omitempty"`
+	BandParts    []schema.BandPart `json:"bandParts,omitempty"`
+	AIModelID    string            `json:"aiModelId,omitempty"`
+	LicenseURL   string            `json:"licenseUrl,omitempty"`
+	SourceURL    string            `json:"sourceUrl,omitempty"`
+	Author       string            `json:"author,omitempty"`
+	SHA256       string            `json:"sha256,omitempty"`
 }
 
 type ResourcePage struct {
@@ -78,7 +85,10 @@ func (w *Workbench) SearchResources(in ResourceQuery) (ResourcePage, error) {
 	items := []ResourceItem{}
 	query := strings.ToLower(strings.TrimSpace(in.Query))
 	add := func(item ResourceItem) {
-		if in.Kind != "" && item.Kind != in.Kind || in.Origin != "" && item.Origin != in.Origin || in.ParentID != "" && item.ParentID != in.ParentID {
+		if in.Kind == "playable" && !slices.Contains([]string{"audio", "voice", "instrument", "sample"}, item.Kind) {
+			return
+		}
+		if in.Kind != "" && in.Kind != "playable" && item.Kind != in.Kind || in.Origin != "" && item.Origin != in.Origin || in.ParentID != "" && item.ParentID != in.ParentID {
 			return
 		}
 		if query != "" && !strings.Contains(strings.ToLower(item.Name+" "+item.Instrument+" "+item.Articulation+" "+item.ID), query) {
@@ -102,10 +112,25 @@ func (w *Workbench) SearchResources(in ResourceQuery) (ResourcePage, error) {
 		if source.CatalogID != "" && status == "ready" {
 			installed[source.CatalogID] = id
 		}
-		add(ResourceItem{ID: id, Kind: "instrument", Name: source.Name, SourceID: source.ID, CatalogID: source.CatalogID, Instrument: source.Instrument, Origin: source.Origin, Status: status, Issue: issue, Usage: "notes", License: source.License})
+		add(ResourceItem{ID: id, Kind: "instrument", Name: source.Name, SourceID: source.ID, CatalogID: source.CatalogID, Instrument: source.Instrument, Origin: source.Origin, Status: status, Issue: issue, Usage: "notes", License: source.License, LicenseURL: source.LicenseURL, SourceURL: source.SourceURL, Author: source.Author})
 		for _, sample := range source.Samples {
 			pitch := sample.RootPitch
 			item := ResourceItem{ID: "sample:" + source.ID + "/" + sample.ID, Kind: "sample", ParentID: id, SourceID: source.ID, SampleID: sample.ID, Name: fmt.Sprintf("%s · MIDI %d · %s", source.Name, pitch, sample.Articulation), Instrument: source.Instrument, Origin: source.Origin, Status: status, Issue: issue, Usage: "notes", MediaKind: "instruments", FileName: sample.FileName, Duration: sample.Duration, RootPitch: &pitch, Articulation: sample.Articulation, VelocityLow: sample.VelocityLow, VelocityHigh: sample.VelocityHigh, License: source.License}
+			item.LicenseURL, item.SourceURL, item.Author = source.LicenseURL, source.SourceURL, source.Author
+			item.SHA256 = sample.SHA256
+			// 某个同组采样损坏不应阻止试听/复用另一个完整采样；逐音演奏仍检查整件音源。
+			item.Issue = ""
+			if path, err := w.Store.MediaPath("instruments", sample.FileName); err != nil {
+				item.Issue = "SOURCE_FILE_MISSING"
+			} else {
+				item.Issue = w.checkedInstrumentFile(path, sample.SHA256)
+			}
+			item.Status = "ready"
+			if item.Issue != "" {
+				item.Status = "repair"
+			} else if source.Verification == "metadata" {
+				item.Status = "review"
+			}
 			add(item)
 		}
 	}
@@ -128,7 +153,7 @@ func (w *Workbench) SearchResources(in ResourceQuery) (ResourcePage, error) {
 		add(item)
 	}
 	seenAudio := map[string]bool{}
-	addAudio := func(id, name, file, origin string, duration float64) {
+	addAudio := func(id, name, file, origin string, duration float64, asset *schema.AudioAsset) {
 		if seenAudio[file] {
 			return
 		}
@@ -138,22 +163,30 @@ func (w *Workbench) SearchResources(in ResourceQuery) (ResourcePage, error) {
 		if issue != "" {
 			status = "repair"
 		}
-		add(ResourceItem{ID: id, Kind: "audio", Name: name, Origin: origin, Status: status, Issue: issue, Usage: "clip", MediaKind: "outputs", FileName: file, Duration: duration})
+		item := ResourceItem{ID: id, Kind: "audio", Name: name, Origin: origin, Status: status, Issue: issue, Usage: "clip", MediaKind: "outputs", FileName: file, Duration: duration}
+		if asset != nil {
+			item.License, item.LicenseURL, item.SourceURL, item.Author = asset.License, asset.LicenseURL, asset.SourceURL, asset.Author
+		}
+		add(item)
 	}
 	for _, material := range s.ArrangementMaterials {
-		addAudio("material:"+material.ID, material.Instrument+" · "+material.Phrase, material.FileName, "ai", material.Duration)
+		addAudio("material:"+material.ID, material.Instrument+" · "+material.Phrase, material.FileName, "ai", material.Duration, nil)
 	}
 	for _, g := range s.History {
 		origin := "generated"
 		if model, err := catalog.Lookup(g.Settings.ModelID); err == nil && catalog.IsMusic(model.Family) && g.Source != "score" && g.Settings.Kind != "score" {
 			origin = "ai"
 		}
-		addAudio("generation:"+g.ID, g.Title, g.FileName, origin, g.Duration)
+		addAudio("generation:"+g.ID, g.Title, g.FileName, origin, g.Duration, nil)
 	}
 	for _, d := range s.Drafts {
 		if d.Timeline != nil {
 			for _, a := range d.Timeline.Assets {
-				addAudio("asset:"+d.ID+"/"+a.ID, a.Name, a.FileName, "imported", a.Duration)
+				origin := a.Origin
+				if origin == "" {
+					origin = "imported"
+				}
+				addAudio("asset:"+d.ID+"/"+a.ID, a.Name, a.FileName, origin, a.Duration, &a)
 			}
 		}
 	}
@@ -166,7 +199,7 @@ func (w *Workbench) SearchResources(in ResourceQuery) (ResourcePage, error) {
 		add(ResourceItem{ID: "voice:" + voice.ID, Kind: "voice", Name: voice.Name, Status: status, Issue: issue, Usage: "reference", MediaKind: "voices", FileName: voice.FileName, Duration: voice.Duration})
 	}
 	for _, band := range s.BandPresets {
-		item := ResourceItem{ID: "band:" + band.ID, Kind: "band", Name: band.Name, Status: "ready", Usage: "preset"}
+		item := ResourceItem{ID: "band:" + band.ID, Kind: "band", Name: band.Name, Status: "ready", Usage: "preset", BandParts: band.Parts, AIModelID: band.AIModelID}
 		for _, part := range band.Parts {
 			if part.SourceID != "" {
 				item.MemberIDs = append(item.MemberIDs, "source:"+part.SourceID)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"slices"
 	"yovoice/internal/schema"
 )
 
@@ -13,6 +14,12 @@ type arrangementToolInput struct {
 }
 
 func (w *Workbench) registerArrangementTools(server *mcp.Server) {
+	mcp.AddTool(server, &mcp.Tool{Name: "apply_resource_band", Description: "将search_resources返回的乐队组合应用于当前计划；只匹配同乐器、角色、来源和可用奏法，保留锁定声部及已有AI模型选择，不复制旧歌曲。先get_work和查询kind=band，组合缺文件或不能演奏当前谱时报告具体原因，不自动下载。"}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
+		ProjectID  string `json:"projectId"`
+		ResourceID string `json:"resourceId"`
+	}) (*mcp.CallToolResult, any, error) { d, err := w.assistantWork(in.ProjectID); if err != nil {
+		return nil, nil, err
+	}; fixed, err := w.ApplyResourceBand(ResourceBandInput{Draft: d, ResourceID: in.ResourceID}); return nil, map[string]any{"saved": err == nil, "projectId": d.ID, "arrangement": fixed.Arrangement}, err })
 	mcp.AddTool(server, &mcp.Tool{Name: "add_resource_clip", Description: "把库存中实际存在的本地音频（已有AI乐句、已生成歌曲、导入音频或单个采样）复制为工程素材并放到独立可编辑音轨；start/offset/duration以秒为单位，duration=0使用剩余长度。先search_resources确认ID与来源，先get_work读取工程。遵守真实/AI来源限制，原文件保持；整曲是片段素材，不会假装可逐音演奏。重拼合保留该手工轨道。"}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
 		ProjectID  string  `json:"projectId"`
 		ResourceID string  `json:"resourceId"`
@@ -125,6 +132,19 @@ func (w *Workbench) registerArrangementTools(server *mcp.Server) {
 		if e != nil {
 			return nil, nil, e
 		}
+		needsReal := in.Mode != "ai"
+		if in.ResumeID != "" {
+			for _, previous := range w.ArrangementJobs(in.ProjectID) {
+				if previous.ID == in.ResumeID && previous.Mode != "ai" {
+					needsReal = true
+				}
+			}
+		}
+		if needsReal {
+			if e = w.requireLocalPreparationSources(d, in.PartIDs); e != nil {
+				return nil, nil, e
+			}
+		}
 		job, e := w.PrepareArrangement(ArrangementPrepareInput{Draft: d, Mode: in.Mode, AIModelID: in.AIModelID, PartIDs: in.PartIDs, ResumeID: in.ResumeID})
 		return nil, job, e
 	})
@@ -139,6 +159,28 @@ func (w *Workbench) registerArrangementTools(server *mcp.Server) {
 		e = w.RenderArrangement(ArrangementRenderInput{Draft: d, AIModelID: in.AIModelID})
 		return nil, map[string]any{"started": e == nil, "projectId": d.ID}, e
 	})
+}
+
+// 助手不能借“备料”绕过下载卡。界面用户明确点击下载的路径仍使用原备料服务。
+func (w *Workbench) requireLocalPreparationSources(d schema.Draft, partIDs []string) error {
+	inspection, e := w.InspectArrangement(ArrangementInspectInput{Draft: d, Stage: "prepare"})
+	if e != nil {
+		return e
+	}
+	for _, part := range inspection.Parts {
+		if len(partIDs) > 0 && part.PartID != "" && !slices.Contains(partIDs, part.PartID) {
+			continue
+		}
+		ref := part.Ref
+		planned := d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex].Parts[ref.PartIndex]
+		if planned.Source != "real" {
+			continue
+		}
+		if !part.Ready || part.SourceID == "" {
+			return fmt.Errorf("%s · %s 尚无适用的健康本地采样。先用search_resources诊断；需要CC0下载时用propose_resource_download显示精确清单，用户确认并完成后再备料。", part.Phrase, part.Instrument)
+		}
+	}
+	return nil
 }
 
 func (w *Workbench) saveAssistantArrangement(d schema.Draft, revision string) error {

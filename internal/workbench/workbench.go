@@ -43,6 +43,9 @@ type Workbench struct {
 	installDone       chan struct{}
 	arrangementCancel context.CancelFunc
 	arrangementDone   chan struct{}
+	resourceCancel    context.CancelFunc
+	resourceDone      chan struct{}
+	resourceEdit      sync.Mutex
 	closed            bool
 	closeOnce         sync.Once
 	engine            *engine.Engine
@@ -84,6 +87,7 @@ func New(root string) (*Workbench, error) {
 		s.Close()
 		return nil, e
 	}
+	w.startResourceDownloadWorker()
 	return w, nil
 }
 
@@ -274,14 +278,14 @@ func (w *Workbench) Close() {
 		defer diag.Log(w.Store.Root, "service.stopped")
 		w.mu.Lock()
 		w.closed = true
-		for _, cancel := range []context.CancelFunc{w.arrangementCancel, w.cancel, w.installCancel} {
+		for _, cancel := range []context.CancelFunc{w.arrangementCancel, w.cancel, w.installCancel, w.resourceCancel} {
 			if cancel != nil {
 				cancel()
 			}
 		}
-		done, installDone, arrangementDone := w.done, w.installDone, w.arrangementDone
+		done, installDone, arrangementDone, resourceDone := w.done, w.installDone, w.arrangementDone, w.resourceDone
 		w.mu.Unlock()
-		for _, ch := range []chan struct{}{arrangementDone, done, installDone} {
+		for _, ch := range []chan struct{}{arrangementDone, done, installDone, resourceDone} {
 			if ch != nil {
 				<-ch
 			}

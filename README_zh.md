@@ -1,8 +1,8 @@
-> **智能编曲定制版 · 0.3.1-preview.3**
+> **智能编曲定制版 · 0.3.1-preview.4**
 >
 > 本分支在官方 [leemysw/yovoice v0.3.1](https://github.com/leemysw/yovoice/releases/tag/v0.3.1) 上整合智能编曲、音源库与乐器及 Windows VST3 管理。它由 yingchao4399 发布，**不是官方发行包**。
 >
-> [定制版下载](https://github.com/yingchao4399/yovoice-previews/releases/tag/v0.3.1-preview.3) · [适配与验证说明](docs/custom_v031_adaptation_zh.md) · [编曲使用与规划](docs/intelligent_arrangement_zh.md)
+> [定制版下载](https://github.com/yingchao4399/yovoice-previews/releases/tag/v0.3.1-preview.4) · [适配与验证说明](docs/custom_v031_adaptation_zh.md) · [编曲使用与规划](docs/intelligent_arrangement_zh.md)
 >
 > 定制数据库与官方版有差异，请备份后使用定制更新包。模型、采样和用户作品不随源码分发；VST3 插件与音色需自行安装，支持情况按插件实际测试确认。原版项目介绍与作者署名保留如下。
 

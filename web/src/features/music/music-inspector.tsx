@@ -12,6 +12,7 @@ import { formatTime, isMusicModel, isYuE, modelEngineReady, type Draft, type Mod
 import { AdvancedSettings, SeedInput } from '../create/shared-controls';
 import { ModelSelector } from '../create/model-selector';
 import { ModelOptions } from '../create/model-options';
+import { MusicReference } from './music-reference';
 import { applyPresetTags, isPresetActive, musicLanguages, splitTags, stylePresets, styleTags, tagHintKey } from './music-draft';
 
 const optionValues = (key: string) => definitions.ace_step.find(spec => spec.key === key)?.values ?? [];
@@ -83,6 +84,7 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
         <h3>{t('@yovoice.music.vocalVoice')}</h3>
         <Selector label={t('@yovoice.music.vocalVoice')} isLabelHidden value={creation.voice ?? 'auto'} options={(['auto', 'male', 'female', 'reference'] as const).map(value => ({ value, label: t(`@yovoice.music.vocalVoice.${value}`) }))} onChange={voice => updateCreation({ voice: voice as NonNullable<Draft['music']>['voice'] })} />
         <small>{t('@yovoice.music.vocalVoiceHint')}</small>
+        {creation.voice === 'reference' ? <MusicReference key={draft.id} draft={draft} kind="voice" change={change} /> : null}
       </VStack> : null}
       {yue ? <>
       {/* 生成方式：按旋律谱（有谱按谱、没谱先写谱）或不经过谱自由发挥；纯音乐必须经过谱。 */}

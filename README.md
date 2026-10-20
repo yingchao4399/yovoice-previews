@@ -1,8 +1,8 @@
-> **Smart Arrangement custom edition · 0.3.1-preview.3**
+> **Smart Arrangement custom edition · 0.3.1-preview.4**
 >
 > This branch integrates custom arrangement, instrument-library and Windows VST3 workflows with official [yovoice v0.3.1](https://github.com/leemysw/yovoice/releases/tag/v0.3.1). Published by yingchao4399; **this is not an official release**.
 >
-> [Custom downloads](https://github.com/yingchao4399/yovoice-previews/releases/tag/v0.3.1-preview.3) · [Compatibility and verification](docs/custom_v031_adaptation_zh.md) · [中文说明](README_zh.md)
+> [Custom downloads](https://github.com/yingchao4399/yovoice-previews/releases/tag/v0.3.1-preview.4) · [Compatibility and verification](docs/custom_v031_adaptation_zh.md) · [中文说明](README_zh.md)
 >
 > Back up projects before using custom updates. User data, model weights, samples and third-party instrument presets are not included in this source repository. The original project description and attribution follow.
 

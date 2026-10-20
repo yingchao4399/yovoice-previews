@@ -151,10 +151,10 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
         {messages.map(message => message.role === 'user'
           ? <ChatMessage key={message.id} sender="user"><ChatMessageBubble>{message.text}</ChatMessageBubble></ChatMessage>
           : <ChatMessage key={message.id} sender="assistant">
-            <AssistantTurn blocks={messageBlocks(message)} live={false} message={message} generation={generationCard(messageBlocks(message), state)} playing={playing} onPlay={play} openWork={actions.openWork} onResolve={resolveProposal} />
+            <AssistantTurn blocks={messageBlocks(message)} live={false} message={message} generation={generationCard(messageBlocks(message), state)} playing={playing} onPlay={play} openWork={actions.openWork} onResolve={resolveProposal} activity={state.activity} />
           </ChatMessage>)}
         {live?.turn ? <ChatMessage key="live" sender="assistant">
-          <AssistantTurn blocks={live.turn.blocks ?? []} live generation={null} playing={null} onPlay={() => undefined} openWork={() => undefined} onResolve={resolveProposal} />
+          <AssistantTurn blocks={live.turn.blocks ?? []} live generation={null} playing={null} onPlay={() => undefined} openWork={() => undefined} onResolve={resolveProposal} activity={state.activity} />
         </ChatMessage> : null}
       </ChatMessageList>}
     </VStack>

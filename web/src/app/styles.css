@@ -1093,10 +1093,11 @@
 /* 历史缩略保持等高，完整内容仅在明确展开时进入布局。 */
 .history-compact .ticket-main { height: calc(var(--spacing-10) * 3); box-sizing: border-box; }
 .history-compact .ticket-body h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.history-compact .project-excerpt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: var(--line-height-normal); max-height: calc(2 * var(--font-size-base) * 1.5); }
+.history-compact, .history-full-text { --history-line-height: 1.5; }
+.history-compact .project-excerpt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: var(--history-line-height); max-height: calc(2 * var(--font-size-base) * var(--history-line-height)); }
 .history-expanded { border-radius: var(--radius-container); background: var(--app-paper); }
 .history-details { padding: var(--spacing-4); border-top: var(--border-width) solid var(--app-line); min-width: 0; }
-.history-full-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--line-height-normal); }
+.history-full-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--history-line-height); }
 /* 页签本身固定，整个创作内容独立滚动；文本框不承担整页滚动。 */
 .music-workspace { flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 .music-workspace > [role="tablist"] { flex: none; }
@@ -1112,3 +1113,8 @@
 .player-single .timeline-lane { min-height: 0; overflow: auto; }
 .player-single .timeline-content { flex: 1; min-height: min-content; }
 .multitrack > [data-timeline-menu-trigger] { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+.resource-download-card li b { overflow-wrap: anywhere; }
+.resource-picker-results { max-height: 40dvh; overflow: auto; scrollbar-width: thin; }
+.resource-audio-preview audio { width: 100%; min-width: 0; }
+.music-reference { min-width: 0; }
+.music-reference > strong, .music-reference strong { overflow-wrap: anywhere; }

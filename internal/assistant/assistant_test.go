@@ -25,6 +25,24 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestToolInitializationFailureDoesNotStartChildOrDeadlock(t *testing.T) {
+	m := New(t.TempDir(), Options{NewServer: func() *mcp.Server { panic("invalid tool schema") }})
+	executable, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range 2 {
+		_, err := m.Ask(context.Background(), Config{Executable: executable, Model: "test"}, "test", nil)
+		if err == nil || !strings.Contains(err.Error(), "invalid tool schema") {
+			t.Fatalf("工具错误没有返回：%v", err)
+		}
+		if m.proc != nil {
+			t.Fatal("工具注册失败不应启动后台助手")
+		}
+	}
+	m.Stop()
+}
+
 // testServer 返回带 echo/submit 工具的进程内 MCP server：submit 第一次调用被拒绝，之后成功。
 func testServer() *mcp.Server {
 	server := mcp.NewServer(&mcp.Implementation{Name: "yovoice", Version: "test"}, nil)

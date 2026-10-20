@@ -53,4 +53,3 @@ test('小窗口的音乐正文可以滚到旋律谱，播放器面板可调高�
   expect((await player.boundingBox())!.height).toBeGreaterThan(before!.height);
   await melody.scrollIntoViewIfNeeded(); await expect(melody).toBeInViewport();
 });
-
