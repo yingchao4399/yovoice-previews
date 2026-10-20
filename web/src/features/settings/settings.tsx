@@ -21,6 +21,7 @@ import { LocalAPISettings } from './local-api-settings';
 import { StorageSettings } from './storage-settings';
 import { LogViewer } from './log-viewer';
 import { AssistantSettings } from './assistant-settings';
+import { PluginSettings } from './plugin-settings';
 
 // 资源表格依赖较多，切到资源页时才加载。
 const AssetsPage = lazy(() => import('../library/assets-page').then(module => ({ default: module.AssetsPage })));
@@ -58,6 +59,7 @@ export function Settings({ state, catalog, engine, draft, run, focus, active, on
       <Tab value="models" label={t('@yovoice.settings.tabModels')} panelId="models-panel" />
       <Tab value="music-models" label={t('@yovoice.settings.tabMusicModels')} panelId="music-models-panel" />
       <Tab value="soundfonts" label={t('@yovoice.settings.tabSoundfonts')} panelId="soundfonts-panel" />
+      <Tab value="plugins" label={t('@yovoice.settings.tabPlugins')} panelId="plugins-panel" />
       <Tab value="engine" label={t('@yovoice.settings.tabEngine')} panelId="engine-panel" />
       <Tab value="ai" label={t('@yovoice.settings.tabAI')} panelId="ai-panel" />
       <Tab value="assistant" label={t('@yovoice.assistant.title')} panelId="assistant-panel" />
@@ -110,7 +112,7 @@ export function Settings({ state, catalog, engine, draft, run, focus, active, on
     </VStack> : tab === 'soundfonts' ? <VStack className="settings-panel" gap={6} id="soundfonts-panel" role="tabpanel" aria-label={t('@yovoice.settings.tabSoundfonts')}>
       <small className="settings-intro">{t('@yovoice.settings.soundfontIntro')}</small>
       <ModelGroups models={catalog.filter(model => model.family === 'soundfont')} state={state} draft={draft} run={run} focus={focus?.modelId} />
-    </VStack> : tab === 'ai' ? <AISettings state={state} run={run} focus={focus} /> : tab === 'assistant' ? <AssistantSettings state={state} run={run} /> : tab === 'assets'
+    </VStack> : tab === 'plugins' ? <PluginSettings state={state} /> : tab === 'ai' ? <AISettings state={state} run={run} focus={focus} /> : tab === 'assistant' ? <AssistantSettings state={state} run={run} /> : tab === 'assets'
       ? <Suspense fallback={<p role="status">{t('@yovoice.app.loading')}</p>}><AssetsPage state={state} active={active} run={run} onError={onError} openProject={openProject} /></Suspense> : tab === 'logs' ? <LogViewer run={run} /> : <VStack className="settings-panel engine-settings" gap={6} id="engine-panel" role="tabpanel" aria-label={t('@yovoice.settings.tabEngine')}>
       <SettingsGroup title={<>audio.cpp{runtimeVersion ? <small className="model-size">{runtimeVersion}</small> : null}</>}>
         <SettingsRow className="engine-setting-row" label={t('@yovoice.settings.computeDevice')}>

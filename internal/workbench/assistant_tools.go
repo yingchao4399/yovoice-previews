@@ -22,6 +22,7 @@ var assistantTools = []string{
 	"plan_melody", "cover_melody", "transform_melody",
 	"open_work", "open_page", "list_models", "list_voices", "list_characters", "save_character", "status",
 	"get_app_status", "get_recent_errors", "remember_preference", "forget_preference", "propose_action",
+	"arrangement_inventory", "inspect_arrangement", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "render_arrangement",
 }
 
 // newAssistantServer 构建只给内置助手的 MCP server：status/list_models/list_voices 与对外 MCP 共用定义，
@@ -43,6 +44,7 @@ func (w *Workbench) newAssistantServer() *mcp.Server {
 	mcp.AddTool(server, &mcp.Tool{Name: "open_page", Description: "让界面切换页面：text（语音生成）、story（故事配音）、music（音乐生成）、score（编曲）、characters（声音库）、settings（设置）。"}, w.openPageTool)
 	w.registerMusicTools(server)
 	w.registerAgentTools(server)
+	w.registerArrangementTools(server)
 	return server
 }
 
@@ -111,7 +113,7 @@ func workKindOf(d schema.Draft) string {
 }
 
 // assistantPages 是 open_page 接受的页面。
-var assistantPages = []string{"text", "story", "music", "score", "characters", "voices", "history", "settings"}
+var assistantPages = []string{"text", "story", "music", "score", "arrangement", "instruments", "characters", "voices", "history", "settings"}
 
 func (w *Workbench) listWorksTool(ctx context.Context, req *mcp.CallToolRequest, in struct {
 	Kind string `json:"kind,omitempty" jsonschema:"只列某类作品：text、story、music 或 score；留空列全部"`
@@ -165,6 +167,9 @@ func workContent(d schema.Draft) map[string]any {
 	}
 	if d.Score != nil {
 		out["score"] = d.Score
+	}
+	if d.Arrangement != nil {
+		out["arrangement"] = d.Arrangement
 	}
 	return out
 }
@@ -603,6 +608,13 @@ func (w *Workbench) getGenerationStatusTool(ctx context.Context, req *mcp.CallTo
 		}
 		out["activity"] = progress
 	}
+	if d.Arrangement != nil {
+		out["arrangementJobs"] = w.ArrangementJobs(d.ID)
+		if d.Timeline != nil {
+			out["existingTimelineLanes"] = len(d.Timeline.Tracks)
+			out["existingTimelineAssets"] = len(d.Timeline.Assets)
+		}
+	}
 	// 出谱或扒谱的结果等待填入作品：给出谱面与概要，助手确认后用 update_work 的 abc 写入。
 	if m := s.Melody; m != nil && m.ProjectID == d.ID {
 		melody := melodySummary(InspectMelody(m.Abc))
@@ -632,12 +644,13 @@ func (w *Workbench) openWorkTool(ctx context.Context, req *mcp.CallToolRequest, 
 // pageCardLabels 是 open_page 卡片摘要里的页面名。
 var pageCardLabels = map[string][2]string{
 	"text": {"语音生成页", "voice generation"}, "story": {"故事配音页", "story dubbing"}, "music": {"音乐生成页", "music generation"},
-	"score": {"编曲页", "arrangement"}, "characters": {"声音库页", "voice library"}, "voices": {"参考音色页", "reference library"},
+	"arrangement": {"智能编曲页", "smart arrangement"}, "instruments": {"音源库与乐器页", "instruments"},
+	"score": {"编曲页", "score"}, "characters": {"声音库页", "voice library"}, "voices": {"参考音色页", "reference library"},
 	"history": {"历史页", "history"}, "settings": {"设置页", "settings"},
 }
 
 type pageInput struct {
-	Page string `json:"page" jsonschema:"页面：text、story、music、score、characters 或 settings"`
+	Page string `json:"page" jsonschema:"页面：text、story、music、score、arrangement、instruments、characters 或 settings"`
 }
 
 func (w *Workbench) openPageTool(ctx context.Context, req *mcp.CallToolRequest, in pageInput) (*mcp.CallToolResult, any, error) {

@@ -42,11 +42,19 @@ func TestMediaRefsCoverEveryFileName(t *testing.T) {
 	fill(reflect.ValueOf(&s).Elem(), 0)
 	refs := s.MediaRefs()
 	for _, name := range names {
-		if !refs["outputs"][name] && !refs["voices"][name] {
+		if !refs["outputs"][name] && !refs["voices"][name] && !refs["instruments"][name] {
 			t.Errorf("%s 对应的 FileName 字段未登记在 MediaRefs 中", name)
 		}
 	}
 	if len(names) < 5 {
 		t.Fatal("反射未覆盖到预期的 FileName 字段", names)
+	}
+}
+
+func TestPluginDependenciesKeepManagedSamplesReferenced(t *testing.T) {
+	s := State{InstrumentSources: []InstrumentSource{{Plugin: &PluginInstrument{Dependencies: []PluginDependency{{Path: `C:\data\instruments\sample-abc.wav`}, {Path: `C:/data/outputs/import-def.wav`}}}}}}
+	refs := s.MediaRefs()
+	if !refs["instruments"]["sample-abc.wav"] || !refs["outputs"]["import-def.wav"] {
+		t.Fatal("插件仍引用的托管采样不能被清理")
 	}
 }

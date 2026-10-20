@@ -61,6 +61,11 @@ type event struct {
 // Render 逐声部合成，按“有声部分”电平对齐到各自目标后混音，写出 16 位立体声 WAV。
 // stems 非空时同时写出每个声部（对齐电平后、混音前）的分轨。progress 收到已完成声部数。
 func Render(ctx context.Context, sf *meltysynth.SoundFont, s schema.Score, output, stems string, progress func(done, total int)) error {
+	return RenderWithSources(ctx, sf, s, output, stems, nil, progress)
+}
+
+// RenderWithSources 仅对显式绑定采样乐器的声部使用采样渲染；其余声部沿用 SF2。
+func RenderWithSources(ctx context.Context, sf *meltysynth.SoundFont, s schema.Score, output, stems string, sources map[string]SampleInstrument, progress func(done, total int)) error {
 	if e := schema.ValidateScore(&s); e != nil {
 		return e
 	}
@@ -71,7 +76,17 @@ func Render(ctx context.Context, sf *meltysynth.SoundFont, s schema.Score, outpu
 		if e := ctx.Err(); e != nil {
 			return e
 		}
-		left, right, e := renderTrack(ctx, sf, s, t, frames)
+		var left, right []float32
+		var e error
+		if t.SourceID != "" {
+			instrument, ok := sources[t.SourceID]
+			if !ok {
+				return fmt.Errorf("声部 %s 的采样音源 %s 不存在", t.Name, t.SourceID)
+			}
+			left, right, e = renderSampleTrack(ctx, s, t, instrument, frames)
+		} else {
+			left, right, e = renderTrack(ctx, sf, s, t, frames)
+		}
 		if e != nil {
 			return e
 		}

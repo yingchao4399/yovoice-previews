@@ -93,6 +93,7 @@ export function MediaLibrary({ page, state, query, onQueryChange, track, auditio
       // 历史也用票根：音乐与编曲是唱片（点唱片中心试听，播放时转动），语音是写着正文的磁带（试听时卷轴转动）。
       : filteredHistory.map((item, index) => {
         const name = heading(item), selected = track?.id === item.id;
+        const scoreTake = kind === 'music' && item.source === 'score';
         const version = t('@yovoice.app.historyVersion', { n: history.length - history.indexOf(item) });
         const date = new Date(item.createdAt).toLocaleString(locale, dateOptions);
         const listen = () => audition({ id: item.id, name: item.title, fileName: item.fileName, kind: 'outputs', subtitle: t('@yovoice.app.subtitleOutput') });
@@ -101,16 +102,16 @@ export function MediaLibrary({ page, state, query, onQueryChange, track, auditio
         return <Ticket key={item.id} index={index} className={`history-item ticket-${kind}`} coverClassName={selected && playingId === item.id ? 'is-playing' : ''}
           cover={quick ? <TapeCover seed={item.id} title={name} />
             : <RecordCover seed={item.id} interactive><Player compact avatar={{ seed: item.id, label: t('@yovoice.app.audition', { name }), select: listen }} suspended={suspended} track={selected ? track : null} onError={onError} /></RecordCover>}
-          eyebrow={<HStack className="history-meta" gap={2}>{quick ? null : <b>{version}</b>}<time dateTime={item.createdAt}>{date}</time></HStack>}
+          eyebrow={<HStack className="history-meta" gap={2}>{quick ? null : <b>{version}</b>}{kind === 'music' ? <span>{t(scoreTake ? '@yovoice.music.historyScore' : '@yovoice.music.historySong')}</span> : null}<time dateTime={item.createdAt}>{date}</time></HStack>}
           title={<h3 onPointerEnter={overflowTitle} data-full-text={item.settings.text}>{name}</h3>} excerpt={excerpt}
           stub={<TicketStamp value={clock(item.duration)} unit={t('@yovoice.library.duration')} />}
           actions={<>
             {quick ? <Player inline={{ label: t('@yovoice.app.audition', { name }), select: listen }} suspended={suspended} track={selected ? track : null} onError={onError} onProgress={(_, playing) => setPlayingId(current => playing ? item.id : current === item.id ? null : current)} /> : null}
-            {kind === 'music' ? <Button label={t('@yovoice.music.openNowPlaying', { name })} tooltip={t('@yovoice.music.nowPlaying')} size="sm" variant="ghost" isIconOnly icon={<Disc3 />} onClick={() => { stop(); play(item); }} /> : null}
+            {kind === 'music' && !scoreTake ? <Button label={t('@yovoice.music.openNowPlaying', { name })} tooltip={t('@yovoice.music.nowPlaying')} size="sm" variant="ghost" isIconOnly icon={<Disc3 />} onClick={() => { stop(); play(item); }} /> : null}
             <DropdownMenu className="audio-actions-menu" presentation="popover" alignment="end" hasChevron={false} button={{ label: t('@yovoice.history.audioActions'), size: 'sm', variant: 'ghost', isIconOnly: true, icon: <MoreHorizontal /> }} items={[
               { label: t('@yovoice.app.exportVersion'), onClick: () => exportItem(item) },
               ...(quick ? [{ label: t('@yovoice.voice.save'), onClick: () => editVoice(item) }, { label: t('@yovoice.character.saveAs'), onClick: () => saveCharacter(item) }] : []),
-              { label: t(kind === 'music' ? '@yovoice.music.reuseTake' : '@yovoice.app.reuseSettings'), onClick: () => reuse(item) },
+              ...(scoreTake ? [] : [{ label: t(kind === 'music' ? '@yovoice.music.reuseTake' : '@yovoice.app.reuseSettings'), onClick: () => reuse(item) }]),
             ]} />
             <MediaActions item={{ id: item.id, kind: 'outputs', name: item.title }} beforeDelete={stop} onError={onError} />
           </>} />;

@@ -2,6 +2,24 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 import { seedState } from './seed';
 import { emptyState } from '../src/shared/workbench';
 
+test('音轨柔化与动态压缩可设置、保存并重载', async ({ page }, testInfo) => {
+  const state = emptyState();
+  state.drafts[0].timeline = { tracks: [{ id: 'lead', name: '主奏', muted: false, clips: [] }] };
+  await seedState(page, state);
+  await page.goto('/');
+  await page.getByRole('button', { name: '主奏 设置' }).click();
+  await page.getByRole('slider', { name: '高频柔化（4 kHz 以上）' }).press('Home');
+  await page.getByRole('slider', { name: '动态压缩' }).press('End');
+  await expect(page.getByRole('slider', { name: '高频柔化（4 kHz 以上）' })).toHaveValue('-12');
+  await expect(page.getByRole('slider', { name: '动态压缩' })).toHaveValue('100');
+  await page.screenshot({ path: testInfo.outputPath('audio-softening.png') });
+  await expect(page.locator('.saved')).toContainText('已保存');
+  await page.reload();
+  await page.getByRole('button', { name: '主奏 设置' }).click();
+  await expect(page.getByRole('slider', { name: '高频柔化（4 kHz 以上）' })).toHaveValue('-12');
+  await expect(page.getByRole('slider', { name: '动态压缩' })).toHaveValue('100');
+});
+
 async function expectPlaybackHitArea(page: Page) {
   const play = page.locator('.audio-panel .play-main');
   // 播放按钮的上半部也应命中按钮，不能被调高面板的透明区域拦截。
@@ -145,6 +163,8 @@ test('多轨分割、移动、静音播放、调整高度和重载', async ({ pa
 
 
 test('分段音轨自动呈现、裁剪和删除持久化、按编辑结果导出 WAV', async ({ page }, testInfo) => {
+  // 多次拖拽、离线导出和重载在繁忙 Windows 环境中可超过一分钟，保留全部断言并使用完整回归的限时。
+  test.setTimeout(90_000);
   const state = emptyState(); const draft = state.drafts[0];
   draft.text = '第一句\n第二句'; draft.kind = 'story';
   draft.subtitles = { speakers: [{ id: 'speaker-1', sourceName: '旁白' }, { id: 'speaker-2', sourceName: '人物' }], cues: [{ id: 'cue-1', speakerId: 'speaker-1', start: 0, end: 2000, text: '第一句' }, { id: 'cue-2', speakerId: 'speaker-2', start: 2000, end: 4000, text: '第二句' }] };

@@ -1,4 +1,736 @@
 {
+  "@yovoice.instruments.generatedMaterials": {"defaultMessage": "AI 生成音源"},
+  "@yovoice.score.resizeDock": {"defaultMessage": "調整曲譜區高度"},
+  "@yovoice.score.collapseDock": {"defaultMessage": "收起曲譜軌道"},
+  "@yovoice.score.expandDock": {"defaultMessage": "展開曲譜軌道"},
+  "@yovoice.instruments.materialPlayFailed": {"defaultMessage": "素材無法播放，請重試或查看日誌中的播放錯誤。"},
+  "@yovoice.instruments.storageLocation": {"defaultMessage": "儲存位置"},
+  "@yovoice.arrangement.title": {
+    "defaultMessage": "智能編曲"
+  },
+  "@yovoice.arrangement.intro": {
+    "defaultMessage": "規劃並審覈樂句音源，分別準備真實採樣與 AI 音頻，最後在可編輯時間線中拼合。"
+  },
+  "@yovoice.arrangement.new": {
+    "defaultMessage": "新建智能編曲"
+  },
+  "@yovoice.arrangement.project": {
+    "defaultMessage": "編曲工程"
+  },
+  "@yovoice.arrangement.current": {
+    "defaultMessage": "當前工程"
+  },
+  "@yovoice.arrangement.projectHint": {
+    "defaultMessage": "智能方案與曲譜保存在編曲工程中。"
+  },
+  "@yovoice.arrangement.chooseProject": {
+    "defaultMessage": "選擇已有編曲"
+  },
+  "@yovoice.arrangement.selectHint": {
+    "defaultMessage": "選擇已有編曲工程，或新建工程開始規劃。"
+  },
+  "@yovoice.arrangement.planStage": {
+    "defaultMessage": "整曲規劃"
+  },
+  "@yovoice.arrangement.planHint": {
+    "defaultMessage": "線上 AI 會逐段逐句規劃配器和真實／AI 音源；結果先供你審覈。"
+  },
+  "@yovoice.arrangement.duration": {
+    "defaultMessage": "目標時長"
+  },
+  "@yovoice.arrangement.sourceMode": {
+    "defaultMessage": "音源策略"
+  },
+  "@yovoice.arrangement.sourceHint": {
+    "defaultMessage": "自動模式讓 AI 按每個樂句選擇真實或 AI 音源。"
+  },
+  "@yovoice.arrangement.mode.auto": {
+    "defaultMessage": "AI 自動選擇"
+  },
+  "@yovoice.arrangement.mode.real": {
+    "defaultMessage": "僅真實音源"
+  },
+  "@yovoice.arrangement.mode.ai": {
+    "defaultMessage": "僅 AI 音源"
+  },
+  "@yovoice.arrangement.mode.hybrid": {
+    "defaultMessage": "真實與 AI 混合"
+  },
+  "@yovoice.arrangement.briefPlaceholder": {
+    "defaultMessage": "寫下你的編曲要求：用途、風格、樂器、獨奏位置、奏法、節奏或其他細節。可以自由描述任何曲目。"
+  },
+  "@yovoice.arrangement.planAction": {
+    "defaultMessage": "規劃整首曲子"
+  },
+  "@yovoice.arrangement.aiSettings": {
+    "defaultMessage": "AI 服務"
+  },
+  "@yovoice.arrangement.bars": {
+    "defaultMessage": "第 {start}–{end} 小節"
+  },
+  "@yovoice.arrangement.instrument": {
+    "defaultMessage": "樂器"
+  },
+  "@yovoice.arrangement.technique": {
+    "defaultMessage": "奏法"
+  },
+  "@yovoice.arrangement.source": {
+    "defaultMessage": "音源"
+  },
+  "@yovoice.arrangement.specificSource": {
+    "defaultMessage": "替換爲已下載音源"
+  },
+  "@yovoice.arrangement.fixedSourceUnavailable": {
+    "defaultMessage": "{instrument} 固定的音源缺少所需奏法採樣；請換一個已下載音源，或清除固定後自動尋找"
+  },
+  "@yovoice.arrangement.autoMatch": {
+    "defaultMessage": "按音符自動匹配"
+  },
+  "@yovoice.arrangement.sourceUndecided": {
+    "defaultMessage": "請先將每個聲部明確設爲真實或 AI 音源，再確認方案。"
+  },
+  "@yovoice.arrangement.lock": {
+    "defaultMessage": "鎖定聲部"
+  },
+  "@yovoice.arrangement.unlock": {
+    "defaultMessage": "解除鎖定"
+  },
+  "@yovoice.arrangement.previewLimit": {
+    "defaultMessage": "曲譜可先用 SF2 預覽；正式拼合只使用已準備並覈驗的真實採樣或 AI 樂句音頻，缺失時會明確提示。"
+  },
+  "@yovoice.arrangement.materialStage": {
+    "defaultMessage": "音源準備"
+  },
+  "@yovoice.arrangement.materialHint": {
+    "defaultMessage": "真實錄音從已審覈目錄或在線來源獲取；AI 按每個樂句單獨生成。可以批量準備，也可以在上方逐聲部操作。"
+  },
+  "@yovoice.arrangement.prepareReal": {
+    "defaultMessage": "一鍵準備真實音源"
+  },
+  "@yovoice.arrangement.prepareAI": {
+    "defaultMessage": "一鍵生成 AI 音源"
+  },
+  "@yovoice.arrangement.prepareBoth": {
+    "defaultMessage": "一鍵下載並生成"
+  },
+  "@yovoice.arrangement.prepareOneReal": {
+    "defaultMessage": "下載此音源"
+  },
+  "@yovoice.arrangement.prepareOneAI": {
+    "defaultMessage": "生成此樂句"
+  },
+  "@yovoice.arrangement.materialReady": {
+    "defaultMessage": "AI 樂句已入庫"
+  },
+  "@yovoice.arrangement.realReady": {
+    "defaultMessage": "已下載，可直接使用"
+  },
+  "@yovoice.arrangement.aiModel": {
+    "defaultMessage": "AI 音頻模型"
+  },
+  "@yovoice.arrangement.aiModelHint": {
+    "defaultMessage": "DeepSeek 負責規劃與寫譜；ACE-Step 可指定時長，YuE2 可生成器樂但時長不精確，且僅限非商業使用。"
+  },
+  "@yovoice.arrangement.aiModelRequired": {
+    "defaultMessage": "請選擇 AI 配樂模型"
+  },
+  "@yovoice.arrangement.aiModelInstall": {
+    "defaultMessage": "到設置中安裝所選模型"
+  },
+  "@yovoice.arrangement.prepareTimeout": {
+    "defaultMessage": "音源準備等待超時，請檢查任務狀態後重試"
+  },
+  "@yovoice.arrangement.assemblyStage": {
+    "defaultMessage": "按樂句拼合"
+  },
+  "@yovoice.arrangement.assemblyHint": {
+    "defaultMessage": "把真實聲部與 AI 樂句放在規劃的小節位置，生成可試聽、可移動和可導出的多軌時間線。"
+  },
+  "@yovoice.arrangement.assemble": {
+    "defaultMessage": "生成可編輯拼合時間線"
+  },
+  "@yovoice.arrangement.assembling": {
+    "defaultMessage": "正在渲染真實聲部並拼合…"
+  },
+  "@yovoice.arrangement.assemblyFailed": {
+    "defaultMessage": "拼合未生成時間線，請查看任務錯誤"
+  },
+  "@yovoice.arrangement.saveBand": {
+    "defaultMessage": "保存爲樂隊組合"
+  },
+  "@yovoice.arrangement.bandSaved": {
+    "defaultMessage": "樂隊組合已保存到音源庫"
+  },
+  "@yovoice.arrangement.reuseBand": {
+    "defaultMessage": "複用樂隊組合"
+  },
+  "@yovoice.arrangement.chooseBand": {
+    "defaultMessage": "選擇樂隊組合"
+  },
+  "@yovoice.arrangement.applyBand": {
+    "defaultMessage": "應用到當前方案"
+  },
+  "@yovoice.arrangement.bandApplied": {
+    "defaultMessage": "已應用樂隊配器偏好，請審覈後重新確認方案"
+  },
+  "@yovoice.arrangement.sourcesMissing": {
+    "defaultMessage": "These parts are not ready. Resolve them before assembly: {names}"
+  },
+  "@yovoice.arrangement.preparing": {
+    "defaultMessage": "正在準備音源…"
+  },
+  "@yovoice.arrangement.downloadFailed": {
+    "defaultMessage": "在線音源下載未完成，請檢查網絡或在音源庫手動重試"
+  },
+  "@yovoice.arrangement.onlineSearchFailed": {
+    "defaultMessage": "未找到可覈驗的{name}單音錄音；可在音源庫繼續搜索或手動導入"
+  },
+  "@yovoice.arrangement.approve": {
+    "defaultMessage": "確認方案並 AI 寫譜"
+  },
+  "@yovoice.arrangement.openScore": {
+    "defaultMessage": "打開編曲編輯器"
+  },
+  "@yovoice.arrangement.scoreStage": {
+    "defaultMessage": "曲譜審覈"
+  },
+  "@yovoice.arrangement.scoreHint": {
+    "defaultMessage": "AI 寫譜完成後先審覈，再應用到工程；原有曲譜不會自動覆蓋。"
+  },
+  "@yovoice.instruments.title": {
+    "defaultMessage": "音源庫與樂器"
+  },
+  "@yovoice.instruments.intro": {
+    "defaultMessage": "管理可映射到曲譜的採樣樂器與編曲音色庫；AI 模型下載仍在設置中。"
+  },
+  "@yovoice.instruments.tabMine": {
+    "defaultMessage": "我的音源"
+  },
+  "@yovoice.instruments.tabCatalog": {
+    "defaultMessage": "CC0 音源目錄"
+  },
+  "@yovoice.instruments.tabOnline": {
+    "defaultMessage": "在線尋找"
+  },
+  "@yovoice.instruments.tabSites": {
+    "defaultMessage": "更多音源站"
+  },
+  "@yovoice.instruments.sitesHint": {
+    "defaultMessage": "賬號登錄由官網或插件自己完成，yovoice 不索取賬號密碼。下載前核對每件音源的許可；單音錄音可導入，完整插件音色包需通過對應插件加載。"
+  },
+  "@yovoice.instruments.site": {
+    "defaultMessage": "音源站"
+  },
+  "@yovoice.instruments.managePlugins": {
+    "defaultMessage": "查看插件"
+  },
+  "@yovoice.instruments.importAfterDownload": {
+    "defaultMessage": "導入單音錄音"
+  },
+  "@yovoice.instruments.sitePianobook": {
+    "defaultMessage": "社區採樣樂器庫，常見 Kontakt、Decent Sampler、SFZ 格式；需註冊並遵守具體音源條款。"
+  },
+  "@yovoice.instruments.sitePianobookLicense": {
+    "defaultMessage": "免費創作使用 · 按站點協議"
+  },
+  "@yovoice.instruments.siteDecent": {
+    "defaultMessage": "免費 Decent Sampler VST3 與專用音色庫；插件可直接下載，部分音色包需留郵箱或登錄，下載後由插件加載。"
+  },
+  "@yovoice.instruments.siteDecentLicense": {
+    "defaultMessage": "免費插件 · 音色授權逐件覈對"
+  },
+  "@yovoice.instruments.siteLabs": {
+    "defaultMessage": "原 Spitfire LABS 現由 Splice INSTRUMENT 提供；免費內容可用，但下載與啓用需在 Splice 登錄，部分內容需訂閱。"
+  },
+  "@yovoice.instruments.siteLabsLicense": {
+    "defaultMessage": "免費與訂閱內容 · Splice 賬號"
+  },
+  "@yovoice.instruments.siteDSK": {
+    "defaultMessage": "新版免費 VST3 內含琵琶、輪指琵琶、二胡、箏、笛等；插件文件及配套 instruments 文件夾須一起安裝。"
+  },
+  "@yovoice.instruments.siteDSKLicense": {
+    "defaultMessage": "免費 VST3 · 可用於私人和商業作品"
+  },
+  "@yovoice.instruments.siteKong": {
+    "defaultMessage": "官網提供 Mini DiZi 和 Mini ErHu 老版下載；笛子包實測爲 32 位 VST，不適合直接載入當前 64 位 yovoice。其許可允許用於作品，但禁止製成採樣音源庫。"
+  },
+  "@yovoice.instruments.siteKongLicense": {
+    "defaultMessage": "免費老版插件 · 32 位兼容限制"
+  },
+  "@yovoice.instruments.siteOpenGameArt": {
+    "defaultMessage": "包含遊戲音樂、音效和部分採樣；逐件查看許可，優先選擇 CC0 或 CC BY。"
+  },
+  "@yovoice.instruments.siteOpenGameArtLicense": {
+    "defaultMessage": "CC0 / CC BY 等 · 逐件覈對"
+  },
+  "@yovoice.instruments.siteFreesound": {
+    "defaultMessage": "除當前自動檢索的 CC0 外，也可手動尋找 CC BY 或僅非商業使用的錄音。"
+  },
+  "@yovoice.instruments.siteFreesoundLicense": {
+    "defaultMessage": "CC0 / CC BY / CC BY-NC · 逐件覈對"
+  },
+  "@yovoice.instruments.siteSFZ": {
+    "defaultMessage": "SFZ 樂器目錄與開源採樣工程；部分樂器可直接在插件中使用，許可按項目覈對。"
+  },
+  "@yovoice.instruments.siteSFZLicense": {
+    "defaultMessage": "CC0 / 其他許可 · 按項目覈對"
+  },
+  "@yovoice.instruments.tabBands": {
+    "defaultMessage": "樂隊組合"
+  },
+  "@yovoice.instruments.bandPreset": {
+    "defaultMessage": "可複用的樂器與音源搭配"
+  },
+  "@yovoice.instruments.saved": {
+    "defaultMessage": "已保存"
+  },
+  "@yovoice.instruments.instruments": {
+    "defaultMessage": "種搭配"
+  },
+  "@yovoice.instruments.viewDetails": {
+    "defaultMessage": "查看詳情"
+  },
+  "@yovoice.instruments.aiMaterialDetails": {
+    "defaultMessage": "AI 樂句音源信息"
+  },
+  "@yovoice.instruments.aiPrompt": {
+    "defaultMessage": "生成提示詞"
+  },
+  "@yovoice.instruments.aiGeneratedAt": {
+    "defaultMessage": "生成時間：{date}"
+  },
+  "@yovoice.instruments.importTitle": {
+    "defaultMessage": "導入音源"
+  },
+  "@yovoice.instruments.backLibrary": {
+    "defaultMessage": "返回音源庫"
+  },
+  "@yovoice.instruments.viewSamples": {
+    "defaultMessage": "查看採樣"
+  },
+  "@yovoice.instruments.sourceDetails": {
+    "defaultMessage": "音源信息"
+  },
+  "@yovoice.instruments.sampleAudition": {
+    "defaultMessage": "逐個試聽採樣"
+  },
+  "@yovoice.instruments.sampleAuditionHint": {
+    "defaultMessage": "試聽的是已安裝、實際供編曲渲染使用的採樣錄音。"
+  },
+  "@yovoice.instruments.downloadToAudition": {
+    "defaultMessage": "下載並校驗音源後，可在這裏逐個試聽採樣。"
+  },
+  "@yovoice.instruments.sampleNumber": {
+    "defaultMessage": "第 {number} 個採樣"
+  },
+  "@yovoice.instruments.playSample": {
+    "defaultMessage": "試聽"
+  },
+  "@yovoice.instruments.pauseSample": {
+    "defaultMessage": "暫停"
+  },
+  "@yovoice.instruments.samplePlayFailed": {
+    "defaultMessage": "採樣無法播放，請重新下載或檢查音源文件。"
+  },
+  "@yovoice.instruments.searchLibrary": {
+    "defaultMessage": "搜索樂器、奏法或來源"
+  },
+  "@yovoice.instruments.searchPrompt": {
+    "defaultMessage": "輸入樂器名稱並點擊搜索，查看 CC0 錄音候選。"
+  },
+  "@yovoice.instruments.noResults": {
+    "defaultMessage": "沒有匹配的音源"
+  },
+  "@yovoice.instruments.family": {
+    "defaultMessage": "樂器分類"
+  },
+  "@yovoice.instruments.catalogSummary": {
+    "defaultMessage": "小寶樂隊固定版本包含 71 項 CC0 音源，其中 67 項可按需下載爲逐音採樣；4 項整段錄音素材另行處理。"
+  },
+  "@yovoice.instruments.phraseOnly": {
+    "defaultMessage": "整段素材"
+  },
+  "@yovoice.instruments.model": {
+    "defaultMessage": "模型"
+  },
+  "@yovoice.instruments.family.all": {
+    "defaultMessage": "全部分類"
+  },
+  "@yovoice.instruments.family.bass": {
+    "defaultMessage": "低音樂器"
+  },
+  "@yovoice.instruments.family.brass": {
+    "defaultMessage": "銅管樂器"
+  },
+  "@yovoice.instruments.family.chinese": {
+    "defaultMessage": "民樂"
+  },
+  "@yovoice.instruments.family.drums": {
+    "defaultMessage": "鼓組"
+  },
+  "@yovoice.instruments.family.keys": {
+    "defaultMessage": "鍵盤樂器"
+  },
+  "@yovoice.instruments.family.mallets": {
+    "defaultMessage": "有音高打擊樂"
+  },
+  "@yovoice.instruments.family.percussion": {
+    "defaultMessage": "打擊樂"
+  },
+  "@yovoice.instruments.family.samples": {
+    "defaultMessage": "整段錄音素材"
+  },
+  "@yovoice.instruments.family.strings": {
+    "defaultMessage": "絃樂與吉他"
+  },
+  "@yovoice.instruments.family.synth": {
+    "defaultMessage": "合成器"
+  },
+  "@yovoice.instruments.family.texture": {
+    "defaultMessage": "氛圍音效"
+  },
+  "@yovoice.instruments.family.vocal": {
+    "defaultMessage": "人聲音色"
+  },
+  "@yovoice.instruments.family.winds": {
+    "defaultMessage": "木管樂器"
+  },
+  "@yovoice.instruments.tabInstruments": {
+    "defaultMessage": "樂器與採樣"
+  },
+  "@yovoice.instruments.tabAI": {
+    "defaultMessage": "AI 音源與模型"
+  },
+  "@yovoice.instruments.soundfonts": {
+    "defaultMessage": "編曲音色庫"
+  },
+  "@yovoice.instruments.soundfontHint": {
+    "defaultMessage": "當前曲譜渲染支持以下 SF2 音色庫；安裝與移除仍在設置 › 編曲音色庫。"
+  },
+  "@yovoice.instruments.samples": {
+    "defaultMessage": "採樣音源"
+  },
+  "@yovoice.instruments.samplesHint": {
+    "defaultMessage": "按樂器、音高和奏法導入錄音；選用音源後，曲譜會按實際採樣渲染。"
+  },
+  "@yovoice.instruments.sampleImport": {
+    "defaultMessage": "採樣文件"
+  },
+  "@yovoice.instruments.origin": {
+    "defaultMessage": "聲音來源"
+  },
+  "@yovoice.instruments.sampleImportHint": {
+    "defaultMessage": "單個錄音不超過 20 MB、30 秒；導入後可繼續添加其他音高和奏法。"
+  },
+  "@yovoice.instruments.real": {
+    "defaultMessage": "真實錄音"
+  },
+  "@yovoice.instruments.generated": {
+    "defaultMessage": "AI 生成"
+  },
+  "@yovoice.instruments.sampleCount": {
+    "defaultMessage": "個採樣"
+  },
+  "@yovoice.instruments.licenseUnknown": {
+    "defaultMessage": "授權未填寫"
+  },
+  "@yovoice.instruments.metadataReview": {
+    "defaultMessage": "自動檢索 · 請試聽"
+  },
+  "@yovoice.instruments.confirmFoundSource": {
+    "defaultMessage": "已試聽，確認樂器"
+  },
+  "@yovoice.instruments.target": {
+    "defaultMessage": "加入到"
+  },
+  "@yovoice.instruments.newSource": {
+    "defaultMessage": "新建樂器音源"
+  },
+  "@yovoice.instruments.sourceName": {
+    "defaultMessage": "音源名稱"
+  },
+  "@yovoice.instruments.instrumentName": {
+    "defaultMessage": "樂器"
+  },
+  "@yovoice.instruments.pitch": {
+    "defaultMessage": "錄音原音高（MIDI）"
+  },
+  "@yovoice.instruments.pitchHint": {
+    "defaultMessage": "例如中央 C = 60"
+  },
+  "@yovoice.instruments.articulation": {
+    "defaultMessage": "奏法"
+  },
+  "@yovoice.instruments.desktopOnly": {
+    "defaultMessage": "請在桌面版導入採樣文件"
+  },
+  "@yovoice.instruments.addSample": {
+    "defaultMessage": "加入採樣"
+  },
+  "@yovoice.instruments.catalogTitle": {
+    "defaultMessage": "可按需下載的開放音源"
+  },
+  "@yovoice.instruments.catalogHint": {
+    "defaultMessage": "來自小寶樂隊 CC0 音源庫，按件下載；模擬樂器會明確標出原錄音樂器。"
+  },
+  "@yovoice.instruments.searchTitle": {
+    "defaultMessage": "在線尋找音源"
+  },
+  "@yovoice.instruments.searchHint": {
+    "defaultMessage": "在 Openverse 搜索 CC0 錄音。標題可能指同名外語詞；請先到來源頁試聽並確認樂器。導入時會重新覈驗許可和單音音高。"
+  },
+  "@yovoice.instruments.confirmInstrument": {
+    "defaultMessage": "已試聽，確認是{instrument}"
+  },
+  "@yovoice.instruments.searchInstrument": {
+    "defaultMessage": "樂器名稱"
+  },
+  "@yovoice.instruments.searchAction": {
+    "defaultMessage": "搜索"
+  },
+  "@yovoice.instruments.sourcePage": {
+    "defaultMessage": "來源頁"
+  },
+  "@yovoice.instruments.verifyImport": {
+    "defaultMessage": "覈驗並導入"
+  },
+  "@yovoice.instruments.noteCandidate": {
+    "defaultMessage": "待覈驗單音"
+  },
+  "@yovoice.instruments.phraseCandidate": {
+    "defaultMessage": "樂句素材"
+  },
+  "@yovoice.instruments.noCandidates": {
+    "defaultMessage": "暫無候選音源"
+  },
+  "@yovoice.instruments.catalog.guzheng": {
+    "defaultMessage": "古箏 · 真實錄音"
+  },
+  "@yovoice.instruments.catalog.xiao": {
+    "defaultMessage": "簫音色 · 豎笛錄音模擬"
+  },
+  "@yovoice.instruments.catalog.suona-oboe": {
+    "defaultMessage": "嗩吶音色 · 雙簧管錄音模擬"
+  },
+  "@yovoice.instruments.catalogHint.guzheng": {
+    "defaultMessage": "34 個採樣 · CC0 · 原素材來自 Freesound Pufermufin"
+  },
+  "@yovoice.instruments.catalogHint.xiao": {
+    "defaultMessage": "56 個採樣 · CC0 · 原素材爲 VCSL 豎笛，非真正簫錄音"
+  },
+  "@yovoice.instruments.catalogHint.suona-oboe": {
+    "defaultMessage": "87 個採樣 · CC0 · 原素材爲 VSCO 雙簧管，非真正嗩吶錄音"
+  },
+  "@yovoice.instruments.download": {
+    "defaultMessage": "下載音源"
+  },
+  "@yovoice.instruments.downloading": {
+    "defaultMessage": "已覈驗 {done}/{total} 個採樣"
+  },
+  "@yovoice.instruments.downloadingBytes": {
+    "defaultMessage": "音源下載 {done}/{total} MB"
+  },
+  "@yovoice.score.expression.source": {
+    "defaultMessage": "聲部音源"
+  },
+  "@yovoice.score.expression.soundfontSource": {
+    "defaultMessage": "原編曲音色庫（SF2）"
+  },
+  "@yovoice.score.expression.sampleCoverage": {
+    "defaultMessage": "渲染時會逐音檢查音高、力度和奏法；缺少對應採樣會提示補充。"
+  },
+  "@yovoice.instruments.aiModels": {
+    "defaultMessage": "AI 音樂模型"
+  },
+  "@yovoice.instruments.aiHint": {
+    "defaultMessage": "這裏保存智能編曲生成的 AI 樂句音頻，並展示可用模型；模型下載仍在設置中。"
+  },
+  "@yovoice.instruments.installed": {
+    "defaultMessage": "已安裝"
+  },
+  "@yovoice.instruments.available": {
+    "defaultMessage": "可安裝"
+  },
+  "@yovoice.instruments.manage": {
+    "defaultMessage": "前往設置"
+  },
+  "@yovoice.settings.tabPlugins": {
+    "defaultMessage": "插件管理"
+  },
+  "@yovoice.plugins.title": {
+    "defaultMessage": "VST 插件"
+  },
+  "@yovoice.plugins.intro": {
+    "defaultMessage": "當前掃描 Windows 標準 VST3 目錄，便於檢查已安裝的插件。"
+  },
+  "@yovoice.plugins.scan": {
+    "defaultMessage": "重新掃描"
+  },
+  "@yovoice.plugins.install": {
+    "defaultMessage": "手動安裝 VST3"
+  },
+  "@yovoice.plugins.installFolder": {
+    "defaultMessage": "安裝插件文件夾"
+  },
+  "@yovoice.plugins.installHint": {
+    "defaultMessage": "選擇已下載的 .vst3 文件或已解壓的 .vst3 文件夾。Windows 安裝程序（.exe）請從插件廠商處運行。"
+  },
+  "@yovoice.plugins.scanning": {
+    "defaultMessage": "正在掃描插件…"
+  },
+  "@yovoice.plugins.empty": {
+    "defaultMessage": "尚未發現 VST3 插件。"
+  },
+  "@yovoice.plugins.hostHint": {
+    "defaultMessage": "安裝後不會自動彈窗：點擊“打開操作檯”可顯示插件自己的編輯器。目前操作檯獨立運行，調整尚不隨工程保存，也尚未接入整軌渲染。試音發送一枚 MIDI 測試音；Decent Sampler 空載時使用臨時測試樣本。"
+  },
+  "@yovoice.plugins.test": {
+    "defaultMessage": "試音"
+  },
+  "@yovoice.plugins.openEditor": {
+    "defaultMessage": "打開操作檯"
+  },
+  "@yovoice.plugins.testPassed": {
+    "defaultMessage": "{name} 已發聲，可播放測試音"
+  },
+  "@yovoice.ai.setup.arrangement": {
+    "defaultMessage": "先在設置 › AI 服務中連接線上模型，再讓 AI 規劃整曲。"
+  },
+  "@yovoice.ai.brief.arrangement": {
+    "defaultMessage": "描述想要的整曲編排"
+  },
+  "@yovoice.ai.task.done.arrangement": {
+    "defaultMessage": "整曲方案已生成"
+  },
+  "@yovoice.ai.task.replace.arrangement": {
+    "defaultMessage": "審覈後應用新方案；原有方案仍保留。"
+  },
+  "@yovoice.ai.task.failed.arrangement": {
+    "defaultMessage": "整曲規劃失敗"
+  },
+  "@yovoice.music.workspace.compose": {
+    "defaultMessage": "創作方案"
+  },
+  "@yovoice.music.workspace.score": {
+    "defaultMessage": "曲譜編排"
+  },
+  "@yovoice.music.workspace.audio": {
+    "defaultMessage": "音頻製作"
+  },
+  "@yovoice.music.workspace.export": {
+    "defaultMessage": "導出"
+  },
+  "@yovoice.music.folkProfile": {
+    "defaultMessage": "民樂方案"
+  },
+  "@yovoice.music.chooseProfile": {
+    "defaultMessage": "選擇地域或戲曲風格"
+  },
+  "@yovoice.music.applyProfile": {
+    "defaultMessage": "應用到風格"
+  },
+  "@yovoice.music.audioHint": {
+    "defaultMessage": "在下方多軌時間線導入真人演唱、樂器錄音，或從歷史版本加入生成歌曲與渲染配樂，再調整片段位置與音量。"
+  },
+  "@yovoice.music.historySong": {
+    "defaultMessage": "歌曲"
+  },
+  "@yovoice.music.historyScore": {
+    "defaultMessage": "編曲"
+  },
+  "@yovoice.music.createTimeline": {
+    "defaultMessage": "創建多軌時間線"
+  },
+  "@yovoice.music.timelineBelow": {
+    "defaultMessage": "多軌時間線已在下方打開。"
+  },
+  "@yovoice.music.exportHint": {
+    "defaultMessage": "曲譜頁可導出 MIDI；下方播放器可導出音頻。也可將整個作品保存爲工程文件。"
+  },
+  "@yovoice.music.openScoreExport": {
+    "defaultMessage": "前往導出 MIDI"
+  },
+  "@yovoice.music.exportProject": {
+    "defaultMessage": "導出工程"
+  },
+  "@yovoice.music.scoreTimbreHint": {
+    "defaultMessage": "編曲會沿用已選民樂方案；當前 SF2 音色庫按通用 MIDI 樂器發聲，具體民樂音色取決於音色庫。"
+  },
+  "@yovoice.score.keyPresets": {
+    "defaultMessage": "常用調性"
+  },
+  "@yovoice.score.keyHint": {
+    "defaultMessage": "大調通常更明亮，小調通常更柔和；可以從列表選，也可以直接輸入。"
+  },
+  "@yovoice.score.expression.title": {
+    "defaultMessage": "聲部表現"
+  },
+  "@yovoice.score.expression.description": {
+    "defaultMessage": "細調演奏力度與時間、左右位置和混響；隻影響當前聲部的曲譜渲染。"
+  },
+  "@yovoice.score.expression.track": {
+    "defaultMessage": "選擇聲部"
+  },
+  "@yovoice.score.expression.velocity": {
+    "defaultMessage": "力度變化"
+  },
+  "@yovoice.score.expression.timing": {
+    "defaultMessage": "時間微調"
+  },
+  "@yovoice.score.expression.pan": {
+    "defaultMessage": "聲像"
+  },
+  "@yovoice.score.expression.reverb": {
+    "defaultMessage": "混響"
+  },
+  "@yovoice.score.expression.center": {
+    "defaultMessage": "居中"
+  },
+  "@yovoice.score.expression.left": {
+    "defaultMessage": "偏左"
+  },
+  "@yovoice.score.expression.right": {
+    "defaultMessage": "偏右"
+  },
+  "@yovoice.score.expression.natural": {
+    "defaultMessage": "自然演奏"
+  },
+  "@yovoice.score.expression.reset": {
+    "defaultMessage": "重置表現"
+  },
+  "@yovoice.score.abcPaste": {
+    "defaultMessage": "粘貼 ABC 曲譜"
+  },
+  "@yovoice.score.abcHelp": {
+    "defaultMessage": "可粘貼 AI Music Composer 等工具生成的單聲部 ABC 旋律；導入後可繼續換音色、編輯聲部並導出 MIDI。"
+  },
+  "@yovoice.score.abcField": {
+    "defaultMessage": "ABC 記譜文本"
+  },
+  "@yovoice.score.abcExample": {
+    "defaultMessage": "X:1\nT:江南小曲\nM:4/4\nL:1/4\nQ:1/4=100\nK:C\nC D E G | A G E D |"
+  },
+  "@yovoice.score.abcImport": {
+    "defaultMessage": "導入曲譜"
+  },
+  "@yovoice.score.abcUnsupported": {
+    "defaultMessage": "ABC 內容無法導入。請檢查調號、拍號和音符；當前僅支持單聲部基本音符、休止符及升降號，不支持和絃、重複記號或連音。"
+  },
+  "@yovoice.timeline.audioRepair": {
+    "defaultMessage": "音軌柔化"
+  },
+  "@yovoice.timeline.audioRepairHint": {
+    "defaultMessage": "先試聽再少量調整；高頻柔化減輕刺耳感，動態壓縮收住音量起伏。無法恢復已削波的原始細節。"
+  },
+  "@yovoice.timeline.soften": {
+    "defaultMessage": "高頻柔化（4 kHz 以上）"
+  },
+  "@yovoice.timeline.compression": {
+    "defaultMessage": "動態壓縮"
+  },
+  "@yovoice.timeline.resetRepair": {
+    "defaultMessage": "重置柔化"
+  },
   "@yovoice.settings.proxy": {
     "defaultMessage": "網路代理伺服器"
   },
@@ -3796,5 +4528,67 @@
   },
   "@yovoice.create.precision": {
     "defaultMessage": "精度"
-  }
+  },
+  "@yovoice.arrangement.replanForBinding": {
+    "defaultMessage": "This legacy plan needs stable part IDs before binding."
+  },
+  "@yovoice.arrangement.matchingOnly": {
+    "defaultMessage": "Matching instruments only"
+  },
+  "@yovoice.arrangement.chooseSubstitute": {
+    "defaultMessage": "Choose a substitute sound"
+  },
+  "@yovoice.arrangement.useLocal": {
+    "defaultMessage": "Use local instrument"
+  },
+  "@yovoice.arrangement.ensembleSample": {
+    "defaultMessage": "Ensemble recording"
+  },
+  "@yovoice.arrangement.jobProgress": {
+    "defaultMessage": "Materials: {done}/{total} ready"
+  },
+  "@yovoice.arrangement.resumeJob": {
+    "defaultMessage": "Resume unfinished materials"
+  },
+  "@yovoice.plugins.saveInstrument": {"defaultMessage": "Save arrangement instrument"},
+  "@yovoice.plugins.presetName": {"defaultMessage": "Instrument name"},
+  "@yovoice.plugins.program": {"defaultMessage": "Plugin program (e.g. 01 Pipa)"},
+  "@yovoice.plugins.provenance": {"defaultMessage": "Sound origin"},
+  "@yovoice.plugins.recorded": {"defaultMessage": "Recorded samples"},
+  "@yovoice.plugins.synthesized": {"defaultMessage": "Synthesized / simulated"},
+  "@yovoice.plugins.presetHint": {"defaultMessage": "Choose the instrument and actual origin. Load samples and adjust the sound in the native editor; close it to save. Select only an articulation this preset actually supports. Tremolo needs a suitable preset."},
+  "@yovoice.plugins.editAndSave": {"defaultMessage": "Open editor and save"},
+  "@yovoice.plugins.captureProgram": {"defaultMessage": "Save specified / default program"},
+  "@yovoice.plugins.instrumentSaved": {"defaultMessage": "Added to Instruments. Select it on an arrangement part."},
+  "@yovoice.plugins.currentPreset": {"defaultMessage": "Saved plugin instrument"},
+  "@yovoice.plugins.currentPresetHint": {"defaultMessage": "Audition plays the saved sound. Track rendering uses the full score MIDI. Keep the plugin and its sample dependencies installed."},
+  "@yovoice.plugins.auditionPreset": {"defaultMessage": "Audition current preset"},
+  "@yovoice.arrangement.scoreConditioned": {"defaultMessage": "Generated with this phrase melody as a condition. Audition to check performance and alignment."},
+  "@yovoice.arrangement.freeAudio": {"defaultMessage": "Free audio generation cannot guarantee note alignment. Audition and check timing."},
+  "@yovoice.arrangement.confirmAudition": {"defaultMessage": "Confirm audition for assembly"},
+  "@yovoice.arrangement.reviewConfirmed": {"defaultMessage": "Audition confirmed"},
+  "@yovoice.arrangement.scoreProgress": {"defaultMessage": "Kept {count} phrase scores. Retry resumes completed phrases."},
+  "@yovoice.arrangement.resetScoreProgress": {"defaultMessage": "Clear score progress for regeneration"},
+  "@yovoice.arrangement.undoBinding": {"defaultMessage": "Undo last source replacement"},
+  "@yovoice.plugins.presetPath": {"defaultMessage": "Existing .vstpreset file path"},
+  "@yovoice.arrangement.referenceTitle": {"defaultMessage": "Reference and performance audio"},
+  "@yovoice.arrangement.referenceHint": {"defaultMessage": "Analyze reference audio into melody, tempo and meter before AI planning. Imported performances use manual timeline tracks that remain editable."},
+  "@yovoice.arrangement.importReference": {"defaultMessage": "Add reference audio"},
+  "@yovoice.arrangement.importPerformance": {"defaultMessage": "Add performance audio"},
+  "@yovoice.arrangement.referenceAudio": {"defaultMessage": "Reference audio"},
+  "@yovoice.arrangement.noReference": {"defaultMessage": "No reference audio"},
+  "@yovoice.arrangement.referenceAnalyzed": {"defaultMessage": "Reference score accepted for the next planning and composition."},
+  "@yovoice.arrangement.referenceNotAnalyzed": {"defaultMessage": "Imported, not analyzed. AI cannot hear this file directly."},
+  "@yovoice.arrangement.analyzeReference": {"defaultMessage": "Analyze reference audio"},
+  "@yovoice.arrangement.referenceModelRequired": {"defaultMessage": "Install SheetSage2 in settings. Analyze opens settings if needed."},
+  "@yovoice.arrangement.useReferenceAnalysis": {"defaultMessage": "Use this reference score"},
+  "@yovoice.arrangement.sourceNeedsRepair": {"defaultMessage": "Repair missing source"},
+  "@yovoice.plugins.capturing": {"defaultMessage": "Saving the instrument. Finish editing and close the plugin window; actual sound will then be checked."},
+  "@yovoice.arrangement.job.queued": {"defaultMessage": "Queued"},
+  "@yovoice.arrangement.job.running": {"defaultMessage": "Preparing"},
+  "@yovoice.arrangement.job.ready": {"defaultMessage": "Ready"},
+  "@yovoice.arrangement.job.failed": {"defaultMessage": "Failed"},
+  "@yovoice.arrangement.job.interrupted": {"defaultMessage": "Interrupted"},
+  "@yovoice.arrangement.blocked": {"defaultMessage": "{detail}"},
+  "@yovoice.arrangement.returnToAssembly": {"defaultMessage": "Assemble in Smart Arrangement"}
 }

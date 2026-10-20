@@ -184,6 +184,13 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
     Object.assign(voice, { referenceText: input.referenceText, source: 'generation', sourceGenerationId: input.id });
     publish(); return voice as T;
   }
+  if (method === 'instrument.source.confirm') {
+    const source = state.instrumentSources?.find(item => item.id === (data as { id: string }).id && item.verification === 'metadata');
+    if (!source) throw new CallError('@yovoice.error.requestInvalid');
+    source.verification = 'user';
+    publish();
+    return true as T;
+  }
   if (method === 'draft.save') {
     const draft = structuredClone(data as Draft); const index = state.drafts.findIndex(d => d.id === draft.id);
     draft.createdAt = index < 0 ? new Date().toISOString() : state.drafts[index]?.createdAt;

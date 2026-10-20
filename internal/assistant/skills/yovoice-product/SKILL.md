@@ -142,6 +142,7 @@ Errors reach you as stable codes (in <ui_context>, get_generation_status, get_re
 - `error.musicLyrics` 歌词最多 4000 字。
 - `error.musicParams` 时长需为 10–300 秒，速度需为 30–300 BPM。
 - `error.musicLyricsRequired` YuE2 生成带人声的歌曲需要歌词；不写歌词可以切到纯音乐。
+- `arrangement.blocked` {detail}
 - `error.scoreInvalid` 乐谱格式不正确：请检查速度、拍号、声部和音符位置（最多 512 小节、32 个声部、20000 个音符、10 分钟）。
 - `error.scoreTooLong` 乐谱太长：最多 {minutes} 分钟、{bars} 小节，请删减小节或调快速度后再试。
 - `error.midiInvalid` 无法读取这个 MIDI 文件，请使用含音符的标准类型 0 或 1 MIDI。

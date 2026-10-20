@@ -101,7 +101,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			case <-r.Context().Done():
 				return
 			case <-ch:
-				b, e := json.Marshal(map[string]any{"event": "state", "state": s.Workbench.Store.Read()})
+				b, e := json.Marshal(map[string]any{"event": "state", "state": s.Workbench.PublicState()})
 				if e != nil {
 					return
 				}

@@ -24,6 +24,7 @@ type scoreInput struct {
 // scoreTrack 是乐谱里的一个声部。
 type scoreTrack struct {
 	ID       string             `json:"id" jsonschema:"声部唯一 ID"`
+	PartIDs  []string           `json:"partIds,omitempty" jsonschema:"智能编曲计划中对应的声部 ID；同一轨跨乐句可列多个 ID"`
 	Name     string             `json:"name" jsonschema:"声部名称，用界面语言书写"`
 	Role     string             `json:"role,omitempty" jsonschema:"melody/piano/strings/bass/drums/pad/arp/other"`
 	Program  int                `json:"program" jsonschema:"General MIDI 音色号 0-127"`
@@ -81,7 +82,7 @@ func buildScore(in scoreInput) (schema.Score, error) {
 	s := schema.Score{Tempo: in.Tempo, TimeSignature: in.TimeSignature, Key: strings.TrimSpace(in.Key), Sections: in.Sections}
 	notes := 0
 	for _, t := range in.Tracks {
-		track := schema.ScoreTrack{ID: t.ID, Name: t.Name, Role: t.Role, Program: t.Program, Drums: t.Drums, Level: t.Level, Pan: t.Pan, Reverb: t.Reverb, Humanize: t.Humanize, Dynamics: t.Dynamics}
+		track := schema.ScoreTrack{ID: t.ID, PartIDs: t.PartIDs, Name: t.Name, Role: t.Role, Program: t.Program, Drums: t.Drums, Level: t.Level, Pan: t.Pan, Reverb: t.Reverb, Humanize: t.Humanize, Dynamics: t.Dynamics}
 		for _, raw := range t.Notes {
 			note, err := parseScoreNote(raw)
 			if err != nil {

@@ -4,6 +4,24 @@ import { emptyState, cueAudioStatus, type AudioTimeline } from '../src/shared/wo
 
 // 不打开页面，直接校验时间线（Timeline）编辑、裁剪、磁吸与历史撤销的核心纯算法。
 
+test('音轨高频柔化会进入实际离线导出，原音频保持不变', async ({ page }) => {
+  await page.goto('/');
+  const result = await page.evaluate(async () => {
+    const { Timeline } = await import('../src/features/media/timeline');
+    const sampleRate = 24000, length = sampleRate / 4;
+    const source = new AudioBuffer({ numberOfChannels: 1, length, sampleRate });
+    const samples = source.getChannelData(0);
+    for (let i = 0; i < length; i++) samples[i] = 0.4 * Math.sin(2 * Math.PI * 6000 * i / sampleRate);
+    const basic = { tracks: [{ id: 'lead', name: '主奏', muted: false, clips: [{ id: 'clip', generationId: 'source', start: 0, offset: 0, duration: .25 }] }] };
+    const plain = await Timeline.render(basic, async () => source);
+    const softened = await Timeline.render({ ...basic, tracks: [{ ...basic.tracks[0], softenDb: -12 }] }, async () => source);
+    const rms = (buffer: AudioBuffer) => Math.sqrt(buffer.getChannelData(0).reduce((sum, value) => sum + value * value, 0) / buffer.length);
+    return { plain: rms(plain), softened: rms(softened), original: samples[1] };
+  });
+  expect(result.softened).toBeLessThan(result.plain * .65);
+  expect(result.original).toBeCloseTo(.4, 5);
+});
+
 test('分割和移动保留源范围，播放从正确偏移开始', () => {
   const value: AudioTimeline = { tracks: [{ id: 'a', name: 'A', muted: false, clips: [{ id: 'clip', generationId: 'source', start: 2, offset: 1, duration: 4 }] }, { id: 'b', name: 'B', muted: false, clips: [] }] };
   const split = Timeline.split(value, 'clip', 3.5);

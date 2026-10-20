@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"hash/fnv"
 	"math"
+	"math/rand/v2"
 	"slices"
 	"sort"
 	"yovoice/internal/msg"
@@ -14,7 +16,11 @@ import (
 const ppq = 480
 
 // MIDI 写出类型 1 文件：首轨记录速度与拍号，每个声部一轨；鼓组使用第 10 通道。
-func MIDI(s schema.Score) ([]byte, error) {
+func MIDI(s schema.Score) ([]byte, error) { return writeMIDI(s, false) }
+
+// PerformanceMIDI 用于实际插件演奏，附带自然力度、微时差及表情控制。普通导出保持原谱。
+func PerformanceMIDI(s schema.Score) ([]byte, error) { return writeMIDI(s, true) }
+func writeMIDI(s schema.Score, performance bool) ([]byte, error) {
 	if e := schema.ValidateScore(&s); e != nil {
 		return nil, e
 	}
@@ -45,7 +51,33 @@ func MIDI(s schema.Score) ([]byte, error) {
 			{data: []byte{0xB0 | channel, 10, byte(math.Round(64 + t.Pan*63))}},
 			{data: []byte{0xB0 | channel, 91, byte(math.Round(t.Reverb * 127))}},
 		}
+		if performance {
+			for bar := 1; bar <= s.Bars(); bar++ {
+				for beat := 1.0; beat <= per; beat += .25 {
+					at := s.Seconds(bar, beat)
+					value := int(math.Round(127 * expression(s, t.Dynamics, at)))
+					events = append(events, midiEvent{tick: tick(bar, beat), data: []byte{0xb0 | channel, 11, byte(max(0, min(127, value)))}})
+				}
+			}
+		}
+		hash := fnv.New64a()
+		_, _ = hash.Write([]byte(t.ID))
+		rng := rand.New(rand.NewPCG(hash.Sum64(), 42))
 		for _, n := range t.Notes {
+			if performance && t.Humanize != nil {
+				h := t.Humanize
+				if h.Velocity > 0 {
+					n.Velocity = max(1, min(127, n.Velocity+rng.IntN(2*h.Velocity+1)-h.Velocity))
+				}
+				if h.TimingMs > 0 {
+					shift := (rng.Float64()*2 - 1) * h.TimingMs / 1000 * s.BarTempo(n.Bar) / 60
+					position := max(0, float64(n.Bar-1)*per+n.Beat-1+shift)
+					position = min(position, float64(s.Bars())*per-.01)
+					n.Length = min(n.Length, float64(s.Bars())*per-position)
+					n.Bar = int(position/per) + 1
+					n.Beat = position - float64(n.Bar-1)*per + 1
+				}
+			}
 			start := tick(n.Bar, n.Beat)
 			events = append(events, midiEvent{tick: start, data: []byte{0x90 | channel, byte(n.Pitch), byte(n.Velocity)}},
 				midiEvent{tick: start + max(1, int(math.Round(n.Length*ppq))), data: []byte{0x80 | channel, byte(n.Pitch), 0}})

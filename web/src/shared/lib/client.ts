@@ -1,4 +1,4 @@
-import type { AudioAsset, State, Voice } from '../workbench';
+import type { AudioAsset, InstrumentSource, State, Voice } from '../workbench';
 import { toBase64 } from './sound';
 import { CallError, parseCallError } from './call-error';
 import { desktopCall, desktopMediaUrl, isDesktop, isMac, reportDesktop, subscribeDesktop } from './bridge';
@@ -28,6 +28,17 @@ export async function importVoiceFile(file: File): Promise<Voice> {
   return call<Voice>('voice.record', { name: file.name.replace(/\.[^.]+$/, ''), base64: await toBase64(file) });
 }
 
+// 用户导入的单音录音进入音源库，并记录乐器、奏法和许可来源。
+export async function importInstrumentFile(file: File, input: {
+  sourceId?: string; name: string; instrument: string; origin: 'real' | 'ai'; rootPitch: number;
+  articulation: string; velocityLow: number; velocityHigh: number;
+  author?: string; license?: string; licenseUrl?: string; sourceUrl?: string;
+}): Promise<InstrumentSource> {
+  if (!isDesktop) throw new CallError('@yovoice.error.previewDesktopOnly');
+  assertUploadSize(file);
+  return call<InstrumentSource>('instrument.sample.import', { ...input, base64: await toBase64(file) });
+}
+
 // 翻唱扒谱：上传歌曲交给后台用 SheetSage2 提取旋律；浏览器预览不做推理。
 export async function coverMelodyFile(projectId: string, file: File): Promise<void> {
   if (!isDesktop) throw new CallError('@yovoice.error.previewDesktopOnly');
@@ -35,7 +46,7 @@ export async function coverMelodyFile(projectId: string, file: File): Promise<vo
   await call('melody.cover', { projectId, base64: await toBase64(file) });
 }
 
-export async function mediaUrl(kind: 'voices' | 'outputs', file: string): Promise<string> {
+export async function mediaUrl(kind: 'voices' | 'outputs' | 'instruments', file: string): Promise<string> {
   return isDesktop ? desktopMediaUrl(kind, file) : previewMediaUrl(file);
 }
 

@@ -20,7 +20,7 @@ const (
 	DatabaseFile = "yovoice.db"
 	backupFile   = "yovoice.backup.db"
 	// schemaVersion 记录在 PRAGMA user_version，表结构变化时在 migrations 中追加步骤。
-	schemaVersion = 1
+	schemaVersion = 6
 )
 
 // migrations[i] 把数据库从版本 i 升级到 i+1；全部在同一事务内执行。
@@ -33,6 +33,11 @@ var migrations = []string{
 	 CREATE TABLE history (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
 	 CREATE TABLE ai_providers (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
 	 CREATE TABLE private (key TEXT PRIMARY KEY, data TEXT NOT NULL);`,
+	`CREATE TABLE instrument_sources (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
+	`CREATE TABLE arrangement_materials (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
+	`CREATE TABLE band_presets (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
+	`CREATE TABLE arrangement_jobs (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
+	`CREATE TABLE arrangement_scores (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
 }
 
 // row 是一行已编码的记录；pos 保留列表顺序，data 为实体的 JSON。
@@ -127,6 +132,11 @@ var tables = []table{
 	list("voices", "voices", func(s *schema.State) *[]schema.Voice { return &s.Voices }, func(v schema.Voice) string { return v.ID }),
 	list("models", "models", func(s *schema.State) *[]schema.InstalledModel { return &s.Models }, func(m schema.InstalledModel) string { return m.ID }),
 	list("history", "history", func(s *schema.State) *[]schema.Generation { return &s.History }, func(g schema.Generation) string { return g.ID }),
+	list("instrument_sources", "instrumentSources", func(s *schema.State) *[]schema.InstrumentSource { return &s.InstrumentSources }, func(v schema.InstrumentSource) string { return v.ID }),
+	list("arrangement_materials", "arrangementMaterials", func(s *schema.State) *[]schema.ArrangementMaterial { return &s.ArrangementMaterials }, func(v schema.ArrangementMaterial) string { return v.ID }),
+	list("band_presets", "bandPresets", func(s *schema.State) *[]schema.BandPreset { return &s.BandPresets }, func(v schema.BandPreset) string { return v.ID }),
+	list("arrangement_scores", "arrangementScores", func(s *schema.State) *[]schema.ArrangementScorePhrase { return &s.ArrangementScores }, func(v schema.ArrangementScorePhrase) string { return v.ID }),
+	list("arrangement_jobs", "arrangementJobs", func(s *schema.State) *[]schema.ArrangementJob { return &s.ArrangementJobs }, func(v schema.ArrangementJob) string { return v.ID }),
 	list("ai_providers", "aiProviders", func(s *schema.State) *[]schema.AIProvider { return &s.AIProviders }, func(p schema.AIProvider) string { return p.ID }),
 }
 

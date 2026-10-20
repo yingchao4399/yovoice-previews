@@ -3,12 +3,12 @@ import { ResizeHandle, type ResizableProps } from '@astryxdesign/core/Resizable'
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { AudioLines, ChevronRight, Mic, Music, Pencil, Settings2, Trash2 } from 'lucide-react';
+import { AudioLines, ChevronRight, FolderOpen, ListMusic, Mic, Music, Pencil, Settings2, Trash2 } from 'lucide-react';
 import { projectKind, type Draft, type State } from '../shared/workbench';
 import { overflowTitle } from '../shared/ui/overflow-title';
 import { UpdateSidebarCard } from '../features/update/update-notice';
 
-// 侧栏：新建入口、作品类型、声音库、最近作品、创作助手与设置。
+// 侧栏：保留官方音乐生成入口，智能编曲和音源库作为独立工作流入口。
 export function SidebarNav(props: {
   page: string;
   setPage: (id: string) => void;
@@ -32,7 +32,9 @@ export function SidebarNav(props: {
         const selected = group(page) === kind || (projectActive && group(projectKind(draft)) === kind);
         return <Button key={kind} data-testid={`nav-${kind}`} label={t(`@yovoice.project.${kind}`)} variant="ghost" icon={kind === 'text' ? <Mic /> : kind === 'story' ? <Pencil /> : <Music />} className={`nav-item ${selected ? 'selected' : ''}`} aria-current={selected ? 'page' : undefined} onClick={() => setPage(kind)} />;
       })}
+      <Button data-testid="nav-arrangement" label={t('@yovoice.arrangement.title')} variant="ghost" icon={<ListMusic />} className={`nav-item ${page === 'arrangement' ? 'selected' : ''}`} aria-current={page === 'arrangement' ? 'page' : undefined} onClick={() => setPage('arrangement')} />
       <Button data-testid="nav-characters" label={t('@yovoice.nav.characters')} variant="ghost" icon={<AudioLines />} className={`nav-item ${page === 'characters' || page === 'voices' ? 'selected' : ''}`} aria-current={page === 'characters' || page === 'voices' ? 'page' : undefined} onClick={() => setPage('characters')} />
+      <Button data-testid="nav-instruments" label={t('@yovoice.instruments.title')} variant="ghost" icon={<FolderOpen />} className={`nav-item ${page === 'instruments' ? 'selected' : ''}`} aria-current={page === 'instruments' ? 'page' : undefined} onClick={() => setPage('instruments')} />
     </VStack>
     <details className="recent-projects" open={recentOpen}>
       <summary onClick={event => { event.preventDefault(); const open = !recentOpen; setRecentOpen(open); localStorage.setItem('yovoice-recent-open', String(open)); }}><ChevronRight aria-hidden />{t('@yovoice.nav.recent')}</summary>

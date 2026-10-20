@@ -4,6 +4,40 @@
 
 ## [Unreleased]
 
+### English
+
+- Prevent old score tracks remaining after creating a new work; add score-area resizing and collapse controls with a shared dock height budget.
+- Separate generated AI audio and model catalogs, and include the official v0.3.1 Windows scrolling-mask fix.
+- Keep AI-material playback and seeking available when moving between library lists, searches and details; retry failed media loads.
+- Show the current storage location and individual file paths in instrument sample and AI-material details.
+- Restore the Smart Arrangement target-duration choices in minutes and seconds, matching the existing Music interface.
+
+### 简体中文
+
+- 修复新建作品后残留旧曲谱轨道；曲谱区支持调整高度和收起，底部面板共同限制高度以保留作品信息。
+- 区分 AI 生成音源与模型目录，并纳入官方 v0.3.1 的 Windows 滚动蒙版修复。
+- 修复 AI 素材在音源库列表、搜索与详情切换后无法播放的问题，保留试听进度并支持失败后重试。
+- 音源采样与 AI 素材详情新增当前存储位置及各文件的完整路径，可换行和选中复制。
+- 修复智能编曲目标时长误显示内部翻译键，恢复与音乐界面一致的分秒选项。
+
+## [0.3.1-preview.2] - 2026-10-20
+
+### English
+
+- Integrate Smart Arrangement, Instrument Library and VST3 management with the official v0.3.0 interface, preserving existing Speech, Story, Music and ordinary Score flows.
+- Diagnose instrument identity, source files, articulation, velocity and pitch before binding or assembly. Support explicit substitutes, undoable source replacement, locked source choices and compatible legacy-project migration.
+- Compose against phrase-specific source capabilities with server-owned part identities; retain validated phrase progress and persist preparation jobs, completed audio and retry state.
+- Connect YuE2 melody conditions, ACE-Step free audio, real sample stems and saved VST3 presets to an editable timeline. Record quality checks, audition confirmation, model choices and plugin dependencies; preserve manual tracks and prior results on reassembly.
+- Add reference-score analysis through SheetSage2, separate performance imports, shared Ocho arrangement tools and protection against incompatible official updates. Fix missing-source repair in both sample catalogs.
+- Fix preparation progress snapshot races and occasional editor displacement after focus changes.
+
+### 简体中文
+
+- 在官方 v0.3.0 界面中整合智能编曲、音源库与乐器及 VST3 管理；保留既有语音、故事、音乐与普通编曲路径。
+- 绑定与拼合前统一检查乐器身份、文件、奏法、力度层及音域；支持显式替代、可撤销换源、锁定选择和兼容旧工程的声部迁移。
+- 写谱按乐句使用实际来源约束，由服务端管理声部身份；保存通过校验的乐句进度、持久备料任务、成功素材与恢复状态。
+- 接通 YuE2 旋律条件、ACE-Step 自由音频、真实采样分轨和已保存 VST3 预设到可编辑时间线；记录质量检查、试听确认、模型选择和插件依赖，重新拼合保留手工轨道与历史结果。
+- 增加 SheetSage2 参考谱分析和独立演奏素材导入，接通 Ocho 共用编曲接口，防止不兼容官方更新覆盖；修复两套采样目录的缺失文件修复逻辑。
 - 修复主编辑区在切换焦点或关闭浮层后偶尔整体上移一小段的问题。
 
 ## [0.3.0] - 2026-10-19

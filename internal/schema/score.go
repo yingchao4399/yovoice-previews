@@ -30,9 +30,11 @@ type ScoreSection struct {
 // Level 是该声部“有声部分”的目标电平（dBFS），为 0 时按 Role 取默认值。
 type ScoreTrack struct {
 	ID       string      `json:"id"`
+	PartIDs  []string    `json:"partIds,omitempty"`
 	Name     string      `json:"name"`
 	Role     string      `json:"role,omitempty"`
 	Program  int         `json:"program"`
+	SourceID string      `json:"sourceId,omitempty"`
 	Drums    bool        `json:"drums,omitempty"`
 	Level    float64     `json:"level,omitempty"`
 	Pan      float64     `json:"pan,omitempty"`
@@ -59,11 +61,12 @@ type ScoreRamp struct {
 
 // ScoreNote 的 Beat 从 1 开始，可为小数；Length 以拍计。
 type ScoreNote struct {
-	Bar      int     `json:"bar"`
-	Beat     float64 `json:"beat"`
-	Pitch    int     `json:"pitch"`
-	Length   float64 `json:"length"`
-	Velocity int     `json:"velocity"`
+	Bar          int     `json:"bar"`
+	Beat         float64 `json:"beat"`
+	Pitch        int     `json:"pitch"`
+	Length       float64 `json:"length"`
+	Velocity     int     `json:"velocity"`
+	Articulation string  `json:"articulation,omitempty"`
 }
 
 const (
@@ -197,11 +200,21 @@ func scoreIssue(s *Score) (string, bool) {
 			return fmt.Sprintf("track id %q must be unique and 1-64 characters", t.ID), false
 		}
 		ids[t.ID] = true
+		partIDs := make(map[string]bool)
+		for _, partID := range t.PartIDs {
+			if !ValidID(partID) || partIDs[partID] {
+				return fmt.Sprintf("track %q partIds must contain distinct valid IDs", t.ID), false
+			}
+			partIDs[partID] = true
+		}
 		if strings.TrimSpace(t.Name) == "" || TextLen(t.Name) > 40 {
 			return fmt.Sprintf("track %q needs a name of at most 40 characters", t.ID), false
 		}
 		if t.Program < 0 || t.Program > 127 {
 			return fmt.Sprintf("track %q program must be 0-127", t.ID), false
+		}
+		if len(t.SourceID) > 64 {
+			return fmt.Sprintf("track %q sourceId must be at most 64 characters", t.ID), false
 		}
 		if _, ok := ScoreRoles[t.Role]; t.Role != "" && !ok {
 			return fmt.Sprintf("track %q role must be one of melody, piano, strings, bass, drums, pad, arp, other", t.ID), false
@@ -218,6 +231,9 @@ func scoreIssue(s *Score) (string, bool) {
 			}
 		}
 		for _, n := range t.Notes {
+			if TextLen(n.Articulation) > 40 {
+				return fmt.Sprintf("track %q note articulation is too long", t.ID), false
+			}
 			if n.Bar > ScoreMaxBars {
 				return tooLong, true
 			}

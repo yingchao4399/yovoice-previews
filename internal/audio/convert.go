@@ -47,3 +47,28 @@ func ConvertWithLimit(ctx context.Context, executable, input, output string, sec
 	}
 	return nil
 }
+
+// ConvertInstrument 将乐器录音规范化为采样器所用的立体声 PCM，禁用网络协议。
+func ConvertInstrument(ctx context.Context, executable, input, output string) error {
+	return ConvertInstrumentWithLimit(ctx, executable, input, output, 30)
+}
+
+// ConvertInstrumentWithLimit 保留指定上限内的完整余音，多解码一秒供调用方拒绝超长素材。
+func ConvertInstrumentWithLimit(ctx context.Context, executable, input, output string, seconds int) error {
+	input, err := filepath.Abs(input)
+	if err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, executable, "-nostdin", "-v", "error", "-xerror",
+		"-protocol_whitelist", "file", "-format_whitelist", "wav,mp3,mov,aac,flac,ogg,aiff,asf,matroska,webm",
+		"-i", input, "-map", "0:a:0", "-vn", "-t", strconv.Itoa(seconds+1), "-ac", "2", "-ar", "44100",
+		"-c:a", "pcm_s16le", "-map_metadata", "-1", "-y", output)
+	platform.ConfigureProcess(cmd)
+	if err = cmd.Run(); err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		return msg.Err(msg.ErrAudioDecode, msg.Params{"detail": err.Error()})
+	}
+	return nil
+}

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"math"
 	"os"
@@ -21,11 +22,23 @@ import (
 const projectArchiveLimit = 500 << 20
 
 type projectArchive struct {
-	Version    int                 `json:"version"`
-	Draft      schema.Draft        `json:"draft"`
-	History    []schema.Generation `json:"history"`
-	Voices     []schema.Voice      `json:"voices"`
-	Characters []schema.Character  `json:"characters"`
+	Dependencies []projectDependency          `json:"dependencies,omitempty"`
+	Version      int                          `json:"version"`
+	Draft        schema.Draft                 `json:"draft"`
+	History      []schema.Generation          `json:"history"`
+	Voices       []schema.Voice               `json:"voices"`
+	Characters   []schema.Character           `json:"characters"`
+	Instruments  []schema.InstrumentSource    `json:"instruments,omitempty"`
+	Materials    []schema.ArrangementMaterial `json:"arrangementMaterials,omitempty"`
+}
+
+// 插件及模型只登记依赖，作品包不复制第三方程序或模型权重。
+type projectDependency struct {
+	Kind    string `json:"kind"`
+	Name    string `json:"name"`
+	Path    string `json:"path,omitempty"`
+	SHA256  string `json:"sha256,omitempty"`
+	License string `json:"license,omitempty"`
 }
 
 // projectMedia 只枚举工程实际引用的文件，归档中不包含模型、密钥和全局设置。
@@ -36,6 +49,14 @@ func (p *projectArchive) projectMedia() []string {
 	}
 	for _, v := range p.Voices {
 		files = append(files, "voices/"+v.FileName)
+	}
+	for _, source := range p.Instruments {
+		for _, sample := range source.Samples {
+			files = append(files, "instruments/"+sample.FileName)
+		}
+	}
+	for _, material := range p.Materials {
+		files = append(files, "outputs/"+material.FileName)
 	}
 	for _, c := range p.Characters {
 		if c.Preview != nil {
@@ -58,6 +79,43 @@ func (w *Workbench) ExportProject(id, path string) error {
 		return msg.Err(msg.ErrDraftIDInvalid, nil)
 	}
 	pack := projectArchive{Version: 1, Draft: state.Drafts[index]}
+	if pack.Draft.Arrangement != nil {
+		hashes := ArrangementPartHashes(*pack.Draft.Arrangement)
+		for _, material := range state.ArrangementMaterials {
+			key := fmt.Sprintf("%d:%d:%d", material.SectionIndex, material.PhraseIndex, material.PartIndex)
+			if material.ProjectID == id && material.PlanHash == hashes[key] && arrangementMaterialMatches(material, pack.Draft, ArrangementPartRef{material.SectionIndex, material.PhraseIndex, material.PartIndex}) {
+				pack.Materials = append(pack.Materials, material)
+			}
+		}
+	}
+	if pack.Draft.Score != nil || pack.Draft.Arrangement != nil {
+		seen := map[string]bool{}
+		if pack.Draft.Arrangement != nil {
+			for _, section := range pack.Draft.Arrangement.Sections {
+				for _, phrase := range section.Phrases {
+					for _, part := range phrase.Parts {
+						if part.SourceID != "" {
+							seen[part.SourceID] = true
+						}
+					}
+				}
+			}
+		}
+		if pack.Draft.Score != nil {
+			for _, track := range pack.Draft.Score.Tracks {
+				if track.SourceID != "" {
+					seen[track.SourceID] = true
+				}
+			}
+		}
+		for id := range seen {
+			i := slices.IndexFunc(state.InstrumentSources, func(source schema.InstrumentSource) bool { return source.ID == id })
+			if i < 0 {
+				return msg.Err(msg.ErrProjectPackage, nil)
+			}
+			pack.Instruments = append(pack.Instruments, state.InstrumentSources[i])
+		}
+	}
 	generations, characters, voices := map[string]bool{}, map[string]bool{}, map[string]bool{}
 	if pack.Draft.Timeline != nil {
 		for _, t := range pack.Draft.Timeline.Tracks {
@@ -111,6 +169,21 @@ func (w *Workbench) ExportProject(id, path string) error {
 	delete(voices, "")
 	if len(voices) != 0 {
 		return msg.Err(msg.ErrVoiceRequired, nil)
+	}
+	for _, source := range pack.Instruments {
+		if source.Plugin != nil {
+			pack.Dependencies = append(pack.Dependencies, projectDependency{Kind: "vst3", Name: source.Plugin.Name, Path: source.Plugin.Path, SHA256: source.Plugin.SHA256, License: source.License})
+			for _, dep := range source.Plugin.Dependencies {
+				pack.Dependencies = append(pack.Dependencies, projectDependency{Kind: "plugin_asset", Name: filepath.Base(dep.Path), Path: dep.Path, SHA256: dep.SHA256, License: source.License})
+			}
+		}
+	}
+	seenModels := map[string]bool{}
+	for _, material := range pack.Materials {
+		if !seenModels[material.ModelID] {
+			seenModels[material.ModelID] = true
+			pack.Dependencies = append(pack.Dependencies, projectDependency{Kind: "audio_model", Name: material.ModelID})
+		}
 	}
 	manifest, err := json.Marshal(pack)
 	if err != nil {
@@ -206,7 +279,7 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 	var pack projectArchive
 	err = json.NewDecoder(io.LimitReader(stream, 20<<20)).Decode(&pack)
 	stream.Close()
-	if err != nil || pack.Version != 1 || len(pack.History) > 5000 || len(pack.Voices) > 2000 || len(pack.Characters) > 1000 {
+	if err != nil || pack.Version != 1 || len(pack.History) > 5000 || len(pack.Voices) > 2000 || len(pack.Characters) > 1000 || len(pack.Instruments) > 100 {
 		return schema.Draft{}, bad
 	}
 	files := pack.projectMedia()
@@ -218,7 +291,7 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 		return schema.Draft{}, err
 	}
 	defer os.RemoveAll(stage)
-	for _, kind := range []string{"outputs", "voices"} {
+	for _, kind := range []string{"outputs", "voices", "instruments"} {
 		if err = os.Mkdir(filepath.Join(stage, kind), 0700); err != nil {
 			return schema.Draft{}, err
 		}
@@ -298,9 +371,40 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 			return schema.Draft{}, bad
 		}
 	}
+	for _, source := range pack.Instruments {
+		if !register(source.ID) || (len(source.Samples) == 0 && source.Plugin == nil) || len(source.Samples) > 500 || schema.TextLen(source.Name) > 120 || schema.TextLen(source.Instrument) > 80 {
+			return schema.Draft{}, bad
+		}
+		if source.Plugin != nil && (len(source.Plugin.StateData) == 0 || len(source.Plugin.StateData) > 16<<20 || len(source.Plugin.SHA256) != 64 || len(source.Plugin.Path) > 4096 || len(source.Plugin.Articulations) > 32 || len(source.Plugin.Dependencies) > 4096 || len(source.Samples) > 0 || (source.Provenance != "recorded" && source.Provenance != "synthesized")) {
+			return schema.Draft{}, bad
+		}
+		for _, sample := range source.Samples {
+			if !register(sample.ID) || sample.FileName != "sample-"+sample.ID+".wav" || sample.RootPitch < 0 || sample.RootPitch > 127 || sample.VelocityLow < 1 || sample.VelocityHigh > 127 || sample.VelocityLow > sample.VelocityHigh ||
+				fileDigest(filepath.Join(stage, "instruments", sample.FileName)) != sample.SHA256 {
+				return schema.Draft{}, bad
+			}
+			names["instruments/"+sample.FileName] = "sample-" + ids[sample.ID] + ".wav"
+		}
+	}
+	for _, material := range pack.Materials {
+		if !register(material.ID) || material.ProjectID != pack.Draft.ID || material.PlanHash == "" || material.FileName != "import-"+material.ID+".wav" || material.SectionIndex < 0 || material.PhraseIndex < 0 || material.PartIndex < 0 || material.ModelID == "" || schema.TextLen(material.Prompt) > 512 || schema.TextLen(material.Phrase) > 120 || !schema.InRange(material.Duration, .01, 3600) {
+			return schema.Draft{}, bad
+		}
+		actual, _ := audio.Duration(filepath.Join(stage, "outputs", material.FileName))
+		if math.Abs(actual-material.Duration) > .001 {
+			return schema.Draft{}, bad
+		}
+		names["outputs/"+material.FileName] = "import-" + ids[material.ID] + ".wav"
+	}
 	if pack.Draft.Timeline != nil {
 		for _, a := range pack.Draft.Timeline.Assets {
-			if !register(a.ID) {
+			if ids[a.ID] == "" {
+				if !register(a.ID) {
+					return schema.Draft{}, bad
+				}
+			} else if !slices.ContainsFunc(pack.Materials, func(material schema.ArrangementMaterial) bool {
+				return material.ID == a.ID && material.FileName == a.FileName
+			}) {
 				return schema.Draft{}, bad
 			}
 			names["outputs/"+a.FileName] = "import-" + ids[a.ID] + ".wav"
@@ -363,6 +467,14 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 	for _, g := range pack.History {
 		keep["outputs/"+g.FileName] = true
 	}
+	for _, source := range pack.Instruments {
+		for _, sample := range source.Samples {
+			keep["instruments/"+sample.FileName] = true
+		}
+	}
+	for _, material := range pack.Materials {
+		keep["outputs/"+material.FileName] = true
+	}
 	if pack.Draft.Timeline != nil {
 		for _, a := range pack.Draft.Timeline.Assets {
 			keep["outputs/"+a.FileName] = true
@@ -385,8 +497,35 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 			}
 		}
 		d.CharacterID = ids[d.CharacterID]
+		// 导入副本重新分配来源身份，原修订的撤销快照不应用于副本。
+		d.ArrangementBindings = nil
 		// 外部作品引用的源音频也归入导入副本，不能污染原作品的版本列表。
 		d.ID = pack.Draft.ID
+		if d.Score != nil {
+			for i := range d.Score.Tracks {
+				if old := d.Score.Tracks[i].SourceID; old != "" {
+					if ids[old] == "" {
+						return bad
+					}
+					d.Score.Tracks[i].SourceID = ids[old]
+				}
+			}
+		}
+		if d.Arrangement != nil {
+			for si := range d.Arrangement.Sections {
+				for pi := range d.Arrangement.Sections[si].Phrases {
+					for ai := range d.Arrangement.Sections[si].Phrases[pi].Parts {
+						part := &d.Arrangement.Sections[si].Phrases[pi].Parts[ai]
+						if part.SourceID != "" {
+							if ids[part.SourceID] == "" {
+								return bad
+							}
+							part.SourceID = ids[part.SourceID]
+						}
+					}
+				}
+			}
+		}
 		if d.Subtitles != nil {
 			for i := range d.Subtitles.Cues {
 				if p := d.Subtitles.Cues[i].Performance; p != nil {
@@ -409,6 +548,21 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 	}
 	if err = remapDraft(&pack.Draft); err != nil {
 		return schema.Draft{}, err
+	}
+	for i := range pack.Instruments {
+		source := &pack.Instruments[i]
+		source.ID = ids[source.ID]
+		for j := range source.Samples {
+			sample := &source.Samples[j]
+			sample.ID = ids[sample.ID]
+			sample.FileName = "sample-" + sample.ID + ".wav"
+		}
+	}
+	for i := range pack.Materials {
+		material := &pack.Materials[i]
+		material.ID = ids[material.ID]
+		material.ProjectID = pack.Draft.ID
+		material.FileName = "import-" + material.ID + ".wav"
 	}
 	for i := range pack.Voices {
 		v := &pack.Voices[i]
@@ -500,6 +654,8 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 		s.History = append(pack.History, s.History...)
 		s.Voices = append(s.Voices, pack.Voices...)
 		s.Characters = append(s.Characters, pack.Characters...)
+		s.InstrumentSources = append(s.InstrumentSources, pack.Instruments...)
+		s.ArrangementMaterials = append(s.ArrangementMaterials, pack.Materials...)
 	}, true); err != nil {
 		return schema.Draft{}, err
 	}

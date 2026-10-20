@@ -13,6 +13,9 @@ import (
 func (w *Workbench) SaveDraft(d schema.Draft) error {
 	w.edit.Lock()
 	defer w.edit.Unlock()
+	if _, migrationErr := migrateLegacyArrangementIDs(&d); migrationErr != nil {
+		diag.Log(w.Store.Root, "arrangement.id_migration_skipped", "project_id", d.ID, "reason", migrationErr.Error())
+	}
 	return w.saveDraft(d)
 }
 
@@ -114,8 +117,16 @@ func (w *Workbench) DeleteDraft(id string) error {
 			}
 		}
 	}
+	for _, material := range s.ArrangementMaterials {
+		if material.ProjectID == id {
+			candidates = append(candidates, material.FileName)
+		}
+	}
 	err := w.Store.Update(func(s *schema.State) {
 		s.Drafts = slices.DeleteFunc(s.Drafts, func(d schema.Draft) bool { return d.ID == id })
+		s.ArrangementMaterials = slices.DeleteFunc(s.ArrangementMaterials, func(material schema.ArrangementMaterial) bool { return material.ProjectID == id })
+		s.ArrangementJobs = slices.DeleteFunc(s.ArrangementJobs, func(j schema.ArrangementJob) bool { return j.ProjectID == id })
+		s.ArrangementScores = slices.DeleteFunc(s.ArrangementScores, func(j schema.ArrangementScorePhrase) bool { return j.ProjectID == id })
 		if len(deleteIDs) > 0 {
 			s.History = slices.DeleteFunc(s.History, func(g schema.Generation) bool { return deleteIDs[g.ID] })
 			for i := range s.Voices {

@@ -45,7 +45,7 @@ export function reportDesktop(event: string, method: string, detail: string) {
   try { native?.postMessage({ id: crypto.randomUUID(), method: 'diag.client', data: { event, method, detail: detail.slice(0, 2000) } }); } catch { /* 宿主不可用时放弃上报。 */ }
 }
 
-export function desktopMediaUrl(kind: 'voices' | 'outputs', file: string): string {
+export function desktopMediaUrl(kind: 'voices' | 'outputs' | 'instruments', file: string): string {
   const base = window.__workbenchMediaBase;
   return base ? `${base}${kind}/${encodeURIComponent(file)}` : `https://${kind}.workbench.local/${encodeURIComponent(file)}`;
 }

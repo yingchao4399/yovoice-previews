@@ -198,11 +198,29 @@ export class Timeline {
         return 10 ** ((db - (track.duckDb ?? 0) * duck) / 20);
       };
       const source = audio.createBufferSource(), gain = audio.createGain();
-      source.buffer = buffer; source.connect(gain); gain.connect(audio.destination);
+      source.buffer = buffer; source.connect(gain);
+      // 音轨处理在试听和离线导出共用的调度入口，原始素材与生成文件保持不变。
+      const effects: AudioNode[] = [gain];
+      let output: AudioNode = gain;
+      if ((track.softenDb ?? 0) < 0) {
+        const shelf = audio.createBiquadFilter();
+        shelf.type = 'highshelf'; shelf.frequency.value = 4000; shelf.gain.value = track.softenDb!;
+        output.connect(shelf); output = shelf; effects.push(shelf);
+      }
+      if ((track.compression ?? 0) > 0) {
+        const compressor = audio.createDynamicsCompressor(), amount = track.compression!;
+        compressor.threshold.value = -12 - amount * 24;
+        compressor.ratio.value = 1 + amount * 3;
+        compressor.knee.value = 6;
+        compressor.attack.value = 0.005;
+        compressor.release.value = 0.2;
+        output.connect(compressor); output = compressor; effects.push(compressor);
+      }
+      output.connect(audio.destination);
       // 10ms 采样处理背景压低曲线，预览与导出完全一致。
       const count = Math.max(2, Math.ceil((end - begin) * 100) + 1);
       gain.gain.setValueCurveAtTime(Float32Array.from({ length: count }, (_, i) => gainAt(begin + i / (count - 1) * (end - begin))), when + begin - from, end - begin);
-      source.onended = () => { source.disconnect(); gain.disconnect(); };
+      source.onended = () => { source.disconnect(); for (const node of effects) node.disconnect(); };
       source.start(when + begin - from, clip.offset + begin - clip.start, end - begin); nodes.push(source);
     }
     return nodes;

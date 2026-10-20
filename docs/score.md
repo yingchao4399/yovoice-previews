@@ -32,13 +32,19 @@ Scores do not need the inference engine or a GPU.
 
 ## In the desktop app
 
-1. New project › Score. Start from the example, or import MIDI or a score (`.mid`, `.midi`, `.json`).
+1. New project › Score. Start from the example, paste a basic single-voice ABC score, or import MIDI or a score (`.mid`, `.midi`, `.json`). Music projects have the same score editor under Score arrangement.
 2. The overview shows notes over time, one row per track, with sections shaded (tempo changes are drawn at their real length). Click a row to highlight the track in the table.
 3. In the track table, change the instrument (GM program), role and target level, or turn a track off.
-4. The inspector edits tempo, meter and key, and lists when each section starts and ends so you can line them up with narration.
+4. The inspector edits tempo, meter and key. The key menu includes common major and minor keys and the five Chinese pentatonic modes; you can also type a name such as “C Gong mode”. The key is descriptive and does not transpose notes.
 5. Render music to create a mixed WAV, kept as a version of the project that you can play and export.
 6. Export saves MIDI or score JSON. To have an Agent write the score, give it the [format](#format) below or the tools in [CLI and Agents](#cli-and-agents).
 7. With an [AI service](ai.md) set up, ask the assistant to write a whole arrangement from a description and a length, and keep revising it in the conversation.
+
+In Track expression, select a track and adjust velocity variation, timing variation, pan and reverb. Natural performance applies moderate velocity and timing variation to that track. These settings affect score rendering; they cannot repair distortion already present in a recording.
+
+Paste ABC score accepts a basic single-voice melody from tools such as AI Music Composer: title, meter, default note length, tempo, common key signatures, notes, rests and accidentals. Chords, multiple voices, repeats and tuplets are rejected rather than silently changed. You can edit the imported track and export MIDI. Instrument names listed by an ABC tool do not supply samples; the installed SF2 sound font determines the sound.
+
+Music projects now group the workflow into Compose, Score arrangement, Audio production and Export. Choose a folk music profile and apply its style, then write lyrics or generate a song. You can render a separate score and create a multitrack timeline. Use the Audio menu at the end of a track to add this project's generated songs or rendered scores from history, or import real vocals and instrument recordings. Per-track high-frequency softening and dynamic compression affect preview and export without changing the source recording. They can tame harshness or excessive dynamics but cannot recover clipped audio or remove clear generation artifacts.
 
 ## Format
 
@@ -72,7 +78,7 @@ Scores do not need the inference engine or a GPU.
 | --- | --- |
 | `tempo` | Tempo in BPM, 30–300. |
 | `timeSignature` | Meter such as `[4, 4]`, `[3, 4]` or `[6, 8]`. Beats are quarter notes, so 6/8 has 3 beats per bar. |
-| `key` | Key, descriptive only, up to 40 characters. |
+| `key` | Key, descriptive only and does not transpose notes; up to 40 characters. |
 | `sections` | Optional sections: name, first and last bar (inclusive) and an optional tempo, for tempo changes and lining up with picture. |
 | `tracks[].program` | General MIDI program 0–127, e.g. 0 piano, 40 violin, 42 cello, 48 string ensemble, 89 warm pad. |
 | `tracks[].drums` | Drum kit on MIDI channel 10; pitch selects the drum: 36 kick, 38 snare, 37 side stick, 42 closed hat, 46 open hat, 49 crash. |
@@ -120,4 +126,4 @@ When importing MIDI, each track × channel becomes a track; tempo comes from the
 
 - Instruments come from an SF2 sound font. They suit underscores and sketches, not the character of synth plugins (VST) or sampled instrument libraries.
 - Notes cannot yet be drawn in the overview; edit notes by importing a score or MIDI.
-- Reverb is a simple send; there is no EQ or compression.
+- Score reverb is a simple send, with no score-track EQ or compression. The music audio timeline offers per-track high-frequency softening and dynamic compression.

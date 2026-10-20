@@ -114,6 +114,9 @@ func (w *Workbench) generateAudio(d schema.Draft, previewID, cueID, clipID strin
 
 // startGeneration 在编辑锁内完成检查、保存与启动，推理开始后素材删除会因任务运行而被拒绝。
 func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID string, saveDraft bool) (done <-chan struct{}, err error) {
+	if d.Kind == "score" && d.Arrangement != nil {
+		return nil, msg.Err(msg.ErrArrangementBlocked, msg.Params{"detail": "此作品使用智能编曲计划，请先预检、备料，再通过智能编曲拼合；不会改用普通 SF2 渲染"})
+	}
 	w.edit.Lock()
 	defer w.edit.Unlock()
 	diag.Log(w.Store.Root, "generation.requested", "project_id", d.ID, "model_id", d.ModelID, "cue_id", cueID, "clip_id", clipID, "preview_id", previewID)
@@ -123,7 +126,7 @@ func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID str
 		}
 	}()
 	if d.Kind == "score" {
-		return w.startScore(d, saveDraft)
+		return w.startScore(d, saveDraft, d)
 	}
 	d.EnsureCueIDs()
 	original := d

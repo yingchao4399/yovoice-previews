@@ -369,3 +369,19 @@ test('同一模型下载了多个精度时选择器只列一项，在下方切�
   await precision.getByRole('radio', { name: 'Q8' }).click();
   await expect(page.getByRole('radio', { name: 'Q8' })).toBeChecked();
 });
+
+test('音乐作品中的编曲版本明确标识来源，不显示歌词播放页', async ({ page }) => {
+  const draft = { ...createMusicDraft('zh-CN'), id: 'f'.repeat(32) };
+  const state = emptyState(); state.drafts = [draft];
+  state.history = [{ id: 'score-version', title: draft.title, source: 'score', fileName: 'score.wav', createdAt: '2026-10-17T02:00:00Z', duration: 10, settings: draft }];
+  await page.addInitScript(value => { if (!localStorage.getItem('voice-workbench-v1')) localStorage.setItem('voice-workbench-v1', value); }, JSON.stringify(state));
+  await page.goto('/');
+  const transport = page.locator('.player .transport');
+  await expect(transport.getByRole('button', { name: '播放页', exact: true })).toHaveCount(0);
+  await transport.getByRole('button', { name: '历史版本', exact: true }).click();
+  const row = page.locator('.history-item');
+  await expect(row.locator('.history-meta')).toContainText('编曲');
+  await expect(row.getByRole('button', { name: /在播放页打开/ })).toHaveCount(0);
+  await row.getByRole('button', { name: '音频操作', exact: true }).click();
+  await expect(page.getByRole('menuitem')).toHaveText(['导出音频']);
+});

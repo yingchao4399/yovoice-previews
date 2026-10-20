@@ -23,6 +23,8 @@
 
 ## 编曲
 
+- [pedalboard](https://github.com/spotify/pedalboard) 0.9.26：GPL-3.0，用于独立运行的 Windows VST3 试音宿主；安装包内附 `tools/yovoice-vst-host-source.py`、`tools/pedalboard-v0.9.26-source.zip` 和 `tools/pedalboard-LICENSE.txt`。第三方 VST 插件本身不随 yovoice 分发。
+
 - [go-meltysynth](https://github.com/sinshu/go-meltysynth)（提交 05d311382fc4）：MIT，Copyright (C) 2021–2022 Nobuaki Tanaka，纯 Go SoundFont 合成器，编译进 yovoice 服务与 CLI，见[原始许可](https://github.com/sinshu/go-meltysynth/blob/main/LICENSE.txt)。
 - [MuseScore General](https://ftp.osuosl.org/pub/musescore/soundfont/MuseScore_General/) 0.2：MIT，Copyright (c) S. Christian Collins，General MIDI 音色库。用户在设置或 CLI 中单独下载，不随应用安装包分发。
 

@@ -76,4 +76,17 @@ func TestHTTPBoundaryAndEvents(t *testing.T) {
 	if audio.StatusCode != 206 || len(b) != 44 {
 		t.Fatal(audio.StatusCode, len(b))
 	}
+	samplePath, e := w.Store.MediaPath("instruments", "sample-audition.wav")
+	must(t, e)
+	must(t, os.WriteFile(samplePath, wav(), 0600))
+	r = request("/media/instruments/sample-audition.wav", "", true)
+	r.Header.Set("Range", "bytes=0-43")
+	audio, e = server.Client().Do(r)
+	must(t, e)
+	b, e = io.ReadAll(audio.Body)
+	audio.Body.Close()
+	must(t, e)
+	if audio.StatusCode != 206 || len(b) != 44 || audio.Header.Get("Content-Type") != "audio/wav" {
+		t.Fatal("采样试听媒体读取失败", audio.StatusCode, len(b), audio.Header.Get("Content-Type"))
+	}
 }

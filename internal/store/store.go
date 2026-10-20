@@ -43,7 +43,7 @@ const hostPreferences = "host-preferences.json"
 
 func New(root string) (store *Store, err error) {
 	defer func() { diag.Log(root, "state.open", "platform", runtime.GOOS, "error", diag.Error(err)) }()
-	for _, d := range []string{"", "voices", "outputs", "downloads", "runtime", "models", "logs"} {
+	for _, d := range []string{"", "voices", "outputs", "instruments", "downloads", "downloads/instrument-cache", "runtime", "models", "logs"} {
 		if e := os.MkdirAll(filepath.Join(root, d), 0700); e != nil {
 			return nil, e
 		}
@@ -64,6 +64,17 @@ func New(root string) (store *Store, err error) {
 	s.state.AITask = nil
 	s.state.Melody = nil
 	s.state.AssistantLive = nil
+	for i := range s.state.ArrangementJobs {
+		job := &s.state.ArrangementJobs[i]
+		if job.Status == "queued" || job.Status == "running" {
+			job.Status = "interrupted"
+			for j := range job.Steps {
+				if job.Steps[j].Status == "running" {
+					job.Steps[j].Status = "queued"
+				}
+			}
+		}
+	}
 	// 未保存的试听不跨会话保留，角色已保存的试听使用独立文件。
 	s.state.Previews = []schema.CharacterPreview{}
 	files, _ := filepath.Glob(filepath.Join(root, "outputs", "audition-*.wav"))
@@ -413,7 +424,7 @@ func (s *Store) Subscribe() (chan struct{}, func()) {
 	return ch, func() { s.mu.Lock(); delete(s.subscribers, ch); s.mu.Unlock() }
 }
 func (s *Store) MediaPath(kind, name string) (string, error) {
-	if (kind != "voices" && kind != "outputs") || name == "" || name == "." || name == ".." || strings.ContainsAny(name, "/\\:\x00") {
+	if (kind != "voices" && kind != "outputs" && kind != "instruments") || name == "" || name == "." || name == ".." || strings.ContainsAny(name, "/\\:\x00") {
 		return "", msg.Err(msg.ErrAudioPathInvalid, nil)
 	}
 	path := filepath.Join(s.Root, kind, name)
@@ -539,7 +550,7 @@ func Within(parent, child string) bool {
 }
 
 // dataEntries 是数据目录中由应用创建的条目；清理旧目录时只删除这些，其余内容（用户自行放入的文件）原样保留。
-var dataEntries = []string{"voices", "outputs", "downloads", "runtime", "models", "logs", "service.lock", hostPreferences, backupFile, legacyBackup, legacyMigrated, "local-api.json", "secrets.json"}
+var dataEntries = []string{"voices", "outputs", "instruments", "downloads", "runtime", "models", "logs", "service.lock", hostPreferences, backupFile, legacyBackup, legacyMigrated, "local-api.json", "secrets.json"}
 
 // dataEntry 判断名称是否为应用创建的条目，包括损坏快照与修复快照。
 func dataEntry(name string) bool {

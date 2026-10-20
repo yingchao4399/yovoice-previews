@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 	"yovoice/internal/catalog"
@@ -115,6 +116,28 @@ func TestScoreRendersWithoutEngine(t *testing.T) {
 	}
 	if g := state.History[0]; g.Duration < 3.99 || g.Duration > 4.01 { // 一小节 2 秒加 2 秒收尾
 		t.Fatal(g.Duration)
+	}
+}
+
+// 歌曲中的编曲使用独立音色库渲染，历史版本和作品仍保留歌曲模型。
+func TestMusicScoreKeepsSongSettings(t *testing.T) {
+	wb, err := New(t.TempDir())
+	must(t, err)
+	defer wb.Close()
+	d := schema.DefaultDraft()
+	d.Kind, d.ModelID, d.SoundFontID, d.Title = "music", "ace-step-1.5-turbo-bf16", "musescore-general-sf2", "江南小曲"
+	d.Text = "Jiangnan sizhu"
+	d.Timeline = &schema.AudioTimeline{Tracks: []schema.AudioLane{}}
+	d.Score = &schema.Score{Tempo: 120, TimeSignature: []int{4, 4}, Tracks: []schema.ScoreTrack{{ID: "dizi", Name: "笛子", Role: "melody", Notes: []schema.ScoreNote{{Bar: 1, Beat: 1, Pitch: 62, Length: 2, Velocity: 80}}}}}
+	font := filepath.Join(wb.Store.Root, "models", "test.sf2")
+	must(t, os.WriteFile(font, testkit.SoundFont(), 0600))
+	must(t, wb.Store.Update(func(s *schema.State) { s.Models = []schema.InstalledModel{{ID: d.SoundFontID, Path: font}} }, true))
+	must(t, wb.RenderMusicScore(d))
+	<-wb.Done()
+	state := wb.Store.Read()
+	saved := slices.IndexFunc(state.Drafts, func(item schema.Draft) bool { return item.ID == d.ID })
+	if saved < 0 || len(state.History) != 1 || state.Drafts[saved].Kind != "music" || state.Drafts[saved].ModelID != d.ModelID || state.Drafts[saved].Timeline == nil || state.History[0].Source != "score" || state.History[0].Settings.Kind != "music" || state.History[0].Settings.SoundFontID != d.SoundFontID || state.History[0].Settings.Timeline != nil {
+		t.Fatalf("编曲渲染改变了歌曲设置：drafts=%+v history=%+v", state.Drafts, state.History)
 	}
 }
 

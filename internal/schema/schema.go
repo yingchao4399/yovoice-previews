@@ -94,20 +94,68 @@ type AudioClip struct {
 	Duration     float64 `json:"duration"`
 }
 type AudioLane struct {
-	Solo   bool        `json:"solo,omitempty"`
-	Locked bool        `json:"locked,omitempty"`
-	GainDB float64     `json:"gainDb,omitempty"`
-	DuckDB float64     `json:"duckDb,omitempty"`
-	ID     string      `json:"id"`
-	Name   string      `json:"name"`
-	Muted  bool        `json:"muted"`
-	Clips  []AudioClip `json:"clips"`
+	Origin      string      `json:"origin,omitempty"`
+	Solo        bool        `json:"solo,omitempty"`
+	Locked      bool        `json:"locked,omitempty"`
+	GainDB      float64     `json:"gainDb,omitempty"`
+	DuckDB      float64     `json:"duckDb,omitempty"`
+	SoftenDB    float64     `json:"softenDb,omitempty"`
+	Compression float64     `json:"compression,omitempty"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Muted       bool        `json:"muted"`
+	Clips       []AudioClip `json:"clips"`
 }
 type AudioAsset struct {
 	ID       string  `json:"id"`
 	Name     string  `json:"name"`
 	FileName string  `json:"fileName"`
 	Duration float64 `json:"duration"`
+}
+
+// ArrangementMaterial is a generated phrase stem. It is not a pitched one-shot
+// sample, so it must never be fed into the note sampler as one.
+type ArrangementMaterial struct {
+	ID               string    `json:"id"`
+	ProjectID        string    `json:"projectId"`
+	PlanHash         string    `json:"planHash"`
+	ScoreHash        string    `json:"scoreHash,omitempty"`
+	PartID           string    `json:"partId,omitempty"`
+	Condition        string    `json:"condition,omitempty"`
+	ReviewStatus     string    `json:"reviewStatus,omitempty"`
+	Peak             float64   `json:"peak,omitempty"`
+	ClippedFraction  float64   `json:"clippedFraction,omitempty"`
+	OnsetSeconds     float64   `json:"onsetSeconds,omitempty"`
+	AlignmentWarning string    `json:"alignmentWarning,omitempty"`
+	SectionIndex     int       `json:"sectionIndex"`
+	PhraseIndex      int       `json:"phraseIndex"`
+	PartIndex        int       `json:"partIndex"`
+	Instrument       string    `json:"instrument"`
+	Role             string    `json:"role"`
+	Technique        string    `json:"technique,omitempty"`
+	Phrase           string    `json:"phrase"`
+	Prompt           string    `json:"prompt"`
+	Tempo            float64   `json:"tempo"`
+	Key              string    `json:"key,omitempty"`
+	ModelID          string    `json:"modelId"`
+	FileName         string    `json:"fileName"`
+	Duration         float64   `json:"duration"`
+	CreatedAt        time.Time `json:"createdAt"`
+}
+type BandPart struct {
+	Instrument        string `json:"instrument"`
+	Role              string `json:"role"`
+	Technique         string `json:"technique,omitempty"`
+	Source            string `json:"source"`
+	SourceID          string `json:"sourceId,omitempty"`
+	AllowSubstitution bool   `json:"allowSubstitution,omitempty"`
+}
+type BandPreset struct {
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	Parts     []BandPart `json:"parts"`
+	AIModelID string     `json:"aiModelId,omitempty"`
+	CreatedAt time.Time  `json:"createdAt"`
 }
 type AudioMarker struct {
 	ID   string  `json:"id"`
@@ -135,6 +183,13 @@ type Draft struct {
 	Timeline    *AudioTimeline    `json:"timeline,omitempty"`
 	// Score 仅编曲作品使用，ModelID 指向渲染所用的音色库。
 	Score *Score `json:"score,omitempty"`
+	// Arrangement 保存智能编曲的分段配器方案，不改变旧编曲作品的渲染路径。
+	Arrangement         *ArrangementPlan         `json:"arrangement,omitempty"`
+	ArrangementInput    *ArrangementInput        `json:"arrangementInput,omitempty"`
+	ArrangementBindings []ArrangementBindingEdit `json:"arrangementBindings,omitempty"`
+	// 音乐作品的伴奏音色库与歌曲生成模型分别保存。
+	SoundFontID   string `json:"soundFontId,omitempty"`
+	FolkProfileID string `json:"folkProfileId,omitempty"`
 }
 
 func DefaultDraft() Draft {
@@ -177,6 +232,7 @@ type InstalledModel struct {
 type Generation struct {
 	ID        string             `json:"id"`
 	Title     string             `json:"title"`
+	Source    string             `json:"source,omitempty"`
 	FileName  string             `json:"fileName"`
 	CreatedAt time.Time          `json:"createdAt"`
 	Duration  float64            `json:"duration"`
@@ -263,16 +319,21 @@ type Preferences struct {
 	AssistantQuiet bool `json:"assistantQuiet,omitempty"`
 }
 type State struct {
-	Characters     []Character        `json:"characters"`
-	Previews       []CharacterPreview `json:"previews"`
-	Drafts         []Draft            `json:"drafts"`
-	Voices         []Voice            `json:"voices"`
-	Models         []InstalledModel   `json:"models"`
-	History        []Generation       `json:"history"`
-	Preferences    Preferences        `json:"preferences"`
-	RuntimePath    *string            `json:"runtimePath"`
-	RuntimeBackend *string            `json:"runtimeBackend"`
-	RuntimeVersion *string            `json:"runtimeVersion"`
+	Characters           []Character              `json:"characters"`
+	Previews             []CharacterPreview       `json:"previews"`
+	Drafts               []Draft                  `json:"drafts"`
+	Voices               []Voice                  `json:"voices"`
+	Models               []InstalledModel         `json:"models"`
+	History              []Generation             `json:"history"`
+	InstrumentSources    []InstrumentSource       `json:"instrumentSources,omitempty"`
+	ArrangementMaterials []ArrangementMaterial    `json:"arrangementMaterials,omitempty"`
+	BandPresets          []BandPreset             `json:"bandPresets,omitempty"`
+	ArrangementScores    []ArrangementScorePhrase `json:"arrangementScores,omitempty"`
+	ArrangementJobs      []ArrangementJob         `json:"arrangementJobs,omitempty"`
+	Preferences          Preferences              `json:"preferences"`
+	RuntimePath          *string                  `json:"runtimePath"`
+	RuntimeBackend       *string                  `json:"runtimeBackend"`
+	RuntimeVersion       *string                  `json:"runtimeVersion"`
 	// Runtimes 按后端记录下载安装的内核，切换计算设备后再切回时直接复用。
 	Runtimes map[string]InstalledRuntime `json:"runtimes,omitempty"`
 	Activity *Activity                   `json:"activity"`

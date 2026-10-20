@@ -74,7 +74,7 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "state.get":
 		// assistant 报告随包的 AI 助手运行时是否存在：缺失时界面禁用 AI 写作并说明原因。
 		_, ochoErr := platform.OchoExecutable()
-		return map[string]any{"state": w.Store.Read(), "catalog": catalog.Models, "engine": map[string]string{"version": catalog.EngineVersion, "minimum": catalog.EngineMinimum}, "desktop": true, "assistant": map[string]bool{"available": ochoErr == nil}}, nil
+		return map[string]any{"state": w.PublicState(), "catalog": catalog.Models, "engine": map[string]string{"version": catalog.EngineVersion, "minimum": catalog.EngineMinimum}, "desktop": true, "assistant": map[string]bool{"available": ochoErr == nil}}, nil
 	case "draft.save", "generation.start":
 		d := schema.DefaultDraft()
 		if e := json.Unmarshal(data, &d); e != nil {
@@ -84,6 +84,12 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			return true, w.SaveDraft(d)
 		}
 		return true, w.Generate(d)
+	case "score.renderMusic":
+		var d schema.Draft
+		if e := json.Unmarshal(data, &d); e != nil {
+			return nil, e
+		}
+		return true, w.RenderMusicScore(d)
 	case "generation.cue":
 		var input struct {
 			Draft  schema.Draft `json:"draft"`
@@ -139,6 +145,33 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			return w.ImportTimelineFrom(ctx, bytes.NewReader(b), p.Name)
 		}
 		return w.ImportVoiceFrom(ctx, bytes.NewReader(b), p.Name)
+	case "instrument.sample.import":
+		var input struct {
+			workbench.InstrumentSampleInput
+			Base64 string `json:"base64"`
+		}
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		b, e := base64.StdEncoding.DecodeString(input.Base64)
+		if e != nil {
+			return nil, e
+		}
+		return w.ImportInstrumentSampleFrom(ctx, bytes.NewReader(b), input.InstrumentSampleInput)
+	case "instrument.catalog.download":
+		return true, w.DownloadCatalogInstrument(p.ID)
+	case "instrument.search":
+		return w.SearchInstrumentCandidates(ctx, p.Name)
+	case "instrument.auto.find":
+		return true, w.AutoFindInstrument(p.Name)
+	case "instrument.source.confirm":
+		return true, w.ConfirmInstrumentSource(p.ID)
+	case "instrument.candidate.import":
+		var input workbench.OnlineSampleInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.ImportOnlineInstrumentSample(ctx, input)
 	case "media.path":
 		return w.MediaFile(p.Kind, p.ID)
 	case "media.rename":
@@ -200,6 +233,127 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 	case "ai.connect":
 		authURL, e := w.ConnectOrcaRouter()
 		return map[string]string{"url": authURL}, e
+	case "ai.score":
+		var input workbench.ScoreBrief
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.StartScore(input)
+	case "ai.arrangement.plan":
+		var input workbench.ArrangementBrief
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.StartArrangement(input)
+	case "arrangement.inspect":
+		var input workbench.ArrangementInspectInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.InspectArrangement(input)
+	case "arrangement.prepare":
+		var input workbench.ArrangementPrepareInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.PrepareArrangement(input)
+	case "arrangement.jobs":
+		return w.ArrangementJobs(p.ID), nil
+	case "arrangement.cancel":
+		w.CancelArrangementJob()
+		return true, nil
+	case "arrangement.bindSource":
+		var input workbench.ArrangementBindInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.BindArrangementSource(input)
+	case "arrangement.render":
+		var input workbench.ArrangementRenderInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return true, w.RenderArrangement(input)
+	case "arrangement.ai.prepare":
+		var input workbench.ArrangementAIPrepareInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return true, w.PrepareArrangementAI(input)
+	case "arrangement.band.save":
+		var input workbench.BandPresetInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.SaveArrangementBand(input)
+	case "arrangement.material.review":
+		var in struct {
+			ID        string `json:"id"`
+			Confirmed bool   `json:"confirmed"`
+		}
+		if e := json.Unmarshal(data, &in); e != nil {
+			return nil, e
+		}
+		return true, w.ReviewArrangementMaterial(in.ID, in.Confirmed)
+	case "arrangement.reference.analyze":
+		var in struct {
+			Draft   schema.Draft `json:"draft"`
+			AssetID string       `json:"assetId"`
+		}
+		if e := json.Unmarshal(data, &in); e != nil {
+			return nil, e
+		}
+		return true, w.AnalyzeArrangementReference(in.Draft, in.AssetID)
+	case "arrangement.undoBinding":
+		var d schema.Draft
+		if e := json.Unmarshal(data, &d); e != nil {
+			return nil, e
+		}
+		return w.UndoArrangementBinding(d)
+	case "arrangement.score.reset":
+		return true, w.ResetArrangementScoreProgress(p.ID)
+	case "arrangement.hash":
+		var plan schema.ArrangementPlan
+		if e := json.Unmarshal(data, &plan); e != nil {
+			return nil, e
+		}
+		return workbench.ArrangementPartHashes(plan), nil
+	case "plugin.scan":
+		return workbench.ScanPlugins(), nil
+	case "plugin.captureInstrument":
+		var input workbench.PluginInstrumentInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return true, w.StartPluginInstrument(input)
+	case "plugin.auditionInstrument":
+		return w.AuditionPluginInstrument(p.ID)
+	case "plugin.instrumentEditor":
+		return true, w.OpenInstrumentEditor(p.ID)
+	case "plugin.install":
+		return workbench.InstallPlugin(p.Path)
+	case "plugin.probe":
+		var input struct {
+			Path string `json:"path"`
+		}
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.ProbePlugin(input.Path)
+	case "plugin.openEditor":
+		var input struct {
+			Path string `json:"path"`
+		}
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return true, w.OpenPluginEditor(input.Path)
+	case "ai.lyrics":
+		var input workbench.LyricsBrief
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.StartLyrics(input)
 	case "assistant.send":
 		var input struct {
 			Text    string                     `json:"text"`

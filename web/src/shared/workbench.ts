@@ -20,26 +20,33 @@ export interface CharacterPerformance { id: string; name: string; settings: Synt
 export interface SubtitleCue { performance?: CharacterPerformance; id?: string; start: number; end: number; text: string; speakerId: string }
 export interface SubtitleDocument { speakers: SubtitleSpeaker[]; cues: SubtitleCue[] }
 export interface AudioClip { id: string; generationId?: string; assetId?: string; start: number; offset: number; duration: number; gainDb?: number }
-export interface AudioLane { id: string; name: string; muted: boolean; solo?: boolean; locked?: boolean; gainDb?: number; duckDb?: number; clips: AudioClip[] }
+export interface AudioLane { id: string; name: string; origin?: 'arrangement'; muted: boolean; solo?: boolean; locked?: boolean; gainDb?: number; duckDb?: number; softenDb?: number; compression?: number; clips: AudioClip[] }
 export interface AudioAsset { id: string; name: string; fileName: string; duration: number }
 export interface AudioMarker { id: string; time: number; name: string }
 export interface AudioTimeline { markers?: AudioMarker[]; regenerateMode?: 'ripple' | 'preserve'; assets?: AudioAsset[]; acceptedGenerations?: string[]; tracks: AudioLane[] }
 // 编曲乐谱与 Go 的 schema.Score 一致：位置以小节和拍计，拍从 1 开始，音高为 MIDI 音高。
-export interface ScoreNote { bar: number; beat: number; pitch: number; length: number; velocity: number }
+export interface ScoreNote { bar: number; beat: number; pitch: number; length: number; velocity: number; articulation?: string }
 export interface ScoreRamp { start: number; end: number; from: number; to: number }
 export interface Humanize { velocity?: number; timingMs?: number }
 export type ScoreRole = 'melody' | 'piano' | 'strings' | 'bass' | 'drums' | 'pad' | 'arp' | 'other';
-export interface ScoreTrack { id: string; name: string; role?: ScoreRole; program: number; drums?: boolean; level?: number; pan?: number; reverb?: number; mute?: boolean; humanize?: Humanize; dynamics?: ScoreRamp[]; notes: ScoreNote[] }
+export interface ScoreTrack { id: string; partIds?: string[]; name: string; role?: ScoreRole; program: number; sourceId?: string; drums?: boolean; level?: number; pan?: number; reverb?: number; mute?: boolean; humanize?: Humanize; dynamics?: ScoreRamp[]; notes: ScoreNote[] }
 export interface ScoreSection { name: string; start: number; end: number; tempo?: number }
 export interface Score { tempo: number; timeSignature: number[]; key?: string; sections?: ScoreSection[]; tracks: ScoreTrack[] }
+export type ArrangementSource = 'real' | 'ai' | 'auto';
+export interface ArrangementJob { id: string; projectId: string; mode: string; status: string; error?: string; steps: { partId?: string; instrument: string; source: string; status: string; error?: string }[] }
+export interface ArrangementPart { id?: string; instrument: string; role: string; technique?: string; source: ArrangementSource; sourceId?: string; reason?: string; locked?: boolean; allowSubstitution?: boolean }
+export interface ArrangementPhrase { id?: string; name: string; startBar: number; endBar: number; parts: ArrangementPart[] }
+export interface ArrangementSection { id?: string; name: string; startBar: number; endBar: number; phrases: ArrangementPhrase[] }
+export interface ArrangementPlan { title: string; tempo: number; timeSignature: number[]; key?: string; seconds: number; sections: ArrangementSection[]; brief?: string; sourceMode?: 'real' | 'ai' | 'hybrid' | 'auto'; approved?: boolean; aiModelId?: string; referenceAbc?: string }
+export interface ArrangementInput { brief: string; seconds: number; source: 'real' | 'ai' | 'hybrid' | 'auto'; referenceAssetId?: string; referenceAbc?: string; referenceAnalysisAt?: number }
 export type ProjectKind = 'text' | 'story' | 'subtitle' | 'music' | 'score';
-export interface Draft extends SynthesisSettings { performance?: CharacterPerformance; id: string; title: string; text: string; kind?: ProjectKind; characterId?: string; createdAt?: string; updatedAt?: string; subtitles?: SubtitleDocument; timeline?: AudioTimeline; score?: Score }
+export interface Draft extends SynthesisSettings { performance?: CharacterPerformance; id: string; title: string; text: string; kind?: ProjectKind; characterId?: string; createdAt?: string; updatedAt?: string; subtitles?: SubtitleDocument; timeline?: AudioTimeline; score?: Score; arrangement?: ArrangementPlan; arrangementInput?: ArrangementInput; arrangementBindings?: { partId: string; previousSourceId?: string; appliedRevision: string }[]; soundFontId?: string; folkProfileId?: string }
 export type ProjectPage = 'text' | 'story' | 'music' | 'score';
 // 旧字幕作品沿用原始数据，统一归入故事。
 export const projectKind = (draft: Draft): ProjectPage => draft.kind === 'music' || draft.kind === 'score' ? draft.kind : draft.subtitles || draft.kind === 'story' || draft.kind === 'subtitle' ? 'story' : 'text';
 export interface CharacterPreview { id: string; fileName: string; duration: number; settings: SynthesisSettings; text: string }
 export interface Character { performances?: CharacterPerformance[]; id: string; name: string; settings: SynthesisSettings; demoText: string; preview?: CharacterPreview; createdAt?: string; updatedAt?: string }
-export const synthesisSettings = ({ performance: _performance, id: _id, title: _title, text: _text, kind: _kind, characterId: _characterId, createdAt: _createdAt, updatedAt: _updatedAt, subtitles: _subtitles, timeline: _timeline, score: _score, ...settings }: Draft): SynthesisSettings => structuredClone(settings);
+export const synthesisSettings = ({ performance: _performance, id: _id, title: _title, text: _text, kind: _kind, characterId: _characterId, createdAt: _createdAt, updatedAt: _updatedAt, subtitles: _subtitles, timeline: _timeline, score: _score, arrangement: _arrangement, arrangementInput: _arrangementInput, soundFontId: _soundFontId, folkProfileId: _folkProfileId, ...settings }: Draft): SynthesisSettings => structuredClone(settings);
 // 参数键的序列化顺序不影响试听是否过期。
 export const stableJSON = (value: unknown): string => JSON.stringify(value, (_, item) => item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.keys(item).sort().map(key => [key, item[key]])) : item);
 // 与 Go 的可选字段默认值对齐，保留 seed=0 与自动随机种子的区别。
@@ -62,6 +69,10 @@ export interface Voice { referenceText?: string; source?: string; sourceGenerati
 export interface ModelFile { path: string; size: number; sha256: string }
 export interface ModelPackage { voices?: string[]; variant?: string; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
 export interface InstalledModel { id: string; path: string; managed: boolean }
+export interface InstrumentSample { id: string; fileName: string; sha256: string; rootPitch: number; articulation: string; velocityLow: number; velocityHigh: number; duration: number }
+export interface InstrumentSource { id: string; catalogId?: string; name: string; instrument: string; origin: 'real' | 'ai'; verification?: 'catalog' | 'user' | 'metadata'; defaultArticulation?: string; author?: string; license?: string; licenseUrl?: string; sourceUrl?: string; samples: InstrumentSample[]; provenance?: "recorded" | "synthesized"; health?: "ready" | "missing" | "corrupt" | "unverified"; plugin?: { path: string; name: string; sha256: string; stateData?: string; articulations: string[] } }
+export interface ArrangementMaterial { id: string; projectId: string; planHash: string; scoreHash?: string; partId?: string; condition?: "score_conditioned" | "free_audio"; reviewStatus?: "needs_review" | "confirmed"; peak?: number; clippedFraction?: number; onsetSeconds?: number; alignmentWarning?: string; sectionIndex: number; phraseIndex: number; partIndex: number; instrument: string; role: string; technique?: string; phrase?: string; prompt?: string; tempo?: number; key?: string; modelId: string; fileName: string; duration: number; createdAt: string }
+export interface BandPreset { id: string; name: string; parts: { instrument: string; role: string; technique?: string; source: 'real' | 'ai'; sourceId?: string; allowSubstitution?: boolean }[]; aiModelId?: string; createdAt: string }
 export interface GenerationSegment { cueId: string; speakerId: string; speakerName: string; batchId: string; index: number; targetClipId?: string; placement?: 'ripple' | 'preserve' }
 // 本机 Codex CLI 的检测结果：path 为空表示未安装，login 为 chatgpt、apikey 或空（未登录）。
 export interface CodexInfo { path?: string; version?: string; login?: 'chatgpt' | 'apikey' }
@@ -70,7 +81,7 @@ export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 export interface LogEntry { time: string; level: LogLevel; event: string; fields?: Record<string, unknown> }
 export interface LogFilter { level?: string; module?: string; text?: string; since?: string; offset?: number; limit?: number }
 export interface LogPage { entries: LogEntry[]; total: number; modules: string[] }
-export interface Generation { segment?: GenerationSegment; id: string; title: string; fileName: string; createdAt: string; duration: number; settings: Draft; lyricTimes?: number[] }
+export interface Generation { segment?: GenerationSegment; id: string; title: string; source?: string; fileName: string; createdAt: string; duration: number; settings: Draft; lyricTimes?: number[] }
 /** UI chrome locale. Distinct from Draft.language (TTS). */
 export type { UiLocale };
 /** Stable product message key. Catalogs and Go constants share this spelling. */
@@ -112,7 +123,8 @@ export interface CleanupReport {
 }
 export interface Preferences { downloadSource: string; backend: string; modelDirectory: string | null; uiLocale: UiLocale; proxyURL?: string; proxyEnabled?: boolean; aiTimeout?: number; introSeen?: boolean; tourSeen?: boolean; assistantQuiet?: boolean }
 export interface State {
-  characters: Character[]; previews: CharacterPreview[]; drafts: Draft[]; voices: Voice[]; models: InstalledModel[]; history: Generation[];
+  arrangementJobs?: ArrangementJob[]; arrangementScores?: { id: string; projectId: string; phraseId: string; conditionHash: string }[];
+  characters: Character[]; previews: CharacterPreview[]; drafts: Draft[]; voices: Voice[]; models: InstalledModel[]; history: Generation[]; instrumentSources?: InstrumentSource[]; arrangementMaterials?: ArrangementMaterial[]; bandPresets?: BandPreset[];
   preferences: Preferences; runtimePath: string | null; runtimeBackend: string | null; runtimeVersion: string | null; runtimes?: Record<string, { path: string; version: string }>; activity: Activity | null; modelActivity?: Activity | null;
   aiProviders?: AIProvider[]; aiProviderID?: string; aiTask?: AITask;
   melody?: MelodyResult;
@@ -131,7 +143,7 @@ export interface MelodyInspection { issue?: MelodyIssue; tempo?: number; meter?:
 // 可选的大模型服务，与 Go 的 schema.AIProvider 一致；密钥不在状态中，只有掩码。
 export interface AITest { ok: boolean; code?: string; params?: Record<string, unknown>; at: string }
 // 后台 AI 写作任务，与 Go 的 schema.AITask 一致；只在本次会话有效。
-export type AITaskKind = 'cast' | 'image';
+export type AITaskKind = 'cast' | 'image' | 'score' | 'lyrics' | 'arrangement';
 export interface AITask {
   id: string; kind: AITaskKind; projectId: string; brief: string; status: 'running' | 'completed' | 'failed' | 'cancelled'; stage: 'writing' | 'repairing'; done?: number; total?: number;
   provider: string; model: string; timeout: number; startedAt: string; finishedAt?: string; result?: unknown; errorCode?: string; errorParams?: Record<string, unknown>;

@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -36,6 +37,26 @@ func WAV() []byte {
 	binary.LittleEndian.PutUint16(b[34:], 16)
 	copy(b[36:], "data")
 	binary.LittleEndian.PutUint32(b[40:], 32000)
+	return b
+}
+
+// WAVSeconds keeps the fake music engine's output length aligned with its
+// requested phrase duration so arrangement tests exercise placement checks.
+func WAVSeconds(seconds int) []byte {
+	if seconds < 1 {
+		seconds = 1
+	}
+	if seconds > 30 {
+		seconds = 30
+	}
+	b := make([]byte, 44+seconds*32000)
+	copy(b, WAV()[:44])
+	binary.LittleEndian.PutUint32(b[4:], uint32(len(b)-8))
+	binary.LittleEndian.PutUint32(b[40:], uint32(len(b)-44))
+	for i := 44; i+1 < len(b); i += 2 {
+		sample := int16(5000 * math.Sin(2*math.Pi*440*float64((i-44)/2)/16000))
+		binary.LittleEndian.PutUint16(b[i:], uint16(sample))
+	}
 	return b
 }
 
@@ -79,7 +100,7 @@ func RunFakeEngine() {
 			<-r.Context().Done()
 			return
 		}
-		if strings.HasSuffix(p.Request.Text, "模拟生成失败") {
+		if strings.HasSuffix(p.Request.Text, "模拟生成失败") || strings.Contains(p.Request.Text, "模拟编曲失败") {
 			http.Error(w, "模拟生成失败", http.StatusInternalServerError)
 			return
 		}
@@ -90,7 +111,14 @@ func RunFakeEngine() {
 			result["artifacts"] = []any{map[string]any{"id": "score", "kind": "custom", "payload": base64.StdEncoding.EncodeToString([]byte(ABC)), "meta": map[string]string{"format": "abc", "truncated": "false"}}}
 		}
 		if p.Request.Options["stop_after"] != "abc" && p.Request.Audio == "" {
-			result["audio"] = base64.StdEncoding.EncodeToString(WAV())
+			audio := WAV()
+			if strings.HasPrefix(p.Request.Text, "Dry isolated solo ") {
+				audio = WAVSeconds(10)
+				if seconds, ok := p.Request.Options["duration_seconds"].(float64); ok {
+					audio = WAVSeconds(int(seconds))
+				}
+			}
+			result["audio"] = base64.StdEncoding.EncodeToString(audio)
 		}
 		_ = json.NewEncoder(w).Encode(result)
 	})

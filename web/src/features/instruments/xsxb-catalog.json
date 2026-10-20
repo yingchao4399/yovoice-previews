@@ -1,0 +1,712 @@
+[
+  {
+    "id": "piano",
+    "name": "立式钢琴",
+    "family": "keys",
+    "description": "温暖的木质琴声，适合和弦、旋律与安静的独奏。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VSCO-2-CE",
+    "sampleCount": 8,
+    "downloadable": true
+  },
+  {
+    "id": "guitar",
+    "name": "原声吉他",
+    "family": "strings",
+    "description": "拨弦的颗粒感，适合分解和弦与轻快节奏。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/karoryfer.shinyguitar",
+    "sampleCount": 8,
+    "downloadable": true
+  },
+  {
+    "id": "bass",
+    "name": "低音提琴",
+    "family": "bass",
+    "description": "真实拨奏低音提琴，让每个低音都带一点木头的呼吸。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/karoryfer.meatbass",
+    "sampleCount": 6,
+    "downloadable": true
+  },
+  {
+    "id": "strings",
+    "name": "弦乐 · 小提琴组",
+    "family": "strings",
+    "description": "小提琴组实录：揉弦长音、跳弓、拨弦与震音，两层力度，短奏两轮替。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VSCO-2-CE",
+    "sampleCount": 131,
+    "downloadable": true
+  },
+  {
+    "id": "cello-section",
+    "name": "大提琴组",
+    "family": "strings",
+    "description": "大提琴组实录：揉弦长音、跳弓、拨弦与震音，低音厚重。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VSCO-2-CE",
+    "sampleCount": 156,
+    "downloadable": true
+  },
+  {
+    "id": "harp",
+    "name": "竖琴",
+    "family": "strings",
+    "description": "音乐会竖琴实录，两层力度，适合琶音与影视氛围。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 45,
+    "downloadable": true
+  },
+  {
+    "id": "flute",
+    "name": "长笛",
+    "family": "winds",
+    "description": "长笛实录：揉音长音、无揉音长音与吐音短奏，多力度与轮替。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VSCO-2-CE",
+    "sampleCount": 80,
+    "downloadable": true
+  },
+  {
+    "id": "french-horn",
+    "name": "圆号",
+    "family": "brass",
+    "description": "圆号实录长音与短奏，三到四层力度，适合影视铺陈与号角动机。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VSCO-2-CE",
+    "sampleCount": 83,
+    "downloadable": true
+  },
+  {
+    "id": "trumpet",
+    "name": "小号",
+    "family": "brass",
+    "description": "小号实录长音与短奏，适合号角、齐奏重音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VSCO-2-CE",
+    "sampleCount": 86,
+    "downloadable": true
+  },
+  {
+    "id": "trombone",
+    "name": "长号",
+    "family": "brass",
+    "description": "次中音长号实录长音与短奏，铜管低声部。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VSCO-2-CE",
+    "sampleCount": 87,
+    "downloadable": true
+  },
+  {
+    "id": "marimba",
+    "name": "马林巴",
+    "family": "mallets",
+    "description": "马林巴实录，三层力度，木质温暖的敲击。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 30,
+    "downloadable": true
+  },
+  {
+    "id": "timpani",
+    "name": "定音鼓",
+    "family": "percussion",
+    "description": "五面定音鼓实录，三层力度、两轮替，音高按实测定位。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 30,
+    "downloadable": true
+  },
+  {
+    "id": "gong",
+    "name": "大锣",
+    "family": "percussion",
+    "description": "大锣实录，弱到极强多层力度，长尾音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 6,
+    "downloadable": true
+  },
+  {
+    "id": "kick",
+    "name": "大鼓",
+    "family": "drums",
+    "description": "低沉的大鼓重拍，为节奏落下稳稳的一步。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "snare",
+    "name": "军鼓",
+    "family": "drums",
+    "description": "清脆的鼓皮与沙沙的响弦，负责节奏的反拍。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "hihat",
+    "name": "闭合踩镲",
+    "family": "drums",
+    "description": "短促的金属颗粒，把拍子切成有弹性的小格。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "electric-guitar",
+    "name": "干净电吉他",
+    "family": "strings",
+    "description": "磁拾音器直出的电吉他，可以接过载、失真与音箱模拟。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/karoryfer.shinyguitar",
+    "sampleCount": 8,
+    "downloadable": true
+  },
+  {
+    "id": "tom",
+    "name": "嗵鼓",
+    "family": "drums",
+    "description": "鼓棒敲击嗵鼓，为过门加上一点滚动感。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "crash",
+    "name": "悬镲",
+    "family": "drums",
+    "description": "鼓棒敲击悬镲，带有自然展开的金属余音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "clap",
+    "name": "拍手",
+    "family": "drums",
+    "description": "真实录制的拍手单击，适合叠加反拍。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "shaker",
+    "name": "沙锤",
+    "family": "drums",
+    "description": "短促的沙沙声，适合轻盈细密的节奏。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "metal-guitar",
+    "name": "电吉他 · 分层短奏",
+    "family": "strings",
+    "description": "逐半音低区、多力度与轮替采样；独立录制的短奏，不等同于掌根闷音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/karoryfer.black-and-green-guitars",
+    "sampleCount": 456,
+    "downloadable": true
+  },
+  {
+    "id": "emily-guitar",
+    "name": "电吉他 · 实心直录",
+    "family": "strings",
+    "description": "Epiphone 实心电吉他，双拾音器直录（DI），四层力度、三轮替。适合接音箱前级与箱体，做失真主奏与延音；没有掌根闷音录音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/karoryfer.emilyguitar",
+    "sampleCount": 216,
+    "downloadable": true
+  },
+  {
+    "id": "electric-bass",
+    "name": "拨片电贝斯",
+    "family": "bass",
+    "description": "五弦实心电贝斯桥拾音器直录，双力度、双轮替，保留拨片起音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/karoryfer.black-and-blue-basses",
+    "sampleCount": 44,
+    "downloadable": true
+  },
+  {
+    "id": "dan-tranh",
+    "name": "筝 · 越南筝",
+    "family": "chinese",
+    "description": "越南筝（Đàn tranh）实录，与古筝同属筝类：拨弦、按揉颤音与摇指，五声定弦。不是古筝录音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 96,
+    "downloadable": true
+  },
+  {
+    "id": "dizi",
+    "name": "笛子",
+    "family": "chinese",
+    "description": "C 调笛子实录单音（Freesound · Hypnotriod · CC0）。使用 Freesound 公开试听版（有损 MP3），仅收录原包中的自然音，不收录作者移调生成的半音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://freesound.org/people/Hypnotriod/packs/21613/",
+    "sampleCount": 8,
+    "downloadable": true
+  },
+  {
+    "id": "erhu",
+    "name": "二胡",
+    "family": "chinese",
+    "description": "二胡实录长音（Freesound · tarane468 · CC0），D4–D6 每小三度一个音。使用 Freesound 公开试听版（有损 MP3）。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://freesound.org/people/tarane468/packs/26451/",
+    "sampleCount": 9,
+    "downloadable": true
+  },
+  {
+    "id": "rock-kick",
+    "name": "架子鼓 · 底鼓",
+    "family": "drums",
+    "description": "鼓棒演奏的真实架子鼓，多力度原始录音，保留自然尾音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/virtuosity_drums",
+    "sampleCount": 16,
+    "downloadable": true
+  },
+  {
+    "id": "rock-snare",
+    "name": "架子鼓 · 军鼓",
+    "family": "drums",
+    "description": "鼓棒演奏的真实架子鼓军鼓：鼓心、边框重击（rimshot）与鼓边敲击（cross-stick），多力度原始录音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/virtuosity_drums",
+    "sampleCount": 64,
+    "downloadable": true
+  },
+  {
+    "id": "rock-hihat",
+    "name": "架子鼓 · 踩镲",
+    "family": "drums",
+    "description": "鼓棒演奏的真实架子鼓踩镲：闭镲与开镲，多力度、多轮替原始录音。开镲按自然衰减播放，不会被闭镲切断。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/virtuosity_drums",
+    "sampleCount": 28,
+    "downloadable": true
+  },
+  {
+    "id": "rock-tom",
+    "name": "架子鼓 · 嗵鼓",
+    "family": "drums",
+    "description": "鼓棒演奏的真实架子鼓，多力度原始录音，保留自然尾音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/virtuosity_drums",
+    "sampleCount": 16,
+    "downloadable": true
+  },
+  {
+    "id": "rock-crash",
+    "name": "架子鼓 · 吊镲",
+    "family": "drums",
+    "description": "鼓棒演奏的真实架子鼓，多力度原始录音，保留自然尾音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/virtuosity_drums",
+    "sampleCount": 12,
+    "downloadable": true
+  },
+  {
+    "id": "vibraphone",
+    "name": "颤音琴",
+    "family": "mallets",
+    "description": "颤音琴实录，软槌与硬槌各两层力度。爵士说唱、Lo-fi 的常用和声色彩。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 44,
+    "downloadable": true
+  },
+  {
+    "id": "fm-piano",
+    "name": "FM 电钢琴",
+    "family": "keys",
+    "description": "Yamaha TX81Z 硬件 FM 合成器的电钢琴音色实录，三层力度。是 FM 电钢琴，不是 Rhodes 录音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 57,
+    "downloadable": true
+  },
+  {
+    "id": "kalimba",
+    "name": "卡林巴",
+    "family": "mallets",
+    "description": "坦桑尼亚卡林巴（拇指琴）实录拨音，Lo-fi 嘻哈常用的颗粒旋律。音阶不完全等距，根音按实测。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 27,
+    "downloadable": true
+  },
+  {
+    "id": "tenor-sax",
+    "name": "次中音萨克斯",
+    "family": "winds",
+    "description": "次中音萨克斯实录：无揉音长音、揉音长音与短奏；长音带连音（相邻音符自动衔接）。适合爵士说唱的应答句与采样感乐句。写慢旋律时长音多用 vibrato，并加兜音、甩音等装饰。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 105,
+    "downloadable": true
+  },
+  {
+    "id": "tr808-kick",
+    "name": "808 · 底鼓",
+    "family": "drums",
+    "description": "真实 Roland TR-808 鼓机单独输出录音（Michael Fischer 1994 采样集，TidalCycles 仓库以 CC0 发布）。短衰减底鼓，长衰减作为另一奏法。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/tidalcycles/sounds-tr808-fischer",
+    "sampleCount": 2,
+    "downloadable": true
+  },
+  {
+    "id": "tr808-snare",
+    "name": "808 · 军鼓",
+    "family": "drums",
+    "description": "真实 Roland TR-808 鼓机单独输出录音（Michael Fischer 1994 采样集，TidalCycles 仓库以 CC0 发布）。中等音色/响弦，另有响弦最大的明亮版本。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/tidalcycles/sounds-tr808-fischer",
+    "sampleCount": 2,
+    "downloadable": true
+  },
+  {
+    "id": "tr808-clap",
+    "name": "808 · 拍手",
+    "family": "drums",
+    "description": "真实 Roland TR-808 鼓机单独输出录音（Michael Fischer 1994 采样集，TidalCycles 仓库以 CC0 发布）。经典电子拍手。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/tidalcycles/sounds-tr808-fischer",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "tr808-hihat",
+    "name": "808 · 踩镲",
+    "family": "drums",
+    "description": "真实 Roland TR-808 鼓机单独输出录音（Michael Fischer 1994 采样集，TidalCycles 仓库以 CC0 发布）。闭镲与两种衰减的开镲。开镲按录音自然衰减播放，没有被闭镲切断的联动。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/tidalcycles/sounds-tr808-fischer",
+    "sampleCount": 3,
+    "downloadable": true
+  },
+  {
+    "id": "tr808-perc",
+    "name": "808 · 打击乐",
+    "family": "drums",
+    "description": "真实 Roland TR-808 鼓机单独输出录音（Michael Fischer 1994 采样集，TidalCycles 仓库以 CC0 发布）。边击、牛铃、响棒、沙锤，以奏法切换。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/tidalcycles/sounds-tr808-fischer",
+    "sampleCount": 4,
+    "downloadable": true
+  },
+  {
+    "id": "tr808-bass",
+    "name": "808 · 低音",
+    "family": "bass",
+    "description": "真实 Roland TR-808 鼓机单独输出录音（Michael Fischer 1994 采样集，TidalCycles 仓库以 CC0 发布）。最长衰减的底鼓录音，按实测基频定根音，用钢琴卷帘写音高即为 808 低音。没有滑音（glide）功能；高于根音越多，尾音越短。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/tidalcycles/sounds-tr808-fischer",
+    "sampleCount": 2,
+    "downloadable": true
+  },
+  {
+    "id": "beatbox",
+    "name": "Beatbox · 人声打击",
+    "family": "vocal",
+    "description": "真人 beatbox 单发（Freesound · ipaghost「Ipa Beatbox Kit 01」· CC0）：底鼓、军鼓、舌根军鼓、踩镲、开镲、边击、拍手、吸气，以奏法切换，每种多条轮换。使用 Freesound 公开试听版（有损 MP3）。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://freesound.org/people/ipaghost/packs/18994/",
+    "sampleCount": 26,
+    "downloadable": true
+  },
+  {
+    "id": "xiao-recorder",
+    "name": "箫 · 竖笛代",
+    "family": "chinese",
+    "description": "找不到 CC0 的箫，用巴洛克次中音竖笛与低音竖笛代替（VCSL · CC0）：木质、带气声的低沉音色接近洞箫。长音、颤音、断奏。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 56,
+    "downloadable": true
+  },
+  {
+    "id": "oboe",
+    "name": "双簧管",
+    "family": "winds",
+    "description": "双簧管（VSCO 2 CE · CC0）：长音、颤音、断奏，多力度与轮替。也是唢呐替代音色的来源。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VSCO-2-CE",
+    "sampleCount": 87,
+    "downloadable": true
+  },
+  {
+    "id": "ride",
+    "name": "架子鼓 · 叮叮镲",
+    "family": "drums",
+    "description": "架子鼓 · 叮叮镲（Virtuosity Drums · CC0）。镲面、镲帽。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/virtuosity_drums",
+    "sampleCount": 21,
+    "downloadable": true
+  },
+  {
+    "id": "flat-ride",
+    "name": "架子鼓 · 平头叮叮镲",
+    "family": "drums",
+    "description": "架子鼓 · 平头叮叮镲（Virtuosity Drums · CC0）。镲面、重击。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sfzinstruments/virtuosity_drums",
+    "sampleCount": 16,
+    "downloadable": true
+  },
+  {
+    "id": "wind-chimes",
+    "name": "风铃",
+    "family": "percussion",
+    "description": "风铃（VCSL · CC0）。上行刮、下行刮、快速上行、慢速上行、慢速下行、随意拨弄。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 6,
+    "downloadable": true
+  },
+  {
+    "id": "bell-tree",
+    "name": "铃树",
+    "family": "percussion",
+    "description": "铃树（VCSL · CC0）。刮奏、单击。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 11,
+    "downloadable": true
+  },
+  {
+    "id": "sleigh-bells",
+    "name": "雪橇铃",
+    "family": "percussion",
+    "description": "雪橇铃（VCSL · CC0）。单击、摇。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 6,
+    "downloadable": true
+  },
+  {
+    "id": "finger-cymbals",
+    "name": "指钹",
+    "family": "percussion",
+    "description": "指钹（VCSL · CC0）。单击。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 1,
+    "downloadable": true
+  },
+  {
+    "id": "nepal-bells",
+    "name": "尼泊尔手铃",
+    "family": "percussion",
+    "description": "尼泊尔手铃（VCSL · CC0）。单击。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 3,
+    "downloadable": true
+  },
+  {
+    "id": "tambourine",
+    "name": "铃鼓",
+    "family": "percussion",
+    "description": "铃鼓（VCSL · CC0）。单击、滚奏、摇。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 14,
+    "downloadable": true
+  },
+  {
+    "id": "conga",
+    "name": "康加鼓",
+    "family": "percussion",
+    "description": "康加鼓（VCSL · CC0）。高鼓 · 开放、高鼓 · 闷、中鼓 · 开放、中鼓 · 闷、低鼓 · 开放、低鼓 · 闷。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 34,
+    "downloadable": true
+  },
+  {
+    "id": "bongos",
+    "name": "邦戈鼓",
+    "family": "percussion",
+    "description": "邦戈鼓（VCSL · CC0）。高鼓、高鼓 · 闷、高鼓 · 滚奏、低鼓、低鼓 · 闷、低鼓 · 滚奏。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 28,
+    "downloadable": true
+  },
+  {
+    "id": "frame-drum",
+    "name": "手鼓",
+    "family": "percussion",
+    "description": "手鼓（VCSL · CC0）。大鼓、大鼓 · 闷、大鼓 · 手掌、小鼓、小鼓 · 闷、小鼓 · 手掌。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 18,
+    "downloadable": true
+  },
+  {
+    "id": "tubular-bells",
+    "name": "管钟",
+    "family": "mallets",
+    "description": "管钟（VCSL · CC0）。敲击。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 18,
+    "downloadable": true
+  },
+  {
+    "id": "reed-organ",
+    "name": "簧风琴 · 管风琴代",
+    "family": "keys",
+    "description": "簧风琴 · 管风琴代（VCSL · CC0）。长音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sgossner/VCSL",
+    "sampleCount": 27,
+    "downloadable": true
+  },
+  {
+    "id": "vinyl",
+    "name": "黑胶底噪",
+    "family": "texture",
+    "description": "黑胶唱片底噪（Freesound · scottyhigh20 / nervousneal / OwlStorm · CC0）：噼啪、表面沙沙、短循环。带循环点，音符写多长就铺多长，用来给 lo-fi / jazzy hip-hop 做旧。使用 Freesound 公开试听版。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://freesound.org/people/scottyhigh20/sounds/493122/",
+    "sampleCount": 3,
+    "downloadable": true
+  },
+  {
+    "id": "xsxb-voice",
+    "name": "小宝人声",
+    "family": "vocal",
+    "description": "像素小宝用 voice-kit 录制的人声：乌 · 长音、啊 · 长音、嗯 · 哼鸣、dm · 低音短音、吧 · 短音、乌 · 假声。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 74,
+    "downloadable": true
+  },
+  {
+    "id": "xsxb-voice-f",
+    "name": "小宝人声 · 女声",
+    "family": "vocal",
+    "description": "由「小宝人声」用 WORLD 声码器转换：音高 +4 半音，共振峰 ×1.17。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 53,
+    "downloadable": true
+  },
+  {
+    "id": "xsxb-voice-beatbox",
+    "name": "小宝人声 · Beatbox",
+    "family": "vocal",
+    "description": "像素小宝用 voice-kit 录制的 beatbox。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 18,
+    "downloadable": true
+  },
+  {
+    "id": "guzheng",
+    "name": "古筝",
+    "family": "chinese",
+    "description": "中国古筝实录拨弦（Freesound · Pufermufin「LOVELY CHINESE GUZHENG PLUCKED」· CC0，D 羽五声定弦 D F G A C）。从 24 分钟整段演奏中自动挑出单音拨弦，按弦分两档力度、多条轮替；连续演奏中截出的较短样本带自然淡出。使用公开试听版（有损 MP3）。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 34,
+    "downloadable": true
+  },
+  {
+    "id": "suona-oboe",
+    "name": "唢呐 · 双簧管代",
+    "family": "chinese",
+    "description": "找不到 CC0 的唢呐，用双簧管（VSCO 2 CE · CC0）加均衡和饱和失真推成唢呐式的亮、冲、带鼻音的音色。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 87,
+    "downloadable": true
+  },
+  {
+    "id": "xiao",
+    "name": "箫",
+    "family": "chinese",
+    "description": "由巴洛克竖笛（VCSL · CC0）加工的箫：压掉吐音的\"嗤\"声、收暗高频、叠一层跟随音量的气声，长音约 70 ms 缓起。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 56,
+    "downloadable": true
+  },
+  {
+    "id": "crate-classical",
+    "name": "采样盒 · 古典乐句",
+    "family": "samples",
+    "description": "公有领域 / CC0 古典钢琴录音按整小节切出的 loop，标了 BPM、调性、和弦；自动拉伸到歌曲速度（变速不变调）。每个奏法是一个切片，在 C4 触发原调。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 6,
+    "downloadable": false
+  },
+  {
+    "id": "crate-speech",
+    "name": "采样盒 · 讲话",
+    "family": "samples",
+    "description": "NASA 任务录音、肯尼迪总统图书馆录音（美国政府作品，公有领域）与 CC0 女声念白，一次性触发。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 10,
+    "downloadable": false
+  },
+  {
+    "id": "crate-vocals",
+    "name": "采样盒 · 人声",
+    "family": "samples",
+    "description": "Freesound CC0 人声短句（灵魂乐、爵士拟声、吟唱、切片），一次性触发；有音高的按实测音高定根音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 10,
+    "downloadable": false
+  },
+  {
+    "id": "nujabes-chops",
+    "name": "采样盒 · 自制爵士唱片切片",
+    "family": "samples",
+    "description": "工作室自己演奏的原创爵士乐句（次中音萨克斯即兴口气的主题 + 钢琴、低音提琴、叮叮镲，95 BPM，Dbmaj9 C7b9 Fm9 Fm9 | Bbm9 Eb13 Abmaj9 C7b9），做旧后切片：8 / 4 / 2 / 1 小节和无萨克斯的和弦单击。自动拉伸到歌曲速度。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 18,
+    "downloadable": false
+  },
+  {
+    "id": "gfunk-lead",
+    "name": "合成器主音 · G-funk 哼鸣",
+    "family": "synth",
+    "description": "自制合成器主音：lead / vibrato 是以正弦为主的圆润“哼鸣”；sly / sly-vibrato 是坏笑的鼻音版（两只微失谐锯齿 + 窄脉冲过共振低通，去掉胸腔），更有 G-funk 的痞气。无缝持续循环；连奏时有 portamento 滑音。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 52,
+    "downloadable": true
+  },
+  {
+    "id": "gfunk-bass",
+    "name": "合成器贝斯 · Moog 式",
+    "family": "synth",
+    "description": "自制 Moog 式合成器贝斯：锯齿波 + 低八度方波，过四极低通，滤波包络从亮到暗，轻度过载；sustain 连奏可滑音，pluck 跟随音符长度停止，deep 是以正弦基音为主的深沉低频（G-funk 黑帮味），滑音更慢。",
+    "license": "CC0-1.0",
+    "sourceUrl": "https://github.com/sparklecatta-lang/XSXB-Band-Samples",
+    "sampleCount": 30,
+    "downloadable": true
+  }
+]

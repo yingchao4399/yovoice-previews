@@ -20,4 +20,6 @@ window.addEventListener('unhandledrejection', event => {
   dismissSplash(true);
   reportDesktop('rejection', '', String((event.reason as Error)?.stack ?? event.reason));
 });
+// 官方 v0.3.1：Windows 合成器不使用滚动边缘蒙版。
+if (/Windows/.test(navigator.userAgent)) document.documentElement.dataset.os = 'windows';
 createRoot(document.getElementById('root')!).render(<React.StrictMode><Theme theme={yovoicePaperTheme} mode="light"><RootBoundary><App /></RootBoundary></Theme></React.StrictMode>);

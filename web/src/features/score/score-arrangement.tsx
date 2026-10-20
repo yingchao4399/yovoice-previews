@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { Selector } from '../../shared/selector';
 import { Button } from '@astryxdesign/core/Button';
+import { ResizeHandle, useResizable } from '@astryxdesign/core/Resizable';
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
-import { Check, Circle, Drum, Piano, Volume2, VolumeX } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Circle, Drum, Piano, Volume2, VolumeX } from 'lucide-react';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { formatTime, type Draft, type Score, type ScoreRole, type ScoreTrack } from '../../shared/workbench';
 import { beatsPerBar, noteCount, scoreBars, scoreDuration, scoreRoles, scoreSeconds, targetLevel } from './score-draft';
@@ -209,9 +210,18 @@ export function ScoreDock({ draft, change, playhead, seek }: {
 }) {
   const t = useTranslator();
   const [selected, setSelected] = useState<string>();
+  const panel = useResizable({ direction: 'vertical', defaultSize: 220, minSize: 100, maxSize: 440, collapsible: true, autoSaveId: 'workbench-score-height' });
   const score = draft.score;
   const notes = score ? noteCount(score) : 0;
   if (!score || !notes) return null;
   const updateTrack = (id: string, patch: Partial<ScoreTrack>) => change({ score: { ...score, tracks: score.tracks.map(track => track.id === id ? { ...track, ...patch } : track) } });
-  return <ScoreArrangement score={score} selected={selected} select={setSelected} updateTrack={updateTrack} playhead={playhead} seek={seek} label={t('@yovoice.score.rollLabel', { tracks: score.tracks.length, notes })} />;
+  return <VStack className="score-dock" gap={0} data-collapsed={panel.isCollapsed || undefined} style={panel.isCollapsed ? undefined : { height: panel.size }}>
+    {!panel.isCollapsed ? <ResizeHandle label={t('@yovoice.score.resizeDock')} direction="vertical" pillPlacement="center" isReversed resizable={panel.props} /> : null}
+    <HStack className="score-dock-toolbar" gap={2} hAlign="between" vAlign="center">
+      <small>{t('@yovoice.score.arrangement')} · {score.tracks.length}</small>
+      <Button size="sm" variant="ghost" isIconOnly icon={panel.isCollapsed ? <ChevronUp /> : <ChevronDown />}
+        label={t(panel.isCollapsed ? '@yovoice.score.expandDock' : '@yovoice.score.collapseDock')} onClick={() => panel.isCollapsed ? panel.expand() : panel.collapse()} />
+    </HStack>
+    {!panel.isCollapsed ? <ScoreArrangement score={score} selected={selected} select={setSelected} updateTrack={updateTrack} playhead={playhead} seek={seek} label={t('@yovoice.score.rollLabel', { tracks: score.tracks.length, notes })} /> : null}
+  </VStack>;
 }

@@ -97,6 +97,12 @@ public sealed class AppUpdater : IDisposable
     public Task CheckFromAppAsync() => CheckAsync();
     private async Task CheckAsync()
     {
+        // 定制库的结构高于官方版本，不能让官方自动更新覆盖掉领域模块。
+        if (File.Exists(Path.Combine(AppContext.BaseDirectory, "yovoice-custom-build.json")))
+        {
+            Publish(Snapshot with { Status = "disabled", Error = HostL10n.T("当前为智能编曲定制版，请使用已合并且验证数据兼容的定制更新包。", "Use a compatible custom update package for this Smart Arrangement build.") });
+            return;
+        }
         if (checking || ready is not null || disposed) return;
         checking = true;
         Publish(Snapshot with { Status = "checking", Error = null, Received = 0, Total = 0 });

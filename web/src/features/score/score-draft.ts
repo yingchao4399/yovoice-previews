@@ -1,9 +1,15 @@
-import { createDraft, emptyScore, type Draft, type Score, type ScoreRole, type ScoreTrack, type UiLocale } from '../../shared/workbench';
+import { createDraft, emptyScore, isUntitled, type Draft, type Score, type ScoreRole, type ScoreTrack, type UiLocale } from '../../shared/workbench';
 import { seedLocale, type SeedLocale } from '../../shared/i18n/locale';
 
 export { emptyScore };
 
 export const soundFontId = 'musescore-general-sf2';
+
+// 智能编曲的 AI 写谱结果带曲名；只在原作品尚未命名时采用。
+export function composedScorePatch(title: string, result: unknown): Partial<Draft> {
+  const { title: named, ...score } = result as Score & { title?: string };
+  return { score, ...(named?.trim() && isUntitled(title) ? { title: named.trim().slice(0, 120) } : {}) };
+}
 
 // 与 Go 的 schema.ScoreRoles 一致：主奏在前，铺底和琶音退后。
 export const roleLevels: Record<ScoreRole, number> = { melody: -21, piano: -21, strings: -23, bass: -25, drums: -25, pad: -29, arp: -29, other: -24 };

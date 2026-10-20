@@ -3,8 +3,9 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent)
 if ($Version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "版本号无效" }
 $compiler = Get-Command ISCC.exe -ErrorAction SilentlyContinue
-$compilerPath = if ($compiler) { $compiler.Source } else { "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
-if (!(Test-Path $compilerPath)) { throw "请先安装 Inno Setup 6（winget install JRSoftware.InnoSetup）。" }
+$compilerPaths = @($compiler.Source, (Join-Path $env:LOCALAPPDATA 'Programs/Inno Setup 6/ISCC.exe'), "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")
+$compilerPath = $compilerPaths | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+if (!$compilerPath) { throw "请先安装 Inno Setup 6（winget install JRSoftware.InnoSetup）。" }
 $application = Join-Path (Get-Location) "artifacts/windows-x64"
 foreach ($file in @('yovoice.exe', 'service/yovoice-service.exe', 'engine/audiocpp_server.exe', 'engine/yovoice-engine.json', 'web/index.html')) {
     if (!(Test-Path "$application/$file")) { throw "安装包缺少 $file，请先构建 Windows 应用。" }
@@ -58,9 +59,17 @@ if ($Kind -like 'cuda*') {
 }
 $bootstrapper = Join-Path (Get-Location) "artifacts/downloads/MicrosoftEdgeWebView2Setup.exe"
 New-Item -ItemType Directory -Force -Path (Split-Path $bootstrapper) | Out-Null
-Invoke-WebRequest "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $bootstrapper
 # Evergreen 安装器会更新，用微软有效的 Authenticode 签名校验发行者。
-$signature = Get-AuthenticodeSignature $bootstrapper
+$signature = if (Test-Path -LiteralPath $bootstrapper) { Get-AuthenticodeSignature -LiteralPath $bootstrapper } else { $null }
+if (!$signature -or $signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation(?:,|$)') {
+    $partial = "$bootstrapper.part"
+    try {
+        Invoke-WebRequest "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $partial
+        $signature = Get-AuthenticodeSignature -LiteralPath $partial
+        if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation(?:,|$)') { throw "WebView2 安装器签名无效，停止打包。" }
+        Move-Item -LiteralPath $partial -Destination $bootstrapper -Force
+    } finally { Remove-Item -LiteralPath $partial -ErrorAction SilentlyContinue }
+}
 if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation(?:,|$)') {
     throw "WebView2 安装器签名无效，停止打包。"
 }

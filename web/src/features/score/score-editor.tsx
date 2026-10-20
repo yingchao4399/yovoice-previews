@@ -1,13 +1,16 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
+import { TextArea } from '@astryxdesign/core/TextArea';
 import { Download, FileMusic, Lightbulb, Upload } from 'lucide-react';
+import { AppDialog } from '../../shared/ui/app-dialog';
 import { call, isDesktop } from '../../shared/lib/client';
 import { formatTime, type Draft, type Score, type UiLocale } from '../../shared/workbench';
-import { emptyScore, exampleScore, noteCount, scoreBars, scoreDuration } from './score-draft';
+import { composedScorePatch, emptyScore, exampleScore, noteCount, scoreBars, scoreDuration } from './score-draft';
 import { midiToScore, scoreToMidi } from './score-midi';
+import { abcToScore } from './score-abc';
 
 
 // 浏览器预览只做最基本的结构检查，完整校验在保存时由 Go 完成。
@@ -28,6 +31,9 @@ export function ScoreEditor({ draft, change, locale, onError }: { draft: Draft; 
   const t = useTranslator();
   const score = draft.score ?? emptyScore();
   const input = useRef<HTMLInputElement>(null);
+  const [abcOpen, setAbcOpen] = useState(false);
+  const [abcText, setAbcText] = useState('');
+  const [abcError, setAbcError] = useState('');
   const notes = noteCount(score);
   const replace = (next: Score) => change({ score: next });
   const fileName = (draft.title.replace(/[\\/:*?"<>|]/g, '_').slice(0, 100) || 'score');
@@ -53,6 +59,7 @@ export function ScoreEditor({ draft, change, locale, onError }: { draft: Draft; 
           { id: 'json', label: t('@yovoice.score.exportJson'), onClick: () => void exportScore('json') },
         ]} />
         <Button size="sm" variant="secondary" icon={<Upload />} label={t('@yovoice.score.importShort')} tooltip={t('@yovoice.score.import')} onClick={() => void importScore()} />
+        <Button size="sm" variant="secondary" label={t('@yovoice.score.abcPaste')} onClick={() => setAbcOpen(true)} />
       </HStack>
       <input ref={input} hidden type="file" accept=".mid,.midi,.json" aria-label={t('@yovoice.score.file')} onChange={async event => {
         const file = event.target.files?.[0]; event.target.value = '';
@@ -70,7 +77,15 @@ export function ScoreEditor({ draft, change, locale, onError }: { draft: Draft; 
         <HStack gap={2} wrap="wrap" hAlign="center">
           <Button variant="secondary" icon={<Lightbulb />} label={t('@yovoice.score.example')} onClick={() => replace(exampleScore(locale))} />
           <Button variant="secondary" icon={<FileMusic />} label={t('@yovoice.score.import')} onClick={() => void importScore()} />
+          <Button variant="secondary" label={t('@yovoice.score.abcPaste')} onClick={() => setAbcOpen(true)} />
         </HStack>
       </VStack>}
+    {abcOpen ? <AppDialog title={t('@yovoice.score.abcPaste')} subtitle={t('@yovoice.score.abcHelp')} width={560} error={abcError} onClose={() => { setAbcOpen(false); setAbcError(''); }} actions={<>
+      <Button label={t('@yovoice.action.cancel')} onClick={() => setAbcOpen(false)} />
+      <Button variant="primary" label={t('@yovoice.score.abcImport')} isDisabled={!abcText.trim()} onClick={() => {
+        try { change(composedScorePatch(draft.title, abcToScore(abcText, locale))); setAbcOpen(false); setAbcText(''); setAbcError(''); }
+        catch { setAbcError(t('@yovoice.score.abcUnsupported')); }
+      }} />
+    </>}><TextArea label={t('@yovoice.score.abcField')} value={abcText} onChange={setAbcText} rows={10} maxLength={100000} hasSpellCheck={false} placeholder={t('@yovoice.score.abcExample')} /></AppDialog> : null}
   </VStack>;
 }

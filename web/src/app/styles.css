@@ -38,6 +38,7 @@
   /* 隐藏滚动条外观，保留滚轮、触控板和键盘滚动。 */
   * { scrollbar-width: none; }
   *::-webkit-scrollbar { display: none; }
+  :is(.inspector-scroll, .recent-projects, .assistant-body, .assistant-history-list, .library-page > .library-content, .settings-page > [role="tabpanel"], .music-editor, .score-editor, .subtitle-editor, .ai-detail, .arrangement-page, .score-scroll) { scrollbar-width: thin; scrollbar-color: var(--color-border-emphasized) transparent; }
   body, input, textarea, button { font-family: var(--app-font); }
   body { -webkit-font-smoothing: antialiased; color: var(--app-ink); background: var(--app-paper); font-size: var(--app-ui-font); }
   h1,h2,h3,h4,p { margin: 0; }
@@ -259,12 +260,15 @@
   .waveform input { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; }
   .waveform:focus-within { outline: 1px solid var(--app-wave); outline-offset: 1px; }
   .settings-page,.library-page { flex: 1; padding: var(--spacing-5) var(--spacing-10) var(--spacing-10); width: 100%; max-width: calc(var(--spacing-10) * 24); margin-inline: auto; overflow: hidden; min-height: 0; }
+  .arrangement-page { overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
   /* 设置页的分组：纸色底卡片，规格与大小用等宽小字。 */
   .model-row .precision { padding: 0 var(--spacing-1); border: var(--border-width) solid var(--color-border-emphasized); border-radius: var(--radius-inner); font-family: var(--app-mono); font-size: var(--font-size-xs); letter-spacing: .04em; }
   .model-row .model-size { font-family: var(--app-mono); font-size: var(--font-size-xs); }
   .library-page > .library-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
   .library-content:not(.empty-state) { margin-inline-end: calc(-1 * var(--spacing-6)); padding-inline-end: var(--spacing-6); }
   .library-content > * { flex-shrink: 0; }
+  .instrument-entry .ticket-cover { width: calc(var(--spacing-10) * 1.8); justify-content: center; border-radius: var(--radius-full); background: var(--app-paper); color: var(--app-ink); }
+  .instrument-entry .ticket-cover > svg { width: var(--spacing-6); height: var(--spacing-6); }
   .settings-page h1,.library-page h1 { font-size: var(--font-size-2xl); }
   .library-heading { min-height: var(--spacing-10); }
   .library-controls { min-height: var(--spacing-10); justify-content: center; }
@@ -294,6 +298,7 @@
   .library-preview .preview-play { border-radius: var(--radius-full); background: var(--app-white); color: var(--app-wave); flex-shrink: 0; }
   .preview-time { font-variant-numeric: tabular-nums; white-space: nowrap; }
   .preview-progress { appearance: none; flex: 1; min-width: 0; height: var(--spacing-1); border-radius: var(--radius-full); cursor: pointer; }
+  .instrument-seek { width: 100%; }
   .preview-progress::-webkit-slider-thumb { appearance: none; width: var(--spacing-3); height: var(--spacing-3); border: var(--border-width) solid var(--app-white); border-radius: var(--radius-full); background: var(--app-wave); }
   .preview-progress::-moz-range-thumb { width: var(--spacing-3); height: var(--spacing-3); border: var(--border-width) solid var(--app-white); border-radius: var(--radius-full); background: var(--app-wave); }
   .preview-progress:focus-visible { outline: var(--focus-outline-width) solid var(--focus-outline-color); outline-offset: var(--spacing-1); }
@@ -1058,7 +1063,7 @@
      用 7 档非线性透明度避免高分屏上的色阶断层；渐隐尺寸随滚动位置从 0 渐变到满，所以在顶部和底部不会盖住内容。
      浏览器不支持滚动驱动动画时保持原样（无渐隐）。 */
   @supports (animation-timeline: scroll()) {
-    .inspector-scroll, .recent-projects, .assistant-body, .assistant-history-list, .library-page > .library-content, .settings-page > [role="tabpanel"], .music-editor, .score-editor, .subtitle-editor, .ai-detail {
+    :root:not([data-os="windows"]) :is(.inspector-scroll, .recent-projects, .assistant-body, .assistant-history-list, .library-page > .library-content, .settings-page > [role="tabpanel"], .music-editor, .score-editor, .subtitle-editor, .ai-detail) {
       animation: app-fade-top linear both, app-fade-bottom linear both;
       animation-timeline: scroll(self block), scroll(self block);
       animation-range: 0 var(--app-fade-size), calc(100% - var(--app-fade-size)) 100%;
@@ -1072,3 +1077,14 @@
 /* 自定义属性注册必须写在 @layer 之外才会生效；滚动渐隐要靠它做长度插值。 */
 @property --app-fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
 @property --app-fade-bottom { syntax: "<length>"; inherits: false; initial-value: 0px; }
+
+/* 本地路径可选择复制，长目录在窄窗口自动换行。 */
+.instrument-file-path { overflow-wrap: anywhere; user-select: text; }
+
+/* 两类编辑器共享底部高度预算，始终给作品信息保留上方空间。 */
+.workbench-docks { max-height: 65vh; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.score-dock { position: relative; flex: none; min-height: 0; max-height: 40vh; margin: var(--spacing-2) var(--spacing-3) 0; border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); }
+.score-dock > .astryx-resize-handle { width: var(--spacing-12); align-self: center; top: calc(-1 * var(--spacing-1)); z-index: 6; }
+.score-dock-toolbar { flex: none; padding-inline: var(--spacing-2); border-bottom: var(--border-width) solid var(--app-line); }
+.score-dock[data-collapsed] .score-dock-toolbar { border-bottom: 0; }
+.score-dock > .score-arrangement { flex: 1; min-height: 0; max-height: none; margin: 0; border: 0; border-radius: 0 0 var(--radius-container) var(--radius-container); }

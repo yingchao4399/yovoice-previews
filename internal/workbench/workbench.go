@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"time"
 	"yovoice/internal/assistant"
 	"yovoice/internal/diag"
@@ -21,22 +22,31 @@ import (
 )
 
 type Workbench struct {
-	Store *store.Store
+	instrumentFileChecks sync.Map
+	Store                *store.Store
+	// GitHub raw 连接失败后，本次运行优先尝试固定提交的镜像，避免每个采样都等待超时。
+	catalogMirrorPreferred      atomic.Bool
+	catalogSystemProxyPreferred atomic.Bool
+	// CC0 下载使用独立的网络路径；0 表示尚未探测，1-4 对应配置代理、系统代理、
+	// 环境代理和直连。成功后同一进程的后续采样复用该路径。
+	catalogPreferredRoute atomic.Int32
 	// edit 串行化“读取状态 → 校验引用 → 写入”的短事务，避免并发调用使引用检查失效；
 	// 持有期间不执行转码、下载或推理等耗时操作。锁顺序：先 edit 后 mu。
 	edit sync.Mutex
 	// mu 保护后台操作的取消函数与完成通道。
 	// cancel/done 是占用推理引擎的主操作（生成、内核安装、迁移）；installCancel/installDone 是模型下载与导入，
 	// 二者互不阻塞，下载大模型时仍可用已安装的模型生成。
-	mu            sync.Mutex
-	cancel        context.CancelFunc
-	done          chan struct{}
-	installCancel context.CancelFunc
-	installDone   chan struct{}
-	closed        bool
-	closeOnce     sync.Once
-	engine        *engine.Engine
-	client        *http.Client
+	mu                sync.Mutex
+	cancel            context.CancelFunc
+	done              chan struct{}
+	installCancel     context.CancelFunc
+	installDone       chan struct{}
+	arrangementCancel context.CancelFunc
+	arrangementDone   chan struct{}
+	closed            bool
+	closeOnce         sync.Once
+	engine            *engine.Engine
+	client            *http.Client
 	// bundled 记录随安装包分发的内核，键为后端；启动时登记，之后只读。
 	bundled         map[string]bundledRuntime
 	ai              aiState
@@ -83,8 +93,10 @@ func (w *Workbench) begin(kind string, code msg.Code, params msg.Params, modelID
 	return err
 }
 
-// installKind 判断操作是否属于模型安装：下载只写模型目录，不占用推理引擎。
-func installKind(kind string) bool { return kind == "download" }
+// installKind 判断操作是否属于模型安装：下载与导入只写模型目录，不占用推理引擎。
+func installKind(kind string) bool {
+	return kind == "download" || kind == "import" || kind == "instrumentDownload"
+}
 
 // activitySlot 返回操作在状态中的位置。
 func activitySlot(s *schema.State, kind string) **schema.Activity {
@@ -262,14 +274,14 @@ func (w *Workbench) Close() {
 		defer diag.Log(w.Store.Root, "service.stopped")
 		w.mu.Lock()
 		w.closed = true
-		for _, cancel := range []context.CancelFunc{w.cancel, w.installCancel} {
+		for _, cancel := range []context.CancelFunc{w.arrangementCancel, w.cancel, w.installCancel} {
 			if cancel != nil {
 				cancel()
 			}
 		}
-		done, installDone := w.done, w.installDone
+		done, installDone, arrangementDone := w.done, w.installDone, w.arrangementDone
 		w.mu.Unlock()
-		for _, ch := range []chan struct{}{done, installDone} {
+		for _, ch := range []chan struct{}{arrangementDone, done, installDone} {
 			if ch != nil {
 				<-ch
 			}

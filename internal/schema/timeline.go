@@ -52,7 +52,7 @@ func ValidateTimeline(timeline *AudioTimeline, history []Generation) error {
 	ids := map[string]bool{}
 	count := 0
 	for _, track := range timeline.Tracks {
-		if !InRange(track.GainDB, -60, 12) || !InRange(track.DuckDB, 0, 36) {
+		if !InRange(track.GainDB, -60, 12) || !InRange(track.DuckDB, 0, 36) || !InRange(track.SoftenDB, -12, 0) || !InRange(track.Compression, 0, 1) {
 			return bad
 		}
 		if track.ID == "" || len(track.ID) > 64 || ids[track.ID] || strings.TrimSpace(track.Name) == "" || TextLen(track.Name) > 120 {

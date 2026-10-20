@@ -473,6 +473,20 @@ public partial class MainWindow : Window
                     string scoreFormat = data.TryGetProperty("format", out var formatValue) && formatValue.GetString() == "json" ? "json" : "mid";
                     var scoreSave = new SaveFileDialog { Filter = scoreFormat == "json" ? HostL10n.T("乐谱 JSON", "Score JSON") + "|*.json" : "MIDI|*.mid", DefaultExt = "." + scoreFormat, FileName = Path.GetFileName(data.GetProperty("name").GetString() ?? "score") + "." + scoreFormat, OverwritePrompt = true };
                     result = scoreSave.ShowDialog(this) == true ? await service.CallAsync(method, new { path = scoreSave.FileName, score = data.GetProperty("score") }) : false; break;
+                case "plugin.install":
+                    string? pluginPath;
+                    if (data.TryGetProperty("kind", out var pluginKind) && pluginKind.GetString() == "folder")
+                    {
+                        var pluginFolder = new OpenFolderDialog { Title = HostL10n.T("选择已解压的 .vst3 插件文件夹", "Choose an extracted .vst3 plugin folder") };
+                        pluginPath = pluginFolder.ShowDialog(this) == true ? pluginFolder.FolderName : null;
+                    }
+                    else
+                    {
+                        var pluginFile = new OpenFileDialog { Filter = "VST3|*.vst3", Title = HostL10n.T("选择 VST3 插件文件", "Choose a VST3 plugin file") };
+                        pluginPath = pluginFile.ShowDialog(this) == true ? pluginFile.FileName : null;
+                    }
+                    result = pluginPath is null ? null : await service.CallAsync(method, new { path = pluginPath });
+                    break;
                 case "audio.export":
                     string encoded = data.GetProperty("base64").GetString() ?? "";
                     if (encoded.Length > 240_000_000) throw new ArgumentException(HostL10n.T("导出音频超过大小限制。", "The exported audio is too large."));

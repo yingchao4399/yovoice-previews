@@ -115,6 +115,8 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
     ...history.map(g => [g.id, g] as const),
     ...(value.assets ?? []).map(asset => [`asset:${asset.id}`, { ...asset, title: asset.name }] as const),
   ]);
+  // 歌曲与单独渲染的编曲都保存在音乐作品历史中，可直接加入多轨制作。
+  const selectableHistory = history.filter(g => ['text', 'music'].includes(projectKind(draft)) && !g.segment && g.settings.id === draft.id && g.title.toLocaleLowerCase().includes(historyQuery.trim().toLocaleLowerCase()));
   const generation = clip ? audioSources.get(Timeline.sourceKey(clip)) : undefined;
   const cueIndex = draft.subtitles?.cues.findIndex(c => c.id === generation?.segment?.cueId) ?? -1;
   const cue = draft.subtitles?.cues[cueIndex];
@@ -376,13 +378,13 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
     {historyTrack ? <AppDialog title={t('@yovoice.timeline.fromHistory')} onClose={() => setHistoryTrack('')}>
       <TextInput label={t('@yovoice.timeline.searchHistory')} isLabelHidden placeholder={t('@yovoice.timeline.searchHistory')} value={historyQuery} onChange={setHistoryQuery} hasClear />
       <VStack className="timeline-history-list" gap={1}>
-        {history.filter(g => projectKind(draft) === 'text' && !g.segment && g.settings.id === draft.id && g.title.toLocaleLowerCase().includes(historyQuery.trim().toLocaleLowerCase())).map(g => <HStack key={g.id} gap={2} vAlign="center">
-          <Button className="grow text-left" variant="ghost" label={g.title} onClick={() => {
+        {selectableHistory.map(g => <HStack key={g.id} gap={2} vAlign="center">
+          <Button className="grow text-left" variant="ghost" label={projectKind(draft) === 'music' ? `${t(g.source === 'score' ? '@yovoice.music.historyScore' : '@yovoice.music.historySong')} · ${g.title}` : g.title} onClick={() => {
             try { append(historyTrack, { generationId: g.id, duration: g.duration }); setHistoryTrack(''); }
             catch (error) { onError((error as Error).message); }
           }} /><small className="muted">{formatTime(g.duration)} · {new Date(g.createdAt).toLocaleString()}</small>
         </HStack>)}
-        {!history.some(g => projectKind(draft) === 'text' && !g.segment && g.settings.id === draft.id && g.title.toLocaleLowerCase().includes(historyQuery.trim().toLocaleLowerCase())) ? <p className="muted">{t('@yovoice.timeline.noHistory')}</p> : null}
+        {!selectableHistory.length ? <p className="muted">{t('@yovoice.timeline.noHistory')}</p> : null}
       </VStack>
     </AppDialog> : null}
     <ResizeHandle label={t('@yovoice.timeline.resize')} direction="vertical" pillPlacement="center" isReversed resizable={panel.props} />
@@ -447,6 +449,11 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
               <TextInput size="sm" label={t('@yovoice.timeline.trackName')} value={track.name} onChange={name => { if (name.trim()) updateTrack(track.id, { name: name.slice(0, 120) }); }} />
               <AudioLevel label={t('@yovoice.timeline.volume')} value={track.gainDb ?? 0} min={-60} max={12} unit="dB" change={gainDb => updateTrack(track.id, { gainDb })} />
               <AudioLevel label={t('@yovoice.timeline.duck')} value={track.duckDb ?? 0} min={0} max={36} unit="dB" change={duckDb => updateTrack(track.id, { duckDb })} />
+              <h3>{t('@yovoice.timeline.audioRepair')}</h3>
+              <small>{t('@yovoice.timeline.audioRepairHint')}</small>
+              <AudioLevel label={t('@yovoice.timeline.soften')} value={track.softenDb ?? 0} min={-12} max={0} unit="dB" change={softenDb => updateTrack(track.id, { softenDb })} />
+              <AudioLevel label={t('@yovoice.timeline.compression')} value={(track.compression ?? 0) * 100} min={0} max={100} unit="%" change={amount => updateTrack(track.id, { compression: amount / 100 })} />
+              <Button size="sm" variant="ghost" label={t('@yovoice.timeline.resetRepair')} onClick={() => updateTrack(track.id, { softenDb: undefined, compression: undefined })} />
               <HStack gap={1}><Button size="sm" label={t('@yovoice.timeline.solo')} icon={<Headphones />} aria-pressed={!!track.solo} onClick={() => updateTrack(track.id, { solo: !track.solo })} /><Button size="sm" label={t(track.locked ? '@yovoice.timeline.unlock' : '@yovoice.timeline.lock')} icon={track.locked ? <Lock /> : <Unlock />} aria-pressed={!!track.locked} onClick={() => updateTrack(track.id, { locked: !track.locked })} /></HStack>
               <Button size="sm" variant="destructive" icon={<Trash2 />} label={t('@yovoice.timeline.removeTrack', { name: track.name })} isDisabled={track.locked || track.clips.length > 0} onClick={() => edit({ ...value, tracks: value.tracks.filter(lane => lane.id !== track.id) })} />
             </VStack>}><Button size="sm" variant="ghost" isIconOnly icon={track.locked ? <Lock /> : track.solo ? <Headphones /> : <SlidersHorizontal />} label={t('@yovoice.timeline.trackSettings', { name: track.name })} /></Popover>
@@ -519,7 +526,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
                 button={{ size: 'sm', variant: 'secondary', className: 'timeline-audio-button', icon: <FileAudio />, label: t('@yovoice.timeline.audio'), 'aria-label': t('@yovoice.timeline.importTo', { name: track.name }), isLoading: importing && uploadTrack.current === track.id, isDisabled: importing || track.locked }}
                 items={[
                   { label: t('@yovoice.timeline.upload'), icon: Upload, onClick: () => { uploadTrack.current = track.id; input.current?.click(); } },
-                  ...(projectKind(draft) === 'text' ? [{ label: t('@yovoice.timeline.fromHistory'), icon: History, onClick: () => { stop(); setHistoryQuery(''); setHistoryTrack(track.id); } }] : []),
+                  ...(['text', 'music'].includes(projectKind(draft)) ? [{ label: t('@yovoice.timeline.fromHistory'), icon: History, onClick: () => { stop(); setHistoryQuery(''); setHistoryTrack(track.id); } }] : []),
                 ]} />
             </HStack>
           </VStack>

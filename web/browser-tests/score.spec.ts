@@ -4,6 +4,25 @@ import { emptyState } from '../src/shared/workbench';
 import { createScoreDraft, exampleScore, scoreDuration } from '../src/features/score/score-draft';
 import { midiToScore, scoreToMidi } from '../src/features/score/score-midi';
 
+test('调性可从常用选项选择，也可手动输入并保存', async ({ page }, testInfo) => {
+  await page.goto('/');
+  await page.getByTestId('nav-new').click();
+  await page.getByRole('menuitem', { name: '编曲生成', exact: true }).click();
+  const key = page.getByRole('textbox', { name: '调性' });
+  await page.getByRole('button', { name: '常用调性' }).click();
+  await page.screenshot({ path: testInfo.outputPath('score-key-options.png') });
+  await page.getByRole('option', { name: 'G 大调 · 1 个升号' }).click();
+  await expect(key).toHaveValue('G 大调');
+  await page.getByRole('button', { name: '常用调性' }).click();
+  await page.getByRole('option', { name: '宫调式' }).click();
+  await expect(key).toHaveValue('宫调式');
+  await key.fill('C 宫调式');
+  await expect(key).toHaveValue('C 宫调式');
+  await expect(page.locator('.saved')).toContainText('已保存');
+  await page.reload();
+  await expect(page.getByRole('textbox', { name: '调性' })).toHaveValue('C 宫调式');
+});
+
 test('新建编曲作品：示例乐谱、音块总览、声部调整与持久化', async ({ page }, testInfo) => {
   // 覆盖编曲全流程（含两次刷新和窗口缩放），步骤多，放宽单测时限。
   test.setTimeout(60_000);
