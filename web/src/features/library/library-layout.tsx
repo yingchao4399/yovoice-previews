@@ -25,11 +25,11 @@ export function LibraryEmpty({ icon, art, title, description, action }: { icon?:
 
 // 所有作品与素材列表共用的票根卡片：左边封面，中间元信息、标题和摘录，右边虚线撕口后的存根。
 // 封面因类型而异（唱片、磁带、声波），结构、间距和动效保持一致。
-export function Ticket({ cover, coverClassName = '', eyebrow, title, excerpt, actions, stub, stubActions, className = '', index = 0 }: {
+export function Ticket({ cover, coverClassName = '', eyebrow, title, excerpt, actions, stub, stubActions, className = '', index = 0, details, expandable }: {
   cover: ReactNode; coverClassName?: string; eyebrow?: ReactNode; title: ReactNode; excerpt?: string; actions?: ReactNode;
-  stub?: ReactNode; stubActions?: ReactNode; className?: string; index?: number;
+  stub?: ReactNode; stubActions?: ReactNode; className?: string; index?: number; details?: ReactNode; expandable?: boolean;
 }) {
-  return <HStack className={`library-entry ticket ${className}`} gap={0} style={{ '--ticket-index': Math.min(index, 10) } as CSSProperties}>
+  const ticket = <HStack className={`library-entry ticket ${className}`} gap={0} style={{ '--ticket-index': Math.min(index, 10) } as CSSProperties}>
     <HStack className="ticket-main grow" gap={4} vAlign="center">
       <HStack className={`ticket-cover ${coverClassName}`} gap={0} vAlign="center">{cover}</HStack>
       <VStack className="grow ticket-body" gap={1}>
@@ -44,6 +44,7 @@ export function Ticket({ cover, coverClassName = '', eyebrow, title, excerpt, ac
       {stubActions ? <HStack className="library-entry-actions ticket-actions" gap={0}>{stubActions}</HStack> : null}
     </VStack>
   </HStack>;
+  return expandable || details ? <VStack className="history-expanded" gap={0}>{ticket}{details ? <VStack className="history-details" gap={3}>{details}</VStack> : null}</VStack> : ticket;
 }
 
 // 存根上的大号数字和下面一行小字。

@@ -22,6 +22,13 @@ export async function importTimelineFile(file: File): Promise<AudioAsset> {
   return call<AudioAsset>('timeline.import', { name, base64: await toBase64(file) });
 }
 
+export async function importMusicReferenceFile(file: File): Promise<AudioAsset> {
+  const name = file.name.replace(/\.[^.]+$/, '').slice(0, 120);
+  if (!isDesktop) return previewImportTimeline(file, name);
+  assertUploadSize(file);
+  return call<AudioAsset>('music.reference.import', { name, base64: await toBase64(file) });
+}
+
 export async function importVoiceFile(file: File): Promise<Voice> {
   if (!isDesktop) return previewImportVoice(file);
   assertUploadSize(file);

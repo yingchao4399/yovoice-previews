@@ -10,6 +10,7 @@ import { formatTime, type Draft, type Score, type ScoreRole, type ScoreTrack } f
 import { beatsPerBar, noteCount, scoreBars, scoreDuration, scoreRoles, scoreSeconds, targetLevel } from './score-draft';
 import { gmPrograms } from './score-instruments';
 import { TrackZoom } from '../media/playback-toolbar';
+import { TrackPanButton, useTrackViewport } from '../media/use-track-viewport';
 import { overflowTitle } from '../../shared/ui/overflow-title';
 
 // 一个声部的音块：横向是时间（按段落变速换算），纵向是该声部自己的音域，深浅对应力度。
@@ -76,6 +77,7 @@ export function ScoreArrangement({ score, selected, select, label, updateTrack, 
   const sections = score.sections?.length ? score.sections : [{ name: '', start: 1, end: scoreBars(score) }];
   const [zoom, setZoom] = useState(1);
   const scroller = useRef<HTMLElement>(null);
+  const viewport = useTrackViewport(scroller);
   // 自然小节宽度：默认视图下保证每个小节具有舒展的横向尺度（每小节约 54px，或每秒约 20px），超出视口时自然可水平滚动浏览；曲目较短时保底填满可视区域。
   const naturalLaneWidth = Math.round(Math.max(bars * 54, total * 20));
   const laneWidth = Math.round(naturalLaneWidth * zoom);
@@ -167,7 +169,7 @@ export function ScoreArrangement({ score, selected, select, label, updateTrack, 
     <VStack className="score-scroll" ref={scroller} gap={0}>
       <VStack className="score-content" gap={0} style={{ '--score-lane': laneExpr, width: `calc(var(--score-head) + ${laneExpr})` } as CSSProperties}>
         <HStack className="score-ruler-row" gap={0}>
-          <HStack className="score-track-head score-ruler-head" gap={2} vAlign="center"><small className="score-ruler-total" title={t('@yovoice.score.tracks')}>{formatTime(total)}</small><TrackZoom value={zoom} change={setZoom} disabled={false} /></HStack>
+          <HStack className="score-track-head score-ruler-head" gap={2} vAlign="center"><small className="score-ruler-total" title={t('@yovoice.score.tracks')}>{formatTime(total)}</small><TrackZoom value={zoom} change={setZoom} disabled={false} /><TrackPanButton active={viewport.hand} toggle={viewport.toggle} /></HStack>
           <HStack className="score-ruler grow" gap={0} role="list" aria-label={t('@yovoice.score.sections')} onPointerDown={playhead ? seekAt : undefined} data-seekable={!!playhead}>
             {sections.map((section, i) => {
               // 段落直接标在时间轴上：名称、起始时间与小节范围，变速段落附上速度。

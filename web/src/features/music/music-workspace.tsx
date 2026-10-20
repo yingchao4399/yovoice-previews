@@ -9,6 +9,7 @@ import type { Draft, State, UiLocale } from '../../shared/workbench';
 import { ScoreEditor } from '../score/score-editor';
 import { folkProfiles } from './folk-profiles';
 import { MusicEditor } from './music-editor';
+import { MusicAudioExport } from './music-audio-export';
 
 export type MusicView = 'compose' | 'score' | 'audio' | 'export';
 
@@ -48,6 +49,7 @@ export function MusicWorkspace({ draft, state, change, locale, onError, view, se
     {view === 'export' ? <VStack id="music-export-panel" role="tabpanel" aria-label={label('export')} gap={3}>
       <h2>{label('export')}</h2>
       <p>{t('@yovoice.music.exportHint')}</p>
+      <MusicAudioExport key={draft.id} draft={draft} state={state} />
       <HStack gap={2} wrap="wrap">
         <Button size="sm" variant="secondary" icon={<FileMusic />} label={t('@yovoice.music.openScoreExport')} onClick={() => setView('score')} />
         {isDesktop ? <Button size="sm" variant="secondary" icon={<FolderDown />} label={t('@yovoice.music.exportProject')} onClick={() => void (async () => { await save(); await call('project.export', { id: draft.id, name: draft.title }); })().catch(error => onError((error as Error).message))} /> : null}

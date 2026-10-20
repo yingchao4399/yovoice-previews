@@ -12,12 +12,12 @@ import { Selector } from '../../shared/selector';
 import { AIComposer } from '../../shared/ui/ai-composer';
 import { SettingsGroup, SettingsRow } from '../../shared/ui/settings-group';
 import { InstrumentDownloadProgress } from '../../shared/ui/instrument-download-progress';
-import { formatTime, isUntitled, type ArrangementInput, type ArrangementPlan, type ArrangementPart, type ArrangementSource, type Draft, type InstrumentSource, type State, type UiLocale } from '../../shared/workbench';
+import { isUntitled, type ArrangementInput, type ArrangementPlan, type ArrangementPart, type ArrangementSource, type Draft, type InstrumentSource, type State, type UiLocale } from '../../shared/workbench';
 import { composedScorePatch, noteCount } from '../score/score-draft';
 import { ArrangementReference } from './arrangement-reference';
+import { DurationControl } from '../../shared/ui/duration-control';
 import { bindArrangementSources, matchedRealSource, realPartReady, sameInstrument } from './arrangement-sources';
 
-const durations = [30, 60, 90, 120, 180, 300, 480, 600];
 const sourceModes = ['auto', 'real', 'ai', 'hybrid'] as const;
 const audioModels = modelCatalog.filter(model => model.family === 'ace_step' || model.family === 'yue2');
 
@@ -188,7 +188,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
     {draft.kind === 'score' ? <ArrangementReference draft={draft} state={state} change={change} openSettings={openSettings} openScore={openScore} /> : null}
     <SettingsGroup title={t('@yovoice.arrangement.planStage')} description={t('@yovoice.arrangement.planHint')}>
         <TextArea label={t('@yovoice.ai.brief.arrangement')} value={input.brief} rows={5} maxLength={2000} placeholder={t('@yovoice.arrangement.briefPlaceholder')} hasSpellCheck={false} onChange={brief => updateInput({ brief })} />
-        <SettingsRow label={t('@yovoice.arrangement.duration')}><Selector size="sm" label={t('@yovoice.arrangement.duration')} isLabelHidden value={String(input.seconds)} options={durations.map(value => ({ value: String(value), label: formatTime(value) }))} isDisabled={planning} onChange={value => updateInput({ seconds: Number(value) })} /></SettingsRow>
+        <SettingsRow label={t('@yovoice.arrangement.duration')}><DurationControl value={input.seconds} change={seconds => updateInput({ seconds })} disabled={planning} /></SettingsRow>
         <SettingsRow label={t('@yovoice.arrangement.sourceMode')} hint={t('@yovoice.arrangement.sourceHint')}><Selector size="sm" label={t('@yovoice.arrangement.sourceMode')} isLabelHidden value={input.source} options={sourceOptions} isDisabled={planning} onChange={value => updateInput({ source: value as (typeof sourceModes)[number] })} /></SettingsRow>
         {draft.kind === 'score' ? <AIComposer kind="arrangement" projectId={draft.id} state={state} overwrite={!!plan} configure={openSettings} apply={result => {
           const next = result as ArrangementPlan;

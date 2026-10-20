@@ -154,6 +154,9 @@ func Validate(d Draft) error {
 var MusicLanguages = []string{"ar", "az", "bg", "bn", "ca", "cs", "da", "de", "el", "en", "es", "fa", "fi", "fr", "he", "hi", "hr", "ht", "hu", "id", "is", "it", "ja", "ko", "la", "lt", "ms", "ne", "nl", "no", "pa", "pl", "pt", "ro", "ru", "sa", "sk", "sr", "sv", "sw", "ta", "te", "th", "tl", "tr", "uk", "ur", "vi", "yue", "zh", "unknown"}
 
 func validateMusic(d Draft, family string) error {
+	if issue := MusicCreationIssue(d, family); issue != "" {
+		return msg.Err(msg.ErrMusicParams, msg.Params{"detail": issue})
+	}
 	if strings.TrimSpace(d.Title) == "" || TextLen(d.Title) > 120 {
 		return msg.Err(msg.ErrTitleLength, nil)
 	}

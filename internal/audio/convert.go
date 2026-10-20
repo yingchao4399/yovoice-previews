@@ -72,3 +72,23 @@ func ConvertInstrumentWithLimit(ctx context.Context, executable, input, output s
 	}
 	return nil
 }
+
+// ConvertMusicWithLimit 保留输入采样率及声道，音乐参考不经过语音用单声道重采样。
+func ConvertMusicWithLimit(ctx context.Context, executable, input, output string, seconds int) error {
+	input, err := filepath.Abs(input)
+	if err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, executable, "-nostdin", "-v", "error", "-xerror",
+		"-protocol_whitelist", "file", "-format_whitelist", "wav,mp3,mov,aac,flac,ogg,aiff,asf,matroska,webm",
+		"-i", input, "-map", "0:a:0", "-vn", "-t", strconv.Itoa(seconds+1),
+		"-c:a", "pcm_s16le", "-map_metadata", "-1", "-y", output)
+	platform.ConfigureProcess(cmd)
+	if err = cmd.Run(); err != nil {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		return msg.Err(msg.ErrAudioDecode, msg.Params{"detail": err.Error()})
+	}
+	return nil
+}

@@ -129,11 +129,15 @@ func (w *Workbench) RenderArrangement(in ArrangementRenderInput) error {
 			}
 			w.progress(msg.ActivityRendering, msg.Params{"done": index, "total": len(units), "stage": unit.Part.Source}, int64(index), int64(len(units)))
 			id := schema.NewID()
-			asset := schema.AudioAsset{ID: id, Name: strings.TrimSpace(unit.Part.Instrument + " · " + unit.Phrase + " · " + unit.Part.Source), FileName: "import-" + id + ".wav"}
+			asset := schema.AudioAsset{ID: id, Name: strings.TrimSpace(unit.Part.Instrument + " · " + unit.Phrase + " · " + unit.Part.Source), FileName: "import-" + id + ".wav", Origin: unit.Part.Source}
 			if schema.TextLen(asset.Name) > 120 {
 				asset.Name = string([]rune(asset.Name)[:120])
 			}
 			source, found := sources[unit.Track.SourceID]
+			if found {
+				asset.SourceResourceID = "source:" + source.ID
+				asset.License, asset.LicenseURL, asset.SourceURL, asset.Author = source.License, source.LicenseURL, source.SourceURL, source.Author
+			}
 			clipOffset := 0.0
 			if found && source.Origin == unit.Part.Source && (len(source.Samples) > 0 || source.Plugin != nil) && (source.ID == unit.Part.SourceID || arrangementSameInstrument(source.Instrument, unit.Part.Instrument)) {
 				key := unit.Track.ID + ":" + unit.Track.SourceID
@@ -172,6 +176,7 @@ func (w *Workbench) RenderArrangement(in ArrangementRenderInput) error {
 			} else {
 				material := materials[ArrangementPartRef{unit.SectionIndex, unit.PhraseIndex, unit.PartIndex}]
 				asset.ID, asset.FileName, asset.Duration = material.ID, material.FileName, material.Duration
+				asset.SourceResourceID = "material:" + material.ID
 			}
 			clipDuration := unit.End - unit.Start
 			if asset.Duration+0.1 < clipOffset+clipDuration {

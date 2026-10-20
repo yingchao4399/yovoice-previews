@@ -6,11 +6,13 @@ import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/Segme
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { Token } from '@astryxdesign/core/Token';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { Lightbulb, Maximize2 } from 'lucide-react';
+import { Lightbulb, Maximize2, Sparkles, Undo2 } from 'lucide-react';
 import { AppDialog } from '../../shared/ui/app-dialog';
 import { isUntitled, isYuE, type Draft, type State, type UiLocale } from '../../shared/workbench';
 import { createMusicDraft, instrumentalSections, lyricSections, splitTags } from './music-draft';
 import { MelodyScore } from './melody-score';
+import { LyricsTool, type LyricsSelection } from './lyrics-tool';
+import { MusicReference } from './music-reference';
 
 // 音乐创作区：从上到下是“风格 → 歌词”，生成的版本在“版本记录”里查看；让 AI 写风格和歌词走创作助手。
 // 纯音乐与填写歌词是并列的两种模式。YuE2 还可以先出旋律谱、改谱后再生成。
@@ -21,6 +23,13 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
   // YuE2 的纯音乐先出谱，再把人声旋律交给乐器演奏；歌词可留空，或只写段落标记安排结构。
   const yue = isYuE(draft.modelId);
   const lyrics = useRef<HTMLTextAreaElement>(null);
+  const [lyricsSelection, setLyricsSelection] = useState<LyricsSelection | null>(null);
+  const [lyricsUndo, setLyricsUndo] = useState<{ projectId: string; before: string; after: string }>();
+  const openLyrics = (mode: LyricsSelection['mode']) => {
+    const base = draft.lyrics ?? '';
+    const start = lyrics.current?.selectionStart ?? 0, end = lyrics.current?.selectionEnd ?? 0;
+    setLyricsSelection({ projectId: draft.id, mode, base, start: mode === 'optimize' && end > start ? start : 0, end: mode === 'optimize' && end > start ? end : base.length });
+  };
   const expandedLyrics = useRef<HTMLTextAreaElement>(null);
   // 歌词框在 YuE2 下收矮，让下方旋律谱露出来；需要细看或长段编辑时放大到对话框里。
   const [expanded, setExpanded] = useState(false);
@@ -122,12 +131,19 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
       </HStack>
       {draft.instrumental && !yue ? null
         : <TextArea ref={lyrics} className="music-lyrics" label={t('@yovoice.music.lyrics')} isLabelHidden value={draft.lyrics ?? ''} maxLength={4000} rows={draft.instrumental ? 6 : yue ? 10 : 14} hasSpellCheck={false} placeholder={t(draft.instrumental ? '@yovoice.music.structurePlaceholder' : '@yovoice.music.lyricsPlaceholder')} onChange={value => change({ lyrics: value.slice(0, 4000) })} />}
+    {!draft.instrumental ? <HStack gap={2} vAlign="center" wrap="wrap" className="lyrics-tools">
+      <Button size="sm" variant="ghost" icon={<Sparkles />} label={t('@yovoice.music.optimizeLyrics')} isDisabled={!draft.lyrics?.trim()} onClick={() => openLyrics('optimize')} />
+      <Button size="sm" variant="ghost" icon={<Sparkles />} label={t('@yovoice.music.generateLyrics')} onClick={() => openLyrics('generate')} />
+      {lyricsUndo?.projectId === draft.id ? <Button size="sm" variant="ghost" icon={<Undo2 />} label={t('@yovoice.music.undoLyrics')} isDisabled={draft.lyrics !== lyricsUndo.after} onClick={() => { change({ lyrics: lyricsUndo.before }); setLyricsUndo(undefined); }} /> : null}
+    </HStack> : null}
     </VStack>
+    {lyricsSelection?.projectId === draft.id ? <LyricsTool key={draft.id} draft={draft} state={state} selection={lyricsSelection} apply={value => { setLyricsUndo({ projectId: draft.id, before: draft.lyrics ?? '', after: value }); change({ lyrics: value }); }} close={() => setLyricsSelection(null)} /> : null}
     {expanded ? <AppDialog title={t('@yovoice.music.lyrics')} width={760} closeLabel={t('@yovoice.action.close')} onClose={() => setExpanded(false)}
       actions={sectionMenu}>
       <TextArea ref={expandedLyrics} className="music-lyrics music-lyrics-expanded" label={t('@yovoice.music.lyrics')} isLabelHidden value={draft.lyrics ?? ''} maxLength={4000} rows={20} hasSpellCheck={false}
         placeholder={t(draft.instrumental ? '@yovoice.music.structurePlaceholder' : '@yovoice.music.lyricsPlaceholder')} onChange={value => change({ lyrics: value.slice(0, 4000) })} />
     </AppDialog> : null}
+    <MusicReference key={`reference:${draft.id}`} draft={draft} kind="accompaniment" change={change} />
     {/* YuE2 的流程是“歌词 → 旋律谱 → 整首歌”，谱放在歌词之后。 */}
     {yue ? <MelodyScore draft={draft} state={state} change={change} onError={onError} /> : null}
   </VStack>;

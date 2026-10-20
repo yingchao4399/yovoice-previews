@@ -8,6 +8,9 @@ import { call, mediaUrl } from '../../shared/lib/client';
 import { noticeMessage } from '../../shared/lib/call-error';
 import { formatTime } from '../../shared/workbench';
 import type { Track } from '../../shared/workbench';
+import { ResizeHandle } from '@astryxdesign/core/Resizable';
+import { useAudioPanel } from './use-audio-panel';
+import { TrackPanButton, useTrackViewport } from './use-track-viewport';
 
 // 头像素材仅在展示库列表时加载，避免进入创作首屏主包。
 const SeededAvatar = lazy(() => import('../../shared/ui/seeded-avatar').then(module => ({ default: module.SeededAvatar })));
@@ -17,6 +20,8 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   const t = useTranslator();
   const audio = useRef<HTMLAudioElement>(null);
   const lane = useRef<HTMLElement>(null);
+  const viewport = useTrackViewport(lane);
+  const panel = useAudioPanel(!!track, !(avatar || compact || inline) ? 'yovoice-player-height' : undefined);
   const [zoom, setZoom] = useState(1);
   const [volume, setVolume] = useState(1);
   const [playing, setPlaying] = useState(false);
@@ -74,7 +79,7 @@ export function Player({ track, onError, suspended, compact = false, actions, av
     pending.current = false;
     if (suspended) return;
     if (failure) { onError(failure); return; }
-    element.currentTime = 0;
+    element.currentTime = Math.min(track?.startTime ?? 0, Number.isFinite(element.duration) ? Math.max(0, element.duration - .01) : track?.startTime ?? 0);
     void play(element);
   });
   useEffect(() => { pending.current = !!playRequest; }, [playRequest, key]);
@@ -125,7 +130,7 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   const ticks = Array.from({ length: Math.ceil(scale / tickStep) }, (_, i) => i * tickStep);
   // 只预读时长等元数据，整段音频在播放时再读取。
   const media = <audio hidden ref={audio} src={url || undefined} preload="metadata"
-    onLoadedMetadata={() => { const value = audio.current?.duration; if (value && Number.isFinite(value)) setDuration(value); }}
+    onLoadedMetadata={() => { const value = audio.current?.duration; if (value && Number.isFinite(value)) { setDuration(value); const start = Math.min(track?.startTime ?? 0, Math.max(0, value - .01)); if (audio.current) audio.current.currentTime = start; setTime(start); } }}
     onTimeUpdate={() => setTime(audio.current?.currentTime ?? 0)}
     onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
     onError={() => { if (url) markFailed('@yovoice.error.audioPlayFailed'); }} />;
@@ -149,7 +154,8 @@ export function Player({ track, onError, suspended, compact = false, actions, av
     <small className="preview-time">{formatTime(duration)}</small>
     <Button label={volume === 0 ? t('@yovoice.player.unmute') : t('@yovoice.player.mute')} isIconOnly icon={volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />} size="sm" variant="ghost" onClick={() => { const next = volume === 0 ? 1 : 0; setVolume(next); if (audio.current) audio.current.volume = next; }} />
   </HStack>;
-  return <VStack as="footer" className="player audio-panel player-single" gap={0}>
+  return <VStack as="footer" className="player audio-panel player-single" gap={0} style={{ height: panel.size }}>
+    <ResizeHandle label={t('@yovoice.player.resizePanel')} direction="vertical" pillPlacement="center" isReversed resizable={panel.props} />
     {media}
     <PlaybackToolbar time={time} duration={duration} playing={playing} disabled={!url || !!failure || suspended} toggle={toggle}
       beforePlay={<Button label={t('@yovoice.player.skipStart')} isIconOnly icon={<SkipBack size={16} />} size="sm" variant="ghost" isDisabled={!url || !!failure} onClick={() => seek(0)} />}
@@ -159,6 +165,7 @@ export function Player({ track, onError, suspended, compact = false, actions, av
           <input aria-label={t('@yovoice.player.volume')} type="range" min={0} max={1} step={0.01} value={volume} onChange={e => { const next = Number(e.target.value); setVolume(next); if (audio.current) audio.current.volume = next; }} />
         </HStack>
         <TrackZoom value={zoom} change={setZoom} disabled={!duration} />
+        <TrackPanButton active={viewport.hand} toggle={viewport.toggle} />
         {actions}
         {reveal && track?.kind === 'outputs' ? <Button label={t('@yovoice.player.reveal')} isIconOnly icon={<FolderOpen size={17} />} size="sm" variant="ghost" onClick={() => { void call('media.reveal', { kind: track.kind, id: track.id }).catch(e => onError(noticeMessage(e))); }} /> : null}
 

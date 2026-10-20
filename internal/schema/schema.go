@@ -19,6 +19,7 @@ func NewID() string {
 func ValidID(id string) bool { b, e := hex.DecodeString(id); return e == nil && len(b) == 16 }
 
 type SynthesisSettings struct {
+	Music             *MusicCreationOptions     `json:"music,omitempty"`
 	ModelOptions      map[string]map[string]any `json:"modelOptions,omitempty"`
 	Speaker           string                    `json:"speaker,omitempty"`
 	SynthesisLanguage string                    `json:"synthesisLanguage,omitempty"`
@@ -107,10 +108,16 @@ type AudioLane struct {
 	Clips       []AudioClip `json:"clips"`
 }
 type AudioAsset struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	FileName string  `json:"fileName"`
-	Duration float64 `json:"duration"`
+	Origin           string  `json:"origin,omitempty"`
+	SourceResourceID string  `json:"sourceResourceId,omitempty"`
+	License          string  `json:"license,omitempty"`
+	LicenseURL       string  `json:"licenseUrl,omitempty"`
+	SourceURL        string  `json:"sourceUrl,omitempty"`
+	Author           string  `json:"author,omitempty"`
+	ID               string  `json:"id"`
+	Name             string  `json:"name"`
+	FileName         string  `json:"fileName"`
+	Duration         float64 `json:"duration"`
 }
 
 // ArrangementMaterial is a generated phrase stem. It is not a pitched one-shot

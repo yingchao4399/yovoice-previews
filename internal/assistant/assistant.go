@@ -156,8 +156,11 @@ func (m *Manager) Ask(ctx context.Context, cfg Config, text string, onEvent func
 		m.asking = false
 		m.mu.Unlock()
 	}()
-	proc, err := m.ensureProcess(ctx, cfg)
-	m.mu.Unlock()
+	proc, err := func() (*process, error) {
+		// 即使初始化的回调异常，也必须先解锁，不能让复位 asking 或 Stop 永久等待。
+		defer m.mu.Unlock()
+		return m.ensureProcess(ctx, cfg)
+	}()
 	if err != nil {
 		return Result{}, err
 	}
@@ -271,9 +274,32 @@ func systemPromptPath(root string) string { return filepath.Join(root, "assistan
 // baseTools 是助手可用的 ocho 内置工具。
 var baseTools = []string{"Skill", "Read", "Write", "Edit", "Glob", "Grep", "Bash", "WebFetch", "WebSearch"}
 
+// 工具注册属于可选助手的初始化；配置错误应返回给界面，不能留下进程或锁住主应用。
+func buildToolServer(factory func() *mcp.Server) (server *mcp.Server, err error) {
+	defer func() {
+		if value := recover(); value != nil {
+			err = fmt.Errorf("助手工具初始化失败：%v", value)
+			server = nil
+		}
+	}()
+	if factory == nil {
+		return nil, fmt.Errorf("助手工具未配置")
+	}
+	server = factory()
+	if server == nil {
+		return nil, fmt.Errorf("助手工具未配置")
+	}
+	return server, nil
+}
+
 func startProcess(ctx context.Context, root string, options Options, cfg Config) (*process, error) {
 	if info, err := os.Stat(cfg.Executable); err != nil || !info.Mode().IsRegular() {
 		return nil, msg.Err(msg.ErrAssistantMissing, nil)
+	}
+	// 先验证工具定义再启动子进程，注册失败不会遗留后台助手。
+	server, err := buildToolServer(options.NewServer)
+	if err != nil {
+		return nil, err
 	}
 	if err := writeAssets(root); err != nil {
 		return nil, err
@@ -331,7 +357,7 @@ func startProcess(ctx context.Context, root string, options Options, cfg Config)
 	}()
 	// 命令行不含密钥，可安全记录；Env 不落日志。
 	diag.Log(root, "assistant.started", "pid", cmd.Process.Pid, "model", cfg.Model, "tools", list)
-	p.bridge = newBridge(context.Background(), options.NewServer(), p.writeLine)
+	p.bridge = newBridge(context.Background(), server, p.writeLine)
 	go p.readLoop(stdout)
 	handshake, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()

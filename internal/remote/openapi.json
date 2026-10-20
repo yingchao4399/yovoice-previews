@@ -199,6 +199,21 @@
           "synthesisLanguage": { "type": "string" },
           "lyrics": { "type": "string", "description": "Lyrics with section markers for music models" },
           "instrumental": { "type": "boolean", "description": "Generate music without vocals" },
+          "music": {
+            "type": "object", "required": ["duration"], "additionalProperties": false,
+            "description": "Music creation intent. ACE-Step accepts native durations up to 300 seconds; YuE2 duration is an advisory planning target. Vocal references guide style and do not imply voice cloning.",
+            "properties": {
+              "duration": { "type": "object", "required": ["mode"], "additionalProperties": false, "properties": {
+                "mode": { "type": "string", "enum": ["auto", "fixed"] },
+                "seconds": { "type": "integer", "minimum": 15, "maximum": 600, "description": "Required for fixed mode; actual generated length can differ" }
+              } },
+              "voice": { "type": "string", "enum": ["auto", "male", "female", "reference"], "description": "Singing direction; ignored for instrumental output" },
+              "voiceReferenceAssetId": { "type": "string", "description": "Managed project reference ID; the standalone endpoint does not read arbitrary reference files" },
+              "voiceReferenceDescription": { "type": "string", "maxLength": 1500, "description": "Textual timbre guidance; not an audio cloning condition" },
+              "accompanimentAssetId": { "type": "string", "description": "Managed project reference ID; no audio is mixed automatically" },
+              "accompanimentDescription": { "type": "string", "maxLength": 1500, "description": "Textual arrangement guidance; not a native audio condition" }
+            }
+          },
           "abc": { "type": "string", "description": "YuE2 melody score in its native ABC dialect; with chords the song follows the harmony, melody only lets the model arrange freely" },
           "emotionVoiceId": { "type": "string", "nullable": true, "description": "Voice whose emotion is copied" },
           "emotionText": { "type": "string", "description": "Emotion described in text" },

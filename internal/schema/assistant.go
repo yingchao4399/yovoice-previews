@@ -37,13 +37,32 @@ type AssistantProposal struct {
 	ID     string `json:"id"`
 	Action string `json:"action"`
 	// Target 是操作对象的 ID（作品、生成记录、角色或模型），Value 是设置的新值；Label 是给用户看的对象名。
-	Target      string     `json:"target,omitempty"`
-	Value       string     `json:"value,omitempty"`
-	Label       string     `json:"label,omitempty"`
-	Reason      string     `json:"reason,omitempty"`
-	State       string     `json:"state"` // pending、confirmed、dismissed 或 failed
-	ErrorCode   msg.Code   `json:"errorCode,omitempty"`
-	ErrorParams msg.Params `json:"errorParams,omitempty"`
+	Target      string                 `json:"target,omitempty"`
+	Value       string                 `json:"value,omitempty"`
+	Label       string                 `json:"label,omitempty"`
+	Reason      string                 `json:"reason,omitempty"`
+	State       string                 `json:"state"` // pending、confirmed、dismissed 或 failed
+	ErrorCode   msg.Code               `json:"errorCode,omitempty"`
+	ErrorParams msg.Params             `json:"errorParams,omitempty"`
+	Downloads   *ResourceDownloadBatch `json:"downloads,omitempty"`
+}
+
+// 下载许可只覆盖这份由服务端固定目录生成的清单；模型不能提供任意 URL 或 confirmed 标志。
+type ResourceDownloadSpec struct {
+	CatalogID string `json:"catalogId"`
+	Name      string `json:"name"`
+	License   string `json:"license"`
+	Bytes     int64  `json:"bytes"`
+	Manifest  string `json:"manifest"`
+	State     string `json:"state"`
+}
+type ResourceDownloadBatch struct {
+	SessionID string                 `json:"sessionId"`
+	ProjectID string                 `json:"projectId,omitempty"`
+	Revision  string                 `json:"revision,omitempty"`
+	State     string                 `json:"state"`
+	Items     []ResourceDownloadSpec `json:"items"`
+	Notified  bool                   `json:"notified,omitempty"`
 }
 
 // AssistantMemo 是助手记住的一条用户偏好（常用音色、风格、语速等），每轮对话随上下文带上；设置里可查看与删除。
@@ -58,9 +77,25 @@ const AssistantMemoLimit = 30
 
 // AssistantBlock 是助手消息里按出现顺序排列的一块：文本、思考，或一次工具调用（Card）。
 type AssistantBlock struct {
-	Kind string             `json:"kind"` // text、thinking 或 tool
-	Text string             `json:"text,omitempty"`
-	Card *AssistantToolCard `json:"card,omitempty"`
+	Kind     string             `json:"kind"` // text、thinking 或 tool
+	Text     string             `json:"text,omitempty"`
+	Card     *AssistantToolCard `json:"card,omitempty"`
+	Question *AssistantQuestion `json:"question,omitempty"`
+}
+
+// 问答卡只保存选择，不授予下载、删除或上传权限；这些操作仍需专门的确认卡。
+type AssistantQuestion struct {
+	ID        string   `json:"id"`
+	SessionID string   `json:"sessionId"`
+	TurnID    string   `json:"turnId"`
+	WorkID    string   `json:"workId,omitempty"`
+	Revision  string   `json:"revision,omitempty"`
+	Prompt    string   `json:"prompt"`
+	Options   []string `json:"options"`
+	Multiple  bool     `json:"multiple,omitempty"`
+	State     string   `json:"state"`
+	Selected  []int    `json:"selected,omitempty"`
+	Custom    string   `json:"custom,omitempty"`
 }
 
 // AssistantSession 是一段助手对话：标题取首条用户消息，消息数量有上限；

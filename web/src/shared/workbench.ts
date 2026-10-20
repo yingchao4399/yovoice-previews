@@ -2,7 +2,10 @@ import { draftCopy } from './i18n/draft-copy';
 import { seedLocale, type UiLocale } from './i18n/locale';
 
 export type Mode = 'speaker' | 'reference' | 'vector' | 'text';
+export interface DurationIntent { mode: 'auto' | 'fixed'; seconds?: number }
+export interface MusicCreationOptions { duration: DurationIntent; voice?: 'auto' | 'male' | 'female' | 'reference'; voiceReferenceAssetId?: string; voiceReferenceDescription?: string; accompanimentAssetId?: string; accompanimentDescription?: string }
 export interface SynthesisSettings {
+  music?: MusicCreationOptions;
   modelOptions?: Record<string, Record<string, string | number | boolean>>; speaker?: string; synthesisLanguage?: string; omniSpeed?: number;
   lyrics?: string; instrumental?: boolean;
   // YuE2 的 ABC 旋律谱：带和弦按谱编曲，只有旋律时按旋律填配器。
@@ -21,7 +24,7 @@ export interface SubtitleCue { performance?: CharacterPerformance; id?: string; 
 export interface SubtitleDocument { speakers: SubtitleSpeaker[]; cues: SubtitleCue[] }
 export interface AudioClip { id: string; generationId?: string; assetId?: string; start: number; offset: number; duration: number; gainDb?: number }
 export interface AudioLane { id: string; name: string; origin?: 'arrangement'; muted: boolean; solo?: boolean; locked?: boolean; gainDb?: number; duckDb?: number; softenDb?: number; compression?: number; clips: AudioClip[] }
-export interface AudioAsset { id: string; name: string; fileName: string; duration: number }
+export interface AudioAsset { id: string; name: string; fileName: string; duration: number; origin?: string; sourceResourceId?: string; license?: string; licenseUrl?: string; sourceUrl?: string; author?: string }
 export interface AudioMarker { id: string; time: number; name: string }
 export interface AudioTimeline { markers?: AudioMarker[]; regenerateMode?: 'ripple' | 'preserve'; assets?: AudioAsset[]; acceptedGenerations?: string[]; tracks: AudioLane[] }
 // 编曲乐谱与 Go 的 schema.Score 一致：位置以小节和拍计，拍从 1 开始，音高为 MIDI 音高。
@@ -157,11 +160,14 @@ export type AssistantToolCardState = 'running' | 'done' | 'error';
 export interface AssistantToolCard { tool: string; summary?: string; args?: string; state?: AssistantToolCardState; proposal?: AssistantProposal }
 /** 助手提议、等用户在卡片上确认的操作，与 Go 的 schema.AssistantProposal 一致。 */
 export type AssistantProposalState = 'pending' | 'confirmed' | 'dismissed' | 'failed';
-export interface AssistantProposal { id: string; action: string; target?: string; value?: string; label?: string; reason?: string; state: AssistantProposalState; errorCode?: string; errorParams?: Record<string, unknown> }
+export interface ResourceDownloadSpec { catalogId: string; name: string; license: string; bytes: number; manifest: string; state: string }
+export interface ResourceDownloadBatch { sessionId: string; projectId?: string; revision?: string; state: string; items: ResourceDownloadSpec[]; notified?: boolean }
+export interface AssistantProposal { id: string; action: string; target?: string; value?: string; label?: string; reason?: string; state: AssistantProposalState; errorCode?: string; errorParams?: Record<string, unknown>; downloads?: ResourceDownloadBatch }
 /** 助手记住的一条用户偏好。 */
 export interface AssistantMemo { id: string; text: string; createdAt: string }
 /** 助手消息里按出现顺序排列的一块：文本、思考或一次工具调用。 */
-export interface AssistantBlock { kind: 'text' | 'thinking' | 'tool'; text?: string; card?: AssistantToolCard }
+export interface AssistantQuestion { id: string; sessionId: string; turnId: string; workId?: string; revision?: string; prompt: string; options: string[]; multiple?: boolean; state: 'pending' | 'deferred' | 'answered' | 'cancelled'; selected?: number[]; custom?: string }
+export interface AssistantBlock { kind: 'text' | 'thinking' | 'tool' | 'question'; text?: string; card?: AssistantToolCard; question?: AssistantQuestion }
 /** 助手消息：blocks 为按顺序的内容块，text 为文本块拼接；tools 只出现在旧版本记录里。 */
 export interface AssistantMessage {
   id: string; role: AssistantMessageRole; text?: string; blocks?: AssistantBlock[]; tools?: AssistantToolCard[];
@@ -231,7 +237,7 @@ export function formatBytes(bytes: number): string {
   if (i === 0) return `${Math.round(value)} B`;
   return `${value.toFixed(2)} ${units[i]}`;
 }
-export interface Track { id: string; name: string; fileName: string; kind: 'voices' | 'outputs'; subtitle: string; playRequest?: number }
+export interface Track { id: string; name: string; fileName: string; kind: 'voices' | 'outputs'; subtitle: string; playRequest?: number; startTime?: number }
 /** 资源页的一行，对应 Go 的 workbench.Asset；bytes 为 -1 表示文件已丢失，users 非空表示正在被引用。 */
 export type AssetKind = 'generation' | 'segment' | 'voice' | 'material' | 'image';
 export interface Asset { kind: AssetKind; id: string; name: string; media: 'outputs' | 'voices' | 'images'; fileName: string; projectId?: string; projectTitle?: string; projectKind?: ProjectPage; createdAt: string; duration?: number; bytes: number; users?: string[] }

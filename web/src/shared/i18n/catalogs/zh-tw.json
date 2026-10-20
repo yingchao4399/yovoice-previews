@@ -4590,5 +4590,275 @@
   "@yovoice.arrangement.job.failed": {"defaultMessage": "Failed"},
   "@yovoice.arrangement.job.interrupted": {"defaultMessage": "Interrupted"},
   "@yovoice.arrangement.blocked": {"defaultMessage": "{detail}"},
-  "@yovoice.arrangement.returnToAssembly": {"defaultMessage": "Assemble in Smart Arrangement"}
+  "@yovoice.arrangement.returnToAssembly": {"defaultMessage": "Assemble in Smart Arrangement"},
+  "@yovoice.history.quickSwitch": {
+    "defaultMessage": "Quick switch version"
+  },
+  "@yovoice.history.expandAll": {
+    "defaultMessage": "Expand all"
+  },
+  "@yovoice.history.collapseAll": {
+    "defaultMessage": "Collapse all"
+  },
+  "@yovoice.history.expandItem": {
+    "defaultMessage": "Expand full details for {name}"
+  },
+  "@yovoice.history.collapseItem": {
+    "defaultMessage": "Collapse full details for {name}"
+  },
+  "@yovoice.player.panCanvas": {
+    "defaultMessage": "Pan canvas"
+  },
+  "@yovoice.player.panHint": {
+    "defaultMessage": "Drag in hand mode, use the middle button, or Shift + wheel to scroll horizontally"
+  },
+  "@yovoice.player.resizePanel": {
+    "defaultMessage": "Resize audio panel"
+  },
+  "@yovoice.assistant.question.single": {
+    "defaultMessage": "Choose one option or write your own answer."
+  },
+  "@yovoice.assistant.question.multiple": {
+    "defaultMessage": "Choose multiple options or add your own answer."
+  },
+  "@yovoice.assistant.question.custom": {
+    "defaultMessage": "Custom answer"
+  },
+  "@yovoice.assistant.question.submit": {
+    "defaultMessage": "Submit answer"
+  },
+  "@yovoice.assistant.question.cancel": {
+    "defaultMessage": "Cancel question"
+  },
+  "@yovoice.assistant.question.later": {
+    "defaultMessage": "Answer later"
+  },
+  "@yovoice.assistant.question.resume": {
+    "defaultMessage": "Resume question"
+  },
+  "@yovoice.assistant.question.cancelled": {
+    "defaultMessage": "Question cancelled"
+  },
+  "@yovoice.music.durationAuto": {
+    "defaultMessage": "AI automatic"
+  },
+  "@yovoice.music.durationCustom": {
+    "defaultMessage": "Custom duration"
+  },
+  "@yovoice.music.durationSeconds": {
+    "defaultMessage": "Target seconds"
+  },
+  "@yovoice.music.durationUnsupported": {
+    "defaultMessage": "Unsupported by this model"
+  },
+  "@yovoice.music.durationYuEHint": {
+    "defaultMessage": "YuE2 follows lyrics and melody. This is a planning target; the result may differ."
+  },
+  "@yovoice.music.durationACEHint": {
+    "defaultMessage": "ACE-Step supports native duration up to 5 minutes in this adapter. AI automatic lets the model decide."
+  },
+  "@yovoice.music.vocalVoice": {
+    "defaultMessage": "Singing voice"
+  },
+  "@yovoice.music.vocalVoice.auto": {
+    "defaultMessage": "AI automatic"
+  },
+  "@yovoice.music.vocalVoice.male": {
+    "defaultMessage": "Male voice"
+  },
+  "@yovoice.music.vocalVoice.female": {
+    "defaultMessage": "Female voice"
+  },
+  "@yovoice.music.vocalVoice.reference": {
+    "defaultMessage": "Reference voice"
+  },
+  "@yovoice.music.vocalVoiceHint": {
+    "defaultMessage": "Voice choices guide the singing style. References guide timbre; these models do not promise cloning."
+  },
+  "@yovoice.music.generateLyrics": {
+    "defaultMessage": "Generate lyrics"
+  },
+  "@yovoice.music.optimizeLyrics": {
+    "defaultMessage": "Optimize lyrics"
+  },
+  "@yovoice.music.undoLyrics": {
+    "defaultMessage": "Undo lyrics replacement"
+  },
+  "@yovoice.music.lyricsRequirement": {
+    "defaultMessage": "Lyrics requirements"
+  },
+  "@yovoice.music.lyricsPreviewHint": {
+    "defaultMessage": "Preview before applying. Only lyrics will change; the title, style and other settings stay as they are."
+  },
+  "@yovoice.music.lyricsPreview": {
+    "defaultMessage": "Lyrics preview"
+  },
+  "@yovoice.music.lyricsSource": {
+    "defaultMessage": "Selected fragment or current lyrics"
+  },
+  "@yovoice.music.lyricsChanged": {
+    "defaultMessage": "Lyrics changed while this was running. Regenerate or copy the result to preserve your edits."
+  },
+  "@yovoice.music.lyricsTooLong": {
+    "defaultMessage": "The replacement exceeds 4,000 characters. Shorten it or select a smaller fragment."
+  },
+  "@yovoice.resources.downloadTitle": {
+    "defaultMessage": "Instrument download list"
+  },
+  "@yovoice.resources.downloadScope": {
+    "defaultMessage": "Only this fixed CC0 list is approved. Files, note ranges and articulations are checked afterwards. Question answers do not grant download permission."
+  },
+  "@yovoice.resources.confirmDownload": {
+    "defaultMessage": "Confirm download"
+  },
+  "@yovoice.resources.downloadProgress": {
+    "defaultMessage": "Instrument download progress"
+  },
+  "@yovoice.resources.retryRemaining": {
+    "defaultMessage": "Retry remaining items"
+  },
+  "@yovoice.resources.downloadState.awaiting_approval": {
+    "defaultMessage": "Awaiting confirmation"
+  },
+  "@yovoice.resources.downloadState.queued": {
+    "defaultMessage": "Queued"
+  },
+  "@yovoice.resources.downloadState.running": {
+    "defaultMessage": "Downloading"
+  },
+  "@yovoice.resources.downloadState.completed": {
+    "defaultMessage": "Completed"
+  },
+  "@yovoice.resources.downloadState.failed": {
+    "defaultMessage": "Failed"
+  },
+  "@yovoice.resources.downloadState.paused": {
+    "defaultMessage": "Paused"
+  },
+  "@yovoice.resources.downloadState.cancelled": {
+    "defaultMessage": "Cancelled"
+  },
+  "@yovoice.resources.preview": {
+    "defaultMessage": "资源试听"
+  },
+  "@yovoice.resources.pick": {
+    "defaultMessage": "选择库内音频"
+  },
+  "@yovoice.resources.search": {
+    "defaultMessage": "搜索音频或采样"
+  },
+  "@yovoice.resources.category": {
+    "defaultMessage": "资源类别"
+  },
+  "@yovoice.resources.use": {
+    "defaultMessage": "使用所选音频"
+  },
+  "@yovoice.resources.back": {
+    "defaultMessage": "返回音频列表 · {name}"
+  },
+  "@yovoice.resources.results": {
+    "defaultMessage": "资源 · {count}"
+  },
+  "@yovoice.resources.samples": {
+    "defaultMessage": "查看单个采样"
+  },
+  "@yovoice.resources.audition": {
+    "defaultMessage": "试听 · {name}"
+  },
+  "@yovoice.resources.empty": {
+    "defaultMessage": "没有匹配的库内资源"
+  },
+  "@yovoice.resources.more": {
+    "defaultMessage": "加载更多"
+  },
+  "@yovoice.resources.licenseUnknown": {
+    "defaultMessage": "未登记许可，请核对来源"
+  },
+  "@yovoice.resources.workChanged": {
+    "defaultMessage": "作品已切换，请重新选择参考音频"
+  },
+  "@yovoice.resources.kind.all": {
+    "defaultMessage": "全部本地音频"
+  },
+  "@yovoice.resources.kind.audio": {
+    "defaultMessage": "作品与AI音频"
+  },
+  "@yovoice.resources.kind.voice": {
+    "defaultMessage": "声音库"
+  },
+  "@yovoice.resources.kind.instrument": {
+    "defaultMessage": "乐器音源"
+  },
+  "@yovoice.resources.kind.sample": {
+    "defaultMessage": "单个采样"
+  },
+  "@yovoice.resources.origin.real": {
+    "defaultMessage": "真实采样"
+  },
+  "@yovoice.resources.origin.ai": {
+    "defaultMessage": "AI生成"
+  },
+  "@yovoice.resources.origin.generated": {
+    "defaultMessage": "应用生成"
+  },
+  "@yovoice.resources.origin.imported": {
+    "defaultMessage": "用户导入"
+  },
+  "@yovoice.resources.status.ready": {
+    "defaultMessage": "本地可用"
+  },
+  "@yovoice.resources.status.repair": {
+    "defaultMessage": "文件需修复"
+  },
+  "@yovoice.resources.status.review": {
+    "defaultMessage": "待核验"
+  },
+  "@yovoice.music.referenceVoice": {
+    "defaultMessage": "参考音色音频"
+  },
+  "@yovoice.music.referenceAccompaniment": {
+    "defaultMessage": "参考配乐"
+  },
+  "@yovoice.music.referenceSemanticHint": {
+    "defaultMessage": "当前音乐模型按下方描述参考风格，不直接读取此音频，也不保证克隆原音色。参考文件不会自动混入成曲。"
+  },
+  "@yovoice.music.referenceLibrary": {
+    "defaultMessage": "从库中选择"
+  },
+  "@yovoice.music.referenceUpload": {
+    "defaultMessage": "上传本地音频"
+  },
+  "@yovoice.music.referenceAddMaterial": {
+    "defaultMessage": "作为素材加入音轨"
+  },
+  "@yovoice.music.referenceClear": {
+    "defaultMessage": "移除此参考"
+  },
+  "@yovoice.music.referenceVoiceDescription": {
+    "defaultMessage": "音色参考描述"
+  },
+  "@yovoice.music.referenceMusicDescription": {
+    "defaultMessage": "配乐参考描述"
+  },
+  "@yovoice.music.exportVersion": {
+    "defaultMessage": "导出版本"
+  },
+  "@yovoice.music.exportFixed": {
+    "defaultMessage": "按指定时长导出副本"
+  },
+  "@yovoice.music.exportSeconds": {
+    "defaultMessage": "导出长度（秒）"
+  },
+  "@yovoice.music.exportPad": {
+    "defaultMessage": "原音频较短时允许补静音"
+  },
+  "@yovoice.music.exportFixedHint": {
+    "defaultMessage": "原音频保留。较长音频会裁剪并在末尾淡出；较短音频仅在勾选后补静音，不代表模型已生成这些内容。"
+  },
+  "@yovoice.music.exportAudioCopy": {
+    "defaultMessage": "导出音频副本"
+  },
+  "@yovoice.music.exportDesktopHint": {
+    "defaultMessage": "定长处理在桌面版中可用；浏览器预览仍可导出原长度音频。"
+  }
 }

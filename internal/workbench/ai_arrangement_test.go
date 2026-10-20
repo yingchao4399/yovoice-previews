@@ -11,6 +11,26 @@ import (
 	"yovoice/internal/schema"
 )
 
+func TestArrangementAutomaticDurationResolvesToConcretePlan(t *testing.T) {
+	reply := `{"title":"自动民乐","tempo":120,"timeSignature":[4,4],"seconds":32,"sections":[{"name":"全曲","startBar":1,"endBar":16,"phrases":[{"name":"主题","startBar":1,"endBar":16,"parts":[{"instrument":"琵琶","role":"melody","source":"ai"}]}]}]}`
+	server, _ := fakeLLM(t, reply)
+	w := aiWorkbench(t, server)
+	_, configured := w.AIModels(context.Background(), "")
+	must(t, configured)
+	plan, e := w.PlanArrangement(context.Background(), ArrangementBrief{Brief: "一首简短琵琶配乐", Seconds: 0, Source: "ai"})
+	must(t, e)
+	if plan.Seconds != 32 {
+		t.Fatalf("AI自动应保存具体规划时长：%+v", plan)
+	}
+	if issue := arrangementResultIssue(ArrangementBrief{Brief: "民乐", Seconds: 0, Source: "ai"}, &plan); issue != "" {
+		t.Fatal(issue)
+	}
+	plan.Seconds = 0
+	if issue := arrangementResultIssue(ArrangementBrief{Brief: "民乐", Seconds: 0, Source: "ai"}, &plan); issue == "" {
+		t.Fatal("自动模式不能把未定时长传给后续备料")
+	}
+}
+
 func TestArrangementResultChecksDurationAndSourcePolicy(t *testing.T) {
 	plan := schema.ArrangementPlan{Title: "山间听弦", Tempo: 80, TimeSignature: []int{4, 4}, Seconds: 90, Sections: []schema.ArrangementSection{
 		{Name: "全曲", StartBar: 1, EndBar: 30, Phrases: []schema.ArrangementPhrase{

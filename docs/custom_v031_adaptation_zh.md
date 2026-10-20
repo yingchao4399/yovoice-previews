@@ -1,6 +1,6 @@
 # 官方 v0.3.1 与智能编曲定制版适配
 
-版本：`0.3.1-preview.3`。此分支是 yingchao4399 的定制发行，原作者为 [leemysw/yovoice](https://github.com/leemysw/yovoice)，不代表官方发行。
+版本：`0.3.1-preview.4`。此分支是 yingchao4399 的定制发行，原作者为 [leemysw/yovoice](https://github.com/leemysw/yovoice)，不代表官方发行。
 
 ## 本次合并范围
 
@@ -35,7 +35,7 @@ pnpm --dir web run test:all
 dotnet run --project desktop/windows/ServiceChecks
 dotnet run --project desktop/windows/UpdateChecks
 python scripts/test-release-notes.py
-python scripts/release-notes.py v0.3.1-preview.3
+python scripts/release-notes.py v0.3.1-preview.4
 ```
 
 Windows 的 Go 竞态检查需要可用的 C 工具链。发布前运行全量浏览器检查，包括官方日常跳过的封存用例。具体执行结果和安装包 SHA-256 随 GitHub Release 提供；源码构建成功不能替代真实模型与插件的推理验收。

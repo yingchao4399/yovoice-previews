@@ -1,4 +1,5 @@
 import { PlaybackToolbar, TrackZoom } from './playback-toolbar';
+import { TrackPanButton, useTrackViewport } from './use-track-viewport';
 import { formatNotice } from '../../shared/i18n/format';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState, useReducer, type PointerEvent as ReactPointerEvent } from 'react';
 import { Popover } from '@astryxdesign/core/Popover';
@@ -43,6 +44,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
   const [activeLane, setActiveLane] = useState(0);
   const clipboard = useRef<{ clip: AudioClip; lane: number }[]>([]);
   const scrollRef = useRef<HTMLElement>(null);
+  const viewportPan = useTrackViewport(scrollRef);
   const rulerRef = useRef<HTMLElement>(null);
   const gesture = useRef<{ x: number; y: number; clientX: number; clientY: number; alt: boolean; scroll: number; vertical: number; moved: boolean; raf: number; clickTime?: number; apply: (x: number, y: number, alt: boolean) => void } | null>(null);
   const gestureNext = useRef<AudioTimeline | null>(null);
@@ -398,6 +400,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
       <Button className="timeline-extra timeline-snap-toggle" size="sm" variant={snap ? "secondary" : "ghost"} isIconOnly label={t('@yovoice.timeline.snap')} tooltip={`${t('@yovoice.timeline.snap')} · Alt`} icon={<Magnet />} aria-pressed={snap} onClick={() => setSnap(!snap)} />
       <DropdownMenu presentation="popover" placement="above" hasChevron={false} menuWidth="max-content" button={{ size: 'sm', variant: 'ghost', isIconOnly: true, label: t('@yovoice.timeline.more'), icon: <MoreHorizontal />, 'data-timeline-more': 'true' }} items={menuItems} />
       <TrackZoom value={zoom} change={zoomTo} fit={fitAll} disabled={!duration} min={minZoom} max={32} />
+      <TrackPanButton active={viewportPan.hand} toggle={viewportPan.toggle} />
     </PlaybackToolbar>
     {exportOpen ? <AppDialog title={t('@yovoice.timeline.export')} busy={exporting} error={formatNotice(t, exportError)} onClose={() => setExportOpen(false)} actions={<Button label={t(exportFormat === 'wav' ? '@yovoice.timeline.exportConfirm' : '@yovoice.timeline.exportCaptions')} variant="primary" isLoading={exporting} isDisabled={!exportName.trim()} onClick={async () => {
       setExporting(true); setExportError('');
@@ -417,7 +420,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
         if (await saveAudio(encodeWav(result), exportName)) setExportOpen(false);
       } catch (error) { setExportError((error as Error).message); } finally { setExporting(false); }
     }} />}><TextInput label={t('@yovoice.timeline.exportName')} value={exportName} onChange={setExportName} /><Selector label={t('@yovoice.timeline.exportType')} value={exportFormat} onChange={v => { setExportFormat(v as typeof exportFormat); setExportError(''); setPeakDb(undefined); }} options={[{ value: 'wav', label: t('@yovoice.timeline.formatWav') }, { value: 'srt', label: t('@yovoice.timeline.formatSrt') }, { value: 'vtt', label: t('@yovoice.timeline.formatVtt') }]} /><Selector label={t('@yovoice.timeline.exportScope')} value={exportScope} onChange={v => { setExportScope(v); setExportError(''); setPeakDb(undefined); }} options={[{ value: 'all', label: t('@yovoice.timeline.all') }, ...(range ? [{ value: 'range', label: t('@yovoice.timeline.range') }] : []), ...value.tracks.map(t => ({ value: `track:${t.id}`, label: t.name })), ...(draft.subtitles?.speakers ?? []).map((s, i) => ({ value: `role:${s.id}`, label: s.sourceName || t('@yovoice.subtitle.speaker', { n: i + 1 }) }))]} />{exportFormat === 'wav' ? <><label><input type="checkbox" checked={preventClipping} onChange={e => { setPreventClipping(e.target.checked); setPeakDb(undefined); }} /> {t('@yovoice.timeline.preventClipping')}</label>{peakDb !== undefined ? <small>{t('@yovoice.timeline.peak')}: {Number.isFinite(peakDb) ? peakDb.toFixed(1) : '−∞'} dBFS</small> : null}</> : <><label><input type="checkbox" checked={captionSpeaker} onChange={e => setCaptionSpeaker(e.target.checked)} /> {t('@yovoice.timeline.captionSpeaker')}</label><small>{t('@yovoice.timeline.captionHint')}</small></>}</AppDialog> : null}
-    <ContextMenu items={menuItems} size="sm" menuWidth="max-content" label={t('@yovoice.timeline.more')} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+    <ContextMenu items={menuItems} size="sm" menuWidth="max-content" label={t('@yovoice.timeline.more')} data-timeline-menu-trigger="true">
     <VStack ref={scrollRef} className="multitrack-scroll" gap={0} {...pointerHandlers} onContextMenu={e => {
       const id = (e.target as Element).closest('[data-clip-id]')?.getAttribute('data-clip-id');
       const target = value.tracks.flatMap(t => t.clips).find(c => c.id === id);

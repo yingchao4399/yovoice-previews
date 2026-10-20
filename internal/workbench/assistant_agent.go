@@ -258,6 +258,9 @@ func (w *Workbench) proposalLabel(action, target, value string) (string, error) 
 // ResolveAssistantProposal 处理用户对提议卡片的选择：确认则执行，否则标记为已忽略；只处理仍待确认的提议。
 func (w *Workbench) ResolveAssistantProposal(id string, confirm bool) error {
 	proposal := w.findProposal(id)
+	if proposal != nil && proposal.Downloads != nil {
+		return w.resolveResourceDownloadProposal(id, confirm)
+	}
 	if proposal == nil || proposal.State != "pending" {
 		return msg.Err(msg.ErrRequestInvalid, nil)
 	}
@@ -341,7 +344,7 @@ func (w *Workbench) findProposal(id string) *schema.AssistantProposal {
 }
 
 // storeProposal 写回提议的新状态：进行中的一轮更新实时状态，已保存的会话更新记录。
-func (w *Workbench) storeProposal(p schema.AssistantProposal) {
+func (w *Workbench) storeProposal(p schema.AssistantProposal) error {
 	w.chat.mu.Lock()
 	var snapshot *schema.AssistantTurn
 	if turn := w.chat.turn; turn != nil {
@@ -353,7 +356,7 @@ func (w *Workbench) storeProposal(p schema.AssistantProposal) {
 	if snapshot != nil {
 		w.publishLive(func(live *schema.AssistantLive) { live.Turn = snapshot })
 	}
-	_ = w.Store.Update(func(s *schema.State) {
+	return w.Store.Update(func(s *schema.State) {
 		if s.AssistantSessions == nil {
 			return
 		}

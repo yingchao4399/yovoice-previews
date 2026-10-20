@@ -5,13 +5,15 @@ import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/Segme
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Check, ChevronRight, ChevronUp, LoaderCircle } from 'lucide-react';
 import { Selector } from '../../shared/selector';
+import { DurationControl } from '../../shared/ui/duration-control';
 import definitions from '../../shared/lib/generation-options.json';
 import { formatActivity } from '../../shared/i18n/format';
 import { formatTime, isMusicModel, isYuE, modelEngineReady, type Draft, type ModelPackage, type State } from '../../shared/workbench';
 import { AdvancedSettings, SeedInput } from '../create/shared-controls';
 import { ModelSelector } from '../create/model-selector';
 import { ModelOptions } from '../create/model-options';
-import { applyPresetTags, durationPresets, isPresetActive, musicLanguages, splitTags, stylePresets, styleTags, tagHintKey } from './music-draft';
+import { MusicReference } from './music-reference';
+import { applyPresetTags, isPresetActive, musicLanguages, splitTags, stylePresets, styleTags, tagHintKey } from './music-draft';
 
 const optionValues = (key: string) => definitions.ace_step.find(spec => spec.key === key)?.values ?? [];
 
@@ -37,7 +39,11 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
   const options = draft.modelOptions?.ace_step ?? {};
   const option = (key: string, fallback: string | number) => options[key] ?? fallback;
   const update = (key: string, value: string | number) => change({ modelOptions: { ...draft.modelOptions, ace_step: { ...options, [key]: value } } });
-  const duration = Number(option('duration_seconds', 0));
+  const duration = draft.music ? draft.music.duration.mode === 'fixed' ? draft.music.duration.seconds ?? 0 : 0 : Number(option('duration_seconds', 0));
+  const creation: NonNullable<Draft['music']> = draft.music ?? { duration: duration ? { mode: 'fixed', seconds: duration } : { mode: 'auto' }, voice: 'auto' };
+  const updateCreation = (patch: Partial<NonNullable<Draft['music']>>) => change({ music: { ...creation, ...patch } });
+  const updateDuration = (seconds: number) => change({ music: { ...creation, duration: seconds ? { mode: 'fixed', seconds } : { mode: 'auto' } },
+    ...(!isYuE(draft.modelId) ? { modelOptions: { ...draft.modelOptions, ace_step: { ...options, duration_seconds: seconds } } } : {}) });
   const yueOptions = draft.modelOptions?.yue2 ?? {};
   const yueMode = String(yueOptions.cot ?? 'auto');
   const updateYue = (key: string, value: string | number) => change({ modelOptions: { ...draft.modelOptions, yue2: { ...yueOptions, [key]: value } } });
@@ -69,6 +75,17 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
         <h2 className="inspector-section-title">{t('@yovoice.create.model')}</h2>
         <ModelSelector label={t('@yovoice.create.model')} models={models} state={state} value={draft.modelId} isDisabled={generating} manage={settings} onChange={modelId => change({ modelId })} />
       </VStack>
+      <VStack gap={3}>
+        <h3>{t('@yovoice.arrangement.duration')}</h3>
+        <DurationControl value={duration} change={updateDuration} disabled={generating} max={yue ? 600 : 300} />
+        <small>{t(yue ? '@yovoice.music.durationYuEHint' : '@yovoice.music.durationACEHint')}</small>
+      </VStack>
+      {!draft.instrumental ? <VStack gap={2}>
+        <h3>{t('@yovoice.music.vocalVoice')}</h3>
+        <Selector label={t('@yovoice.music.vocalVoice')} isLabelHidden value={creation.voice ?? 'auto'} options={(['auto', 'male', 'female', 'reference'] as const).map(value => ({ value, label: t(`@yovoice.music.vocalVoice.${value}`) }))} onChange={voice => updateCreation({ voice: voice as NonNullable<Draft['music']>['voice'] })} />
+        <small>{t('@yovoice.music.vocalVoiceHint')}</small>
+        {creation.voice === 'reference' ? <MusicReference key={draft.id} draft={draft} kind="voice" change={change} /> : null}
+      </VStack> : null}
       {yue ? <>
       {/* 生成方式：按旋律谱（有谱按谱、没谱先写谱）或不经过谱自由发挥；纯音乐必须经过谱。 */}
       {draft.instrumental ? null : <VStack gap={2}>
@@ -79,12 +96,6 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
         </SegmentedControl>
       </VStack>}
       </> : <>
-      <VStack gap={3}>
-        <h3>{t('@yovoice.music.duration')}</h3>
-        <SegmentedControl label={t('@yovoice.music.duration')} size="sm" layout="fill" value={String(durationPresets.includes(duration as typeof durationPresets[number]) ? duration : '')} onChange={value => update('duration_seconds', Number(value))}>
-          {durationPresets.map(value => <SegmentedControlItem key={value} value={String(value)} label={value ? formatTime(value) : t('@yovoice.music.auto')} />)}
-        </SegmentedControl>
-      </VStack>
       <HStack className="language-row" vAlign="center" hAlign="between"><h3 aria-hidden="true">{t('@yovoice.music.language')}</h3>
         <Selector label={t('@yovoice.music.language')} isLabelHidden width="calc(var(--spacing-10) * 3)" value={draft.synthesisLanguage || 'zh'} options={musicLanguages.map(value => ({ value, label: t(`@yovoice.music.languageName.${value}`) }))} onChange={synthesisLanguage => change({ synthesisLanguage })} />
       </HStack>
@@ -177,7 +188,6 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
       </VStack>
       <AdvancedSettings open={advanced} onOpenChange={setAdvanced}>
         {yue ? <ModelOptions draft={draft} family="yue2" change={change} omit={['cot']} /> : <>
-        <label className="number-field">{t('@yovoice.music.duration')}<input type="number" min={0} max={300} step={1} value={duration || ''} placeholder={t('@yovoice.music.auto')} onChange={event => update('duration_seconds', event.target.value ? Number(event.target.value) : 0)} /></label>
         <label className="number-field">{t('@yovoice.music.bpm')}<input type="number" min={30} max={300} step={1} value={Number(option('bpm', 0)) || ''} placeholder={t('@yovoice.music.auto')} onChange={event => update('bpm', event.target.value ? Number(event.target.value) : 0)} /></label>
         <Selector label={t('@yovoice.music.keyscale')} value={String(option('keyscale', 'auto'))} options={optionValues('keyscale').map(value => ({ value, label: value === 'auto' ? t('@yovoice.music.auto') : value }))} onChange={value => update('keyscale', value)} />
         <Selector label={t('@yovoice.music.timesignature')} value={String(option('timesignature', 'auto'))} options={optionValues('timesignature').map(value => ({ value, label: value === 'auto' ? t('@yovoice.music.auto') : `${value}/${value === '6' ? 8 : 4}` }))} onChange={value => update('timesignature', value)} />
