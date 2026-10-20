@@ -4,6 +4,9 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # 每周全量跑一次浏览器测试，包括日常提交不跑的已封存用例。
+  schedule:
+    - cron: '0 3 * * 1'
   workflow_call:
     inputs:
       release:
@@ -21,7 +24,35 @@ concurrency:
   group: build-${{ github.workflow }}-${{ inputs.tag || (github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number)) || github.ref }}
   cancel-in-progress: ${{ !inputs.release }}
 jobs:
+  # 日常提交只跑测试；Windows/macOS 验证平台相关的 Go 行为与 macOS 更新器，打包只在发布标签时运行。
+  test:
+    if: ${{ !inputs.release && github.event_name != 'schedule' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [windows-latest, macos-15]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check release notes extraction
+        if: runner.os == 'macOS'
+        run: python3 scripts/test-release-notes.py
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      # 竞态检测只在 Linux 上跑；这里只验证平台相关行为，不重复加 -race。
+      - run: go test ./...
+      - run: python3 scripts/desktop/check-signing.py
+        if: runner.os == 'macOS'
+      - name: Verify macOS updater
+        if: runner.os == 'macOS'
+        run: |
+          swift test --package-path desktop/macos
+          python3 scripts/desktop/check-macos-update.py
   package:
+    if: ${{ inputs.release }}
     strategy:
       fail-fast: false
       matrix:
@@ -35,10 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.tag) || github.ref }}
-      - name: Check release notes extraction
-        if: ${{ !inputs.release && runner.os == 'macOS' }}
-        run: python3 scripts/test-release-notes.py
+          ref: refs/tags/${{ inputs.tag }}
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: web/package.json
@@ -67,16 +95,6 @@ jobs:
           fi
           echo "YOVOICE_BUILD_NUMBER=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
       - run: pnpm --dir web install --frozen-lockfile
-      # 竞态检测只在 Linux 上跑；Windows/macOS 只验证平台相关行为，不重复加 -race。
-      - run: go test ./...
-        if: ${{ !inputs.release }}
-      - run: python3 scripts/desktop/check-signing.py
-        if: ${{ !inputs.release && runner.os == 'macOS' }}
-      - name: Verify macOS updater
-        if: ${{ !inputs.release && runner.os == 'macOS' }}
-        run: |
-          swift test --package-path desktop/macos
-          python3 scripts/desktop/check-macos-update.py
       - name: Cache audio.cpp runtime
         uses: actions/cache@v4
         with:
@@ -117,13 +135,7 @@ jobs:
           # 仅正式发布签名；未配置证书时脚本跳过签名。
           WINDOWS_SIGN_PFX_BASE64: ${{ inputs.release && secrets.WINDOWS_SIGN_PFX_BASE64 || '' }}
           WINDOWS_SIGN_PASSWORD: ${{ inputs.release && secrets.WINDOWS_SIGN_PASSWORD || '' }}
-        # PR 构建跳过 CUDA 版以提速；合并到 main 后仍打包 CUDA 版，避免发布时才第一次发现 CUDA 打包问题。
-        run: |
-          if ('${{ inputs.release || github.event_name == 'push' }}' -eq 'true') {
-            ./scripts/desktop/build-windows.ps1 -Package -Cuda
-          } else {
-            ./scripts/desktop/build-windows.ps1 -Package
-          }
+        run: ./scripts/desktop/build-windows.ps1 -Package -Cuda
       - name: Verify Windows service errors and recovery
         if: runner.os == 'Windows'
         shell: pwsh
@@ -131,14 +143,14 @@ jobs:
           dotnet run --project desktop/windows/ServiceChecks
           if ($LASTEXITCODE -ne 0) { throw "保存与错误协议检查失败" }
       - name: Verify Windows updater
-        if: ${{ !inputs.release && runner.os == 'Windows' }}
+        if: runner.os == 'Windows'
         shell: powershell
         run: |
           dotnet run --project desktop/windows/UpdateChecks
           if ($LASTEXITCODE -ne 0) { throw "更新元数据检查失败" }
           ./scripts/desktop/check-windows-update.ps1
       - name: Verify Windows Setup
-        if: ${{ !inputs.release && runner.os == 'Windows' }}
+        if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/desktop/check-windows-setup.ps1
       - name: Import macOS signing certificate
@@ -217,12 +229,6 @@ jobs:
           name: yovoice-ffmpeg-source
           path: artifacts/yovoice-ffmpeg-source.tar.gz
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        if: failure() && runner.os == 'Windows'
-        with:
-          name: test-results-${{ matrix.platform }}
-          path: web/test-results/
-          retention-days: 7
 
   # 前端检查与浏览器测试与平台无关，单独在 Linux 上并行跑，不拖慢打包任务。
   web:
@@ -243,25 +249,27 @@ jobs:
       - run: pnpm --dir web exec playwright install --with-deps chromium
       - run: pnpm --dir web run lint
       - run: pnpm --dir web test
+        env:
+          # 定时与手动触发时全量运行，包括已封存的用例。
+          PW_ALL: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '1' || '' }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: browser-test-results
           path: web/test-results/
           retention-days: 7
-  linux-cli:
+  # Linux 上做格式、vet 与竞态检测。
+  go:
+    if: ${{ !inputs.release && github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.release && format('refs/tags/{0}', inputs.tag) || github.ref }}
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: false
       - name: Check Go format and vet
-        if: ${{ !inputs.release }}
         run: |
           unformatted="$(gofmt -l cmd internal)"
           if [[ -n "$unformatted" ]]; then echo "未格式化：$unformatted" >&2; exit 1; fi
@@ -269,7 +277,18 @@ jobs:
           GOOS=windows go vet ./...
           GOOS=darwin go vet ./...
       - run: go test -race ./...
-        if: ${{ !inputs.release }}
+  linux-cli:
+    if: ${{ inputs.release }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
       - uses: actions/cache@v4
         with:
           path: |
@@ -288,7 +307,6 @@ jobs:
           if [[ -n "$TAG" ]]; then export YOVOICE_VERSION="${TAG#v}"; fi
           python3 scripts/package-cli.py
       - name: Verify Linux runtime
-        if: ${{ !inputs.release }}
         run: |
           unzip artifacts/yovoice-cli-linux-x64.zip -d "$RUNNER_TEMP/cli"
           "$RUNNER_TEMP/cli/yovoice" --version

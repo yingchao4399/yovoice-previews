@@ -41,7 +41,8 @@ MORE CLI:
 - Go 按对象职责划分，Windows C# 只处理原生窗口与文件对话框；避免仅有一个实现的接口和预留架构。
 - 修改推理映射或下载逻辑后运行 `go test -race ./...`。
 - 界面修改运行 `pnpm --dir web run lint`、`pnpm --dir web run build` 和 `pnpm --dir web test`。
-- 浏览器测试较耗时，日常调试优先定向执行相关用例（如 `pnpm --dir web exec playwright test browser-tests/<file>.spec.ts`），提交前再运行全量测试。
+- 浏览器测试较耗时，日常调试优先定向执行相关用例（如 `pnpm --dir web exec playwright test browser-tests/<file>.spec.ts`），提交前再运行 `pnpm --dir web test`。
+- 功能稳定的用例在 `web/playwright.config.ts` 的 `sealed` 列表中封存，`pnpm --dir web test` 和日常 CI 不跑；改到这些功能或发布前运行 `pnpm --dir web run test:all`（CI 每周一全量跑一次）。功能重新频繁改动时移出列表。
 - 不将浏览器预览和交叉编译视为 Windows 实机推理已验证。
 
 ## 版本记录

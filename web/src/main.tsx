@@ -20,6 +20,6 @@ window.addEventListener('unhandledrejection', event => {
   dismissSplash(true);
   reportDesktop('rejection', '', String((event.reason as Error)?.stack ?? event.reason));
 });
-// 官方 v0.3.1：Windows 合成器不使用滚动边缘蒙版。
+// 标记 Windows：部分样式（如滚动边缘渐隐）在 WebView2/Chrome 的 Windows 合成器上会渲染出错，需要按系统区分。
 if (/Windows/.test(navigator.userAgent)) document.documentElement.dataset.os = 'windows';
 createRoot(document.getElementById('root')!).render(<React.StrictMode><Theme theme={yovoicePaperTheme} mode="light"><RootBoundary><App /></RootBoundary></Theme></React.StrictMode>);

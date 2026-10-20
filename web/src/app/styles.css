@@ -38,6 +38,7 @@
   /* 隐藏滚动条外观，保留滚轮、触控板和键盘滚动。 */
   * { scrollbar-width: none; }
   *::-webkit-scrollbar { display: none; }
+  /* 官方细滚动条同时覆盖智能编曲和曲谱滚动区。 */
   :is(.inspector-scroll, .recent-projects, .assistant-body, .assistant-history-list, .library-page > .library-content, .settings-page > [role="tabpanel"], .music-editor, .score-editor, .subtitle-editor, .ai-detail, .arrangement-page, .score-scroll) { scrollbar-width: thin; scrollbar-color: var(--color-border-emphasized) transparent; }
   body, input, textarea, button { font-family: var(--app-font); }
   body { -webkit-font-smoothing: antialiased; color: var(--app-ink); background: var(--app-paper); font-size: var(--app-ui-font); }

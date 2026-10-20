@@ -51,7 +51,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
         sidebarButton.isBordered = false
         sidebarButton.toolTip = HostL10n.t("sidebar.tooltip")
         sidebarButton.frame = NSRect(x: 0, y: 0, width: 32, height: 28)
-        accessory.view = sidebarButton
+        // 按钮不能直接当附件视图：macOS 26 上按钮的固有尺寸会与标题栏布局互相拉扯，布局无法收敛而抛异常崩溃。
+        // 与右侧一样放进固定大小的普通容器里，由容器 frame 决定附件尺寸。
+        let sidebarContainer = NSView(frame: NSRect(x: 0, y: 0, width: 32, height: 28))
+        sidebarContainer.addSubview(sidebarButton)
+        accessory.view = sidebarContainer
         window.addTitlebarAccessoryViewController(accessory)
         let rightAccessory = NSTitlebarAccessoryViewController()
         rightAccessory.layoutAttribute = .right
