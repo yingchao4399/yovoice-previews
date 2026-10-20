@@ -533,6 +533,21 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
     publish();
     return true as T;
   }
+  if (method === 'assistant.answer') {
+    const input = data as { id: string; sessionId: string; action: string; selected: number[]; custom: string };
+    if (state.assistantSessions?.currentId !== input.sessionId) throw new CallError('@yovoice.error.requestInvalid');
+    const session = state.assistantSessions.sessions.find(item => item.id === input.sessionId);
+    const question = session?.messages.flatMap(message => message.blocks ?? []).find(block => block.question?.id === input.id)?.question;
+    if (!question || !['pending', 'deferred'].includes(question.state)) throw new CallError('@yovoice.error.requestInvalid');
+    if (input.action === 'submit') {
+      if (!input.selected.length && !input.custom.trim() || !question.multiple && input.selected.length > 1 || input.selected.some(i => !Number.isInteger(i) || i < 0 || i >= question.options.length)) throw new CallError('@yovoice.error.requestInvalid');
+      question.state = 'answered'; question.selected = input.selected; question.custom = input.custom.trim();
+    } else if (input.action === 'later') question.state = 'deferred';
+    else if (input.action === 'cancel') question.state = 'cancelled';
+    else throw new CallError('@yovoice.error.requestInvalid');
+    publish();
+    return true as T;
+  }
   if (method === 'assistant.proposal') {
     const { id, confirm } = data as { id: string; confirm: boolean };
     const cards = (state.assistantSessions?.sessions ?? []).flatMap(session => session.messages.flatMap(message => message.blocks ?? [])).map(block => block.card).filter(card => card?.proposal?.id === id);

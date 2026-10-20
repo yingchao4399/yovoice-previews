@@ -1,0 +1,33 @@
+import { test, expect } from '@playwright/test';
+import { emptyState } from '../src/shared/workbench';
+import { createMusicDraft } from '../src/features/music/music-draft';
+import { seedState } from './seed';
+
+test('音乐时长与演唱方向可保存，纯音乐保留设置；歌词工具使用选中文本且不自动改正文', async ({ page }) => {
+  const state = emptyState();
+  state.drafts = [{ ...createMusicDraft('zh-CN'), id: 'e'.repeat(32), title: '乡间小调', text: 'chinese folk', modelId: 'yue2-3b-q8', instrumental: false, lyrics: '[Verse]\n山风吹过弦\n月色照在水面' }];
+  await seedState(page, state); await page.goto('/');
+  await page.getByRole('combobox', { name: '目标时长', exact: true }).click();
+  await page.getByRole('option', { name: '08:00', exact: true }).click();
+  await page.getByRole('combobox', { name: '演唱音色', exact: true }).click();
+  await page.getByRole('option', { name: '女声', exact: true }).click();
+  await expect(page.locator('.saved')).toContainText('已保存');
+  await page.reload();
+  await expect(page.getByRole('combobox', { name: '目标时长', exact: true })).toContainText('08:00');
+  await expect(page.getByRole('combobox', { name: '演唱音色', exact: true })).toContainText('女声');
+  await page.getByRole('radio', { name: '纯音乐', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: '演唱音色', exact: true })).toHaveCount(0);
+  await page.getByRole('radio', { name: '填写歌词', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: '演唱音色', exact: true })).toContainText('女声');
+  const lyrics = page.getByRole('textbox', { name: '歌词', exact: true });
+  await lyrics.evaluate((element: HTMLTextAreaElement) => { element.focus(); element.setSelectionRange(8, 13); });
+  await page.getByRole('button', { name: '优化歌词', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('山风吹过弦');
+  await expect(dialog.getByRole('textbox', { name: '歌词要求' })).toHaveValue('chinese folk');
+  await dialog.getByRole('button', { name: '取消', exact: true }).click();
+  await expect(lyrics).toHaveValue(state.drafts[0].lyrics!);
+  await page.getByRole('combobox', { name: '目标时长', exact: true }).click();
+  await page.getByRole('option', { name: 'AI 自动', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).drafts[0].music.duration.mode)).toBe('auto');
+});

@@ -19,6 +19,7 @@ func NewID() string {
 func ValidID(id string) bool { b, e := hex.DecodeString(id); return e == nil && len(b) == 16 }
 
 type SynthesisSettings struct {
+	Music             *MusicCreationOptions     `json:"music,omitempty"`
 	ModelOptions      map[string]map[string]any `json:"modelOptions,omitempty"`
 	Speaker           string                    `json:"speaker,omitempty"`
 	SynthesisLanguage string                    `json:"synthesisLanguage,omitempty"`

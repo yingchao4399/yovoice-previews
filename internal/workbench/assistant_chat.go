@@ -67,6 +67,11 @@ type chatTurn struct {
 	locale    schema.UiLocale // 界面语言，工具卡片摘要据此选择
 	model     string
 	startedAt time.Time
+	id        string
+	sessionID string
+	context   AssistantContext
+	waiting   bool
+	yield     context.CancelFunc
 }
 
 // assistantSessionDir 返回某个会话的助手子进程配置目录。
@@ -89,6 +94,11 @@ func (w *Workbench) SendAssistant(text string, context AssistantContext) error {
 	if err != nil {
 		return err
 	}
+	return w.sendAssistantToSession(sessionID, text, context)
+}
+
+// 问答续接固定原会话，不能因用户切换会话而把回答发到另一处。
+func (w *Workbench) sendAssistantToSession(sessionID, text string, context AssistantContext) error {
 	// 用户消息立即入库：标题取首条用户消息，会话时间随之更新。
 	now := time.Now().UTC()
 	_ = w.Store.Update(func(s *schema.State) {
@@ -309,7 +319,8 @@ func (w *Workbench) runTurn(parent context.Context, next chatMessage) {
 	timeout := aiTimeout(w.Store.Read().Preferences)
 	ctx, cancel := context.WithTimeout(parent, timeout)
 	defer cancel()
-	turn := &chatTurn{model: cfg.Model, startedAt: time.Now().UTC(), locale: next.context.Locale}
+	turn := &chatTurn{model: cfg.Model, startedAt: time.Now().UTC(), locale: next.context.Locale,
+		id: schema.NewID(), sessionID: next.sessionID, context: next.context, yield: cancel}
 	w.chat.mu.Lock()
 	w.chat.turn = turn
 	w.chat.mu.Unlock()
@@ -352,6 +363,8 @@ func (w *Workbench) runTurn(parent context.Context, next chatMessage) {
 
 	reply := schema.AssistantMessage{ID: schema.NewID(), Role: "assistant", Text: blocksText(final.Blocks), Blocks: final.Blocks, CreatedAt: time.Now().UTC()}
 	switch {
+	case turn.waiting:
+		reply.Status = "completed"
 	case err == nil:
 		reply.Status = "completed"
 	case errors.Is(parent.Err(), context.Canceled):

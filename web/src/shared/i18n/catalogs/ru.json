@@ -4590,5 +4590,116 @@
   "@yovoice.arrangement.job.failed": {"defaultMessage": "Failed"},
   "@yovoice.arrangement.job.interrupted": {"defaultMessage": "Interrupted"},
   "@yovoice.arrangement.blocked": {"defaultMessage": "{detail}"},
-  "@yovoice.arrangement.returnToAssembly": {"defaultMessage": "Assemble in Smart Arrangement"}
+  "@yovoice.arrangement.returnToAssembly": {"defaultMessage": "Assemble in Smart Arrangement"},
+  "@yovoice.history.quickSwitch": {
+    "defaultMessage": "Quick switch version"
+  },
+  "@yovoice.history.expandAll": {
+    "defaultMessage": "Expand all"
+  },
+  "@yovoice.history.collapseAll": {
+    "defaultMessage": "Collapse all"
+  },
+  "@yovoice.history.expandItem": {
+    "defaultMessage": "Expand full details for {name}"
+  },
+  "@yovoice.history.collapseItem": {
+    "defaultMessage": "Collapse full details for {name}"
+  },
+  "@yovoice.player.panCanvas": {
+    "defaultMessage": "Pan canvas"
+  },
+  "@yovoice.player.panHint": {
+    "defaultMessage": "Drag in hand mode, use the middle button, or Shift + wheel to scroll horizontally"
+  },
+  "@yovoice.player.resizePanel": {
+    "defaultMessage": "Resize audio panel"
+  },
+  "@yovoice.assistant.question.single": {
+    "defaultMessage": "Choose one option or write your own answer."
+  },
+  "@yovoice.assistant.question.multiple": {
+    "defaultMessage": "Choose multiple options or add your own answer."
+  },
+  "@yovoice.assistant.question.custom": {
+    "defaultMessage": "Custom answer"
+  },
+  "@yovoice.assistant.question.submit": {
+    "defaultMessage": "Submit answer"
+  },
+  "@yovoice.assistant.question.cancel": {
+    "defaultMessage": "Cancel question"
+  },
+  "@yovoice.assistant.question.later": {
+    "defaultMessage": "Answer later"
+  },
+  "@yovoice.assistant.question.resume": {
+    "defaultMessage": "Resume question"
+  },
+  "@yovoice.assistant.question.cancelled": {
+    "defaultMessage": "Question cancelled"
+  },
+  "@yovoice.music.durationAuto": {
+    "defaultMessage": "AI automatic"
+  },
+  "@yovoice.music.durationCustom": {
+    "defaultMessage": "Custom duration"
+  },
+  "@yovoice.music.durationSeconds": {
+    "defaultMessage": "Target seconds"
+  },
+  "@yovoice.music.durationUnsupported": {
+    "defaultMessage": "Unsupported by this model"
+  },
+  "@yovoice.music.durationYuEHint": {
+    "defaultMessage": "YuE2 follows lyrics and melody. This is a planning target; the result may differ."
+  },
+  "@yovoice.music.durationACEHint": {
+    "defaultMessage": "ACE-Step supports native duration up to 5 minutes in this adapter. AI automatic lets the model decide."
+  },
+  "@yovoice.music.vocalVoice": {
+    "defaultMessage": "Singing voice"
+  },
+  "@yovoice.music.vocalVoice.auto": {
+    "defaultMessage": "AI automatic"
+  },
+  "@yovoice.music.vocalVoice.male": {
+    "defaultMessage": "Male voice"
+  },
+  "@yovoice.music.vocalVoice.female": {
+    "defaultMessage": "Female voice"
+  },
+  "@yovoice.music.vocalVoice.reference": {
+    "defaultMessage": "Reference voice"
+  },
+  "@yovoice.music.vocalVoiceHint": {
+    "defaultMessage": "Voice choices guide the singing style. References guide timbre; these models do not promise cloning."
+  },
+  "@yovoice.music.generateLyrics": {
+    "defaultMessage": "Generate lyrics"
+  },
+  "@yovoice.music.optimizeLyrics": {
+    "defaultMessage": "Optimize lyrics"
+  },
+  "@yovoice.music.undoLyrics": {
+    "defaultMessage": "Undo lyrics replacement"
+  },
+  "@yovoice.music.lyricsRequirement": {
+    "defaultMessage": "Lyrics requirements"
+  },
+  "@yovoice.music.lyricsPreviewHint": {
+    "defaultMessage": "Preview before applying. Only lyrics will change; the title, style and other settings stay as they are."
+  },
+  "@yovoice.music.lyricsPreview": {
+    "defaultMessage": "Lyrics preview"
+  },
+  "@yovoice.music.lyricsSource": {
+    "defaultMessage": "Selected fragment or current lyrics"
+  },
+  "@yovoice.music.lyricsChanged": {
+    "defaultMessage": "Lyrics changed while this was running. Regenerate or copy the result to preserve your edits."
+  },
+  "@yovoice.music.lyricsTooLong": {
+    "defaultMessage": "The replacement exceeds 4,000 characters. Shorten it or select a smaller fragment."
+  }
 }

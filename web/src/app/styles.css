@@ -1083,9 +1083,32 @@
 .instrument-file-path { overflow-wrap: anywhere; user-select: text; }
 
 /* 两类编辑器共享底部高度预算，始终给作品信息保留上方空间。 */
-.workbench-docks { max-height: 65vh; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+.workbench-docks { max-height: min(65vh, calc(100dvh - var(--spacing-10) * 6)); min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; }
 .score-dock { position: relative; flex: none; min-height: 0; max-height: 40vh; margin: var(--spacing-2) var(--spacing-3) 0; border: var(--border-width) solid var(--app-line); border-radius: var(--radius-container); background: var(--app-white); }
 .score-dock > .astryx-resize-handle { width: var(--spacing-12); align-self: center; top: calc(-1 * var(--spacing-1)); z-index: 6; }
 .score-dock-toolbar { flex: none; padding-inline: var(--spacing-2); border-bottom: var(--border-width) solid var(--app-line); }
 .score-dock[data-collapsed] .score-dock-toolbar { border-bottom: 0; }
 .score-dock > .score-arrangement { flex: 1; min-height: 0; max-height: none; margin: 0; border: 0; border-radius: 0 0 var(--radius-container) var(--radius-container); }
+
+/* 历史缩略保持等高，完整内容仅在明确展开时进入布局。 */
+.history-compact .ticket-main { height: calc(var(--spacing-10) * 3); box-sizing: border-box; }
+.history-compact .ticket-body h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-compact .project-excerpt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: var(--line-height-normal); max-height: calc(2 * var(--font-size-base) * 1.5); }
+.history-expanded { border-radius: var(--radius-container); background: var(--app-paper); }
+.history-details { padding: var(--spacing-4); border-top: var(--border-width) solid var(--app-line); min-width: 0; }
+.history-full-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: var(--line-height-normal); }
+/* 页签本身固定，整个创作内容独立滚动；文本框不承担整页滚动。 */
+.music-workspace { flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
+.music-workspace > [role="tablist"] { flex: none; }
+.music-workspace > [role="tabpanel"] { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: var(--color-border-emphasized) transparent; padding-bottom: var(--spacing-4); }
+.music-workspace #music-compose-panel > .music-editor { flex: none; overflow: visible; }
+.music-workspace #music-compose-panel > .music-block { flex: none; }
+.timeline-lane, .multitrack-scroll, .score-scroll { scrollbar-width: thin; scrollbar-color: var(--color-border-emphasized) transparent; overscroll-behavior: contain; }
+[data-hand-tool="true"], [data-hand-tool="true"] input[type="range"] { cursor: grab; }
+[data-panning="true"], [data-panning="true"] * { cursor: grabbing !important; user-select: none; }
+.audio-panel { position: relative; }
+.player-single > .astryx-resize-handle { flex-shrink: 0; min-height: var(--spacing-2); }
+.player.player-single > .timeline { flex: 1; min-height: 0; }
+.player-single .timeline-lane { min-height: 0; overflow: auto; }
+.player-single .timeline-content { flex: 1; min-height: min-content; }
+.multitrack > [data-timeline-menu-trigger] { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }

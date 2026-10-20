@@ -23,6 +23,9 @@ var assistantTools = []string{
 	"open_work", "open_page", "list_models", "list_voices", "list_characters", "save_character", "status",
 	"get_app_status", "get_recent_errors", "remember_preference", "forget_preference", "propose_action",
 	"arrangement_inventory", "inspect_arrangement", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "render_arrangement",
+	"search_resources",
+	"add_resource_clip",
+	"ask_user",
 }
 
 // newAssistantServer 构建只给内置助手的 MCP server：status/list_models/list_voices 与对外 MCP 共用定义，
@@ -45,6 +48,7 @@ func (w *Workbench) newAssistantServer() *mcp.Server {
 	w.registerMusicTools(server)
 	w.registerAgentTools(server)
 	w.registerArrangementTools(server)
+	w.registerQuestionTool(server)
 	return server
 }
 

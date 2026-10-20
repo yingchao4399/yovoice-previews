@@ -58,9 +58,25 @@ const AssistantMemoLimit = 30
 
 // AssistantBlock 是助手消息里按出现顺序排列的一块：文本、思考，或一次工具调用（Card）。
 type AssistantBlock struct {
-	Kind string             `json:"kind"` // text、thinking 或 tool
-	Text string             `json:"text,omitempty"`
-	Card *AssistantToolCard `json:"card,omitempty"`
+	Kind     string             `json:"kind"` // text、thinking 或 tool
+	Text     string             `json:"text,omitempty"`
+	Card     *AssistantToolCard `json:"card,omitempty"`
+	Question *AssistantQuestion `json:"question,omitempty"`
+}
+
+// 问答卡只保存选择，不授予下载、删除或上传权限；这些操作仍需专门的确认卡。
+type AssistantQuestion struct {
+	ID        string   `json:"id"`
+	SessionID string   `json:"sessionId"`
+	TurnID    string   `json:"turnId"`
+	WorkID    string   `json:"workId,omitempty"`
+	Revision  string   `json:"revision,omitempty"`
+	Prompt    string   `json:"prompt"`
+	Options   []string `json:"options"`
+	Multiple  bool     `json:"multiple,omitempty"`
+	State     string   `json:"state"`
+	Selected  []int    `json:"selected,omitempty"`
+	Custom    string   `json:"custom,omitempty"`
 }
 
 // AssistantSession 是一段助手对话：标题取首条用户消息，消息数量有上限；

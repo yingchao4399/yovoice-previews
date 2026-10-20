@@ -11,6 +11,7 @@ import { formatCallError } from '../../shared/i18n/format';
 import { formatTime, type AssistantBlock, type AssistantMessage, type AssistantToolCard, type Generation } from '../../shared/workbench';
 import { splitTurn, turnActivity, turnPhase } from './assistant-model';
 import { AssistantOrb } from './assistant-avatar';
+import { AssistantQuestionCard } from './assistant-question';
 
 // 助手的一轮回复：没有气泡与头像，内容即界面。过程（思考、工具、中间说明）收在一行状态里，
 // 默认收起、点开看步骤；回答逐字流式渲染为 Markdown；生成结果可直接试听。
@@ -34,6 +35,7 @@ export function AssistantTurn({ blocks, live, message, generation, playing, onPl
       <Button size="sm" variant="ghost" label={t('@yovoice.assistant.openWork')} onClick={() => openWork(generation.settings.id)} />
     </HStack> : null}
     {proposals.map(card => <ProposalCard key={card.proposal!.id} card={card} onResolve={onResolve} />)}
+    {blocks.flatMap(block => block.question ? [<AssistantQuestionCard key={block.question.id} question={block.question} />] : [])}
     {message?.status === 'cancelled' ? <small className="assistant-note">{t('@yovoice.assistant.cancelled')}</small> : null}
     {message?.status === 'failed' && message.errorCode ? <small className="assistant-note" data-tone="danger" role="alert">{formatCallError(t, message)}</small> : null}
     {!live && message?.text ? <CopyButton text={message.text} /> : null}

@@ -11,6 +11,7 @@ import { NewProject, Projects } from '../features/library/projects';
 import { BookImport } from '../features/library/book-import';
 import { VoiceTarget } from '../features/library/voice-target';
 import { MediaLibrary } from '../features/library/media-library';
+import { HistoryVersionMenu, historyForProject, rememberedVersion, rememberVersion } from '../features/library/history-version-menu';
 import { CharacterEditor, CharacterLibrary } from '../features/library/characters';
 import { VoiceEditor } from '../features/library/voice-editor';
 import { Studio } from '../features/create/studio';
@@ -278,7 +279,6 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   function annotate(selection: TextSelection) {
     setPronunciation({ ...selection, sound: '' });
   }
-  const generations = state.history.filter(item => item.settings.id === draft.id);
   const activity = state.activity; const busy = activity?.status === 'running';
   const [playingCue, setPlayingCue] = useState(-1);
   const [cueSelection, setCueSelection] = useState<{ draftId: string; index: number; revision: number } | null>(null);
@@ -363,12 +363,14 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
 
   useEffect(() => {
     if (!ready) return;
-    const items = state.history.filter(item => item.settings.id === draft.id);
+    const items = historyForProject(draft, { drafts: state.drafts, history: state.history });
     const latest = items[0];
     const key = `${draft.id}/${latest?.id ?? ''}`;
     // 切换作品或生成了新版本时跳到最新版；删除版本露出的旧版本不抢占仍然存在的当前选择。
     const surfaced = !!latest && previousHistory.current?.startsWith(`${draft.id}/`) && knownHistory.current.has(latest.id);
-    const latestTrack: Track | null = latest ? { id: latest.id, name: latest.title, fileName: latest.fileName, kind: 'outputs', subtitle: t('@yovoice.app.subtitleOutput') } : null;
+    const remembered = !previousHistory.current?.startsWith(`${draft.id}/`) ? items.find(item => item.id === rememberedVersion(draft.id)) : undefined;
+    const initial = remembered ?? latest;
+    const latestTrack: Track | null = initial ? { id: initial.id, name: initial.title, fileName: initial.fileName, kind: 'outputs', subtitle: t('@yovoice.app.subtitleOutput') } : null;
     const changed = key !== previousHistory.current;
     // 删除了正在播放的版本时回到最新一版；试听参考音频等其他音频不受影响。
     setTrack(current => {
@@ -377,9 +379,16 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
       return current?.kind === 'outputs' && !kept && !state.history.some(item => item.id === current.id) ? latestTrack : current;
     });
     previousHistory.current = key; knownHistory.current = new Set(items.map(item => item.id));
-  }, [draft.id, state.history, ready, t, previousHistory, setTrack]);
+  }, [draft, state.drafts, state.history, ready, t, previousHistory, setTrack]);
 
-  const currentVersion = track?.kind === 'outputs' ? generations.find(item => item.id === track.id) : undefined;
+  const historyItems = historyForProject(draft, state);
+  const currentVersion = track?.kind === 'outputs' ? historyItems.find(item => item.id === track.id) : undefined;
+  const switchVersion = (item: Generation) => {
+    rememberVersion(draft.id, item.id);
+    setTrack({ id: item.id, name: item.title, fileName: item.fileName, kind: 'outputs', subtitle: t('@yovoice.app.subtitleOutput'),
+      startTime: projectKind(draft) === 'music' || projectKind(draft) === 'score' ? Math.min(playback.time, Math.max(0, item.duration - .01)) : 0,
+      playRequest: playback.playing ? performance.now() : undefined });
+  };
   // 语音生成定位为快速合成：没有作品列表，进入时直接继续当前或最近的语音作品，没有则新建一个。
   const quickOpening = useRef(false);
   useEffect(() => {
@@ -398,7 +407,10 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   });
   const audition = (value: Track) => {
     if (page === 'create') setTrack({ ...value, playRequest: performance.now() });
-    else setPreviewTrack(current => current?.id === value.id ? null : { ...value, playRequest: performance.now() });
+    else {
+      if (page === 'history' && value.kind === 'outputs') { rememberVersion(draft.id, value.id); setTrack({ ...value, playRequest: undefined }); }
+      setPreviewTrack(current => current?.id === value.id ? null : { ...value, playRequest: performance.now() });
+    }
   };
   const editorFooter = (controls?: ReactNode) => <HStack className="editor-status" hAlign="between" vAlign="center" gap={2} wrap="wrap"><HStack gap={1} vAlign="center">{projectKind(draft) === 'story' ? <SubtitleImport onError={onError} onImport={async (title, subtitles) => { await newDraft({ ...createDraft(false, state.preferences.uiLocale), ...synthesisSettings(draft), kind: 'story', title, text: subtitles.cues.map(c => c.text).join('\n'), subtitles }); }} /> : null}{controls}</HStack><HStack vAlign="center" gap={4}><small className="saved"><Check size={14} />{saveFailed ? <Button size="sm" label={t('@yovoice.app.saveFailed')} onClick={() => run(() => persistDraft(draft))} /> : saving ? t('@yovoice.app.saving') : t('@yovoice.app.saved')}</small>{projectKind(draft) === 'score' ? null : <small>{t('@yovoice.app.charCount', { count: Array.from(draft.text).length })}</small>}</HStack></HStack>;
   const defaultModelId = preferredModel(state, 'text', 'index-2.5-q8');
@@ -435,6 +447,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
     {currentVersion && music ? <Button className="player-tool" label={t('@yovoice.music.nowPlaying')} tooltip={t('@yovoice.music.nowPlaying')} size="sm" variant="ghost" icon={<Disc3 />} onClick={() => setNowPlaying(currentVersion)} /> : null}
     {/* 历史入口始终保留：还没生成过时也能进入历史页查看其他作品的生成记录。 */}
     <Button className="player-tool" label={historyLabel} tooltip={historyLabel} size="sm" variant="ghost" icon={<History />} onClick={() => openHistory(draft)} />
+    <HistoryVersionMenu items={historyItems} selected={track?.kind === 'outputs' ? track.id : undefined} select={switchVersion} />
     {currentVersion ? <DropdownMenu presentation="popover" placement="above" alignment="end" hasChevron={false} menuWidth="max-content" button={{ size: 'sm', variant: 'ghost', isIconOnly: true, icon: <MoreHorizontal />, label: t('@yovoice.history.audioActions'), tooltip: t('@yovoice.history.audioActions') }} items={[
       ...(projectKind(draft) === 'text' ? [{ label: t('@yovoice.voice.save'), onClick: () => setVoiceEditor(currentVersion) }, { label: t('@yovoice.character.saveAs'), onClick: () => characterFromGeneration(currentVersion) }] : []),
       { label: t('@yovoice.player.reveal'), onClick: () => { void call('media.reveal', { kind: 'outputs', id: currentVersion.id }).catch(e => onError(noticeMessage(e))); } },
@@ -443,7 +456,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   // 复用：音乐版本把风格、歌词和参数填回当前作品；其余新建一个同参数的作品。
   const reuseGeneration = (item: Generation) => {
     if (music && item.settings.id === draft.id) {
-      change({ text: item.settings.text, lyrics: item.settings.lyrics, abc: item.settings.abc, instrumental: item.settings.instrumental, synthesisLanguage: item.settings.synthesisLanguage, modelOptions: item.settings.modelOptions, seed: item.settings.seed });
+      change({ text: item.settings.text, lyrics: item.settings.lyrics, abc: item.settings.abc, instrumental: item.settings.instrumental, synthesisLanguage: item.settings.synthesisLanguage, modelOptions: item.settings.modelOptions, music: structuredClone(item.settings.music), seed: item.settings.seed });
       setPreviewTrack(null); setPage('create'); return;
     }
     run(() => newDraft({ ...structuredClone(item.settings), id: crypto.randomUUID().replaceAll('-', ''), title: (item.title + t('@yovoice.draft.copySuffix')).slice(0, 120), createdAt: undefined, updatedAt: undefined }));
@@ -459,7 +472,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
       {page === 'create' ? <Button label={inspectorCollapsed ? t('@yovoice.app.expandInspector') : t('@yovoice.app.collapseInspector')} isIconOnly variant="ghost" size="sm" icon={<PanelRight size={17} />} aria-expanded={!inspectorCollapsed} onClick={toggleInspectorPanel} /> : null}</HStack> : null}
     <AppShell variant="elevated" sideNav={navigation.isCollapsed ? undefined : sidebar} mobileNav={{ breakpoint: 'none' }} height="fill"><VStack className="app-sheet" gap={0}>
       {characterEditor ? <VStack style={{ display: page === 'characters' ? 'flex' : 'none', height: '100%', minHeight: 0 }} gap={0}><PageBoundary name="character-editor"><CharacterEditor active={page === 'characters'} initial={characterEditor} state={state} catalog={catalog} settings={openSettings} apply={characterOrigin.current ? async saved => { const origin = characterOrigin.current!; await applyToTarget(saved, origin.draftId, origin.speakerId); setCharacterEditor(null); } : undefined} close={() => { setCharacterEditor(null); setPage(characterReturnPage.current); }} /></PageBoundary></VStack> : null}
-      <VStack className="page-panel" style={{ display: characterActive ? 'none' : 'flex' }} gap={0}><Layout height="fill" footer={<VStack className="workbench-docks" gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="timeline" resetKey={draft.id}>{scoring || musicScore ? <ScoreDock key={`score:${draft.id}`} draft={draft} change={change} playhead={track ? playback : undefined} seek={time => setSeekRequest({ time, nonce: performance.now() })} /> : null}{showTimeline ? <TimelineEditor exportProject={async () => { await persistDraft(draft); await call('project.export', { id: draft.id, name: draft.title }); }} key={`timeline:${draft.id}`} selectedCue={selectedCue} cueSelectionRevision={cueSelection?.revision ?? 0} playbackCue={setPlayingCue} selectCue={selectCue} draft={draft} busy={busy} regenerate={async (cueId, clipId) => { await persistDraft(draft); await call('generation.cue', { draft, cueId, clipId }); }} value={draft.timeline ?? { tracks: [] }} history={state.history} change={timeline => change({ timeline })} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget} onError={onError} /> : <Player onProgress={(time, playing) => { reportPlayhead(time); if (scoring || musicScore) setPlayback({ time, playing }); }} seekRequest={scoring || musicScore ? seekRequest : undefined} actions={playerActions} reveal={false} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget || !!nowPlaying} track={track} onError={onError} />}</PageBoundary></VStack>} content={<VStack className="content-frame" gap={0}>
+      <VStack className="page-panel" style={{ display: characterActive ? 'none' : 'flex' }} gap={0}><Layout height="fill" footer={<VStack className="workbench-docks" gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="timeline" resetKey={draft.id}>{scoring || musicScore ? <ScoreDock key={`score:${draft.id}`} draft={draft} change={change} playhead={track ? playback : undefined} seek={time => setSeekRequest({ time, nonce: performance.now() })} /> : null}{showTimeline ? <TimelineEditor exportProject={async () => { await persistDraft(draft); await call('project.export', { id: draft.id, name: draft.title }); }} key={`timeline:${draft.id}`} selectedCue={selectedCue} cueSelectionRevision={cueSelection?.revision ?? 0} playbackCue={setPlayingCue} selectCue={selectCue} draft={draft} busy={busy} regenerate={async (cueId, clipId) => { await persistDraft(draft); await call('generation.cue', { draft, cueId, clipId }); }} value={draft.timeline ?? { tracks: [] }} history={state.history} change={timeline => change({ timeline })} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget} onError={onError} /> : <Player onProgress={(time, playing) => { reportPlayhead(time); setPlayback({ time, playing }); }} seekRequest={scoring || musicScore ? seekRequest : undefined} actions={playerActions} reveal={false} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget || !!nowPlaying} track={track} onError={onError} />}</PageBoundary></VStack>} content={<VStack className="content-frame" gap={0}>
         {!ready ? <p className="loading" role="status">{t('@yovoice.app.loading')}</p> : <>
 
           <VStack className="page-panel" gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="create" resetKey={draft.id}>

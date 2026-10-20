@@ -27,6 +27,12 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 	m, _ := catalog.Lookup(d.ModelID)
 	if m.Family == "ace_step" {
 		o, _ := d.GenerationOptions(m.Family)
+		if d.Music != nil {
+			delete(o, "duration_seconds")
+			if d.Music.Duration.Mode == "fixed" {
+				o["duration_seconds"] = d.Music.Duration.Seconds
+			}
+		}
 		o["route"] = "text2music"
 		// ACE-Step 以 [Instrumental] 标记纯音乐；保存的歌词不随开关丢失。
 		o["lyrics"] = strings.TrimSpace(d.Lyrics)
@@ -36,7 +42,7 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 		if d.Seed != nil {
 			o["seed"] = *d.Seed
 		}
-		r := map[string]any{"text": strings.TrimSpace(d.Text), "options": o}
+		r := map[string]any{"text": schema.MusicStyle(d), "options": o}
 		if d.SynthesisLanguage != "" {
 			r["language"] = d.SynthesisLanguage
 		}
@@ -220,7 +226,10 @@ func yue2Request(d schema.Draft) (map[string]any, error) {
 	}
 	mode, _ := options["cot"].(string)
 	delete(options, "cot")
-	style := strings.TrimSpace(d.Text)
+	style := schema.MusicStyle(d)
+	if d.Music != nil && d.Music.Duration.Mode == "fixed" && strings.TrimSpace(d.Abc) == "" {
+		style += ", target duration about " + strconv.Itoa(d.Music.Duration.Seconds) + " seconds"
+	}
 	lyrics := strings.TrimSpace(d.Lyrics)
 	abc := d.Abc
 	if strings.TrimSpace(abc) == "" {

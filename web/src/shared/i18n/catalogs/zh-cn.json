@@ -4092,5 +4092,116 @@
   "@yovoice.arrangement.job.failed": {"defaultMessage": "准备失败"},
   "@yovoice.arrangement.job.interrupted": {"defaultMessage": "已中断"},
   "@yovoice.arrangement.blocked": {"defaultMessage": "{detail}"},
-  "@yovoice.arrangement.returnToAssembly": {"defaultMessage": "前往智能编曲拼合"}
+  "@yovoice.arrangement.returnToAssembly": {"defaultMessage": "前往智能编曲拼合"},
+  "@yovoice.history.quickSwitch": {
+    "defaultMessage": "快速切换版本"
+  },
+  "@yovoice.history.expandAll": {
+    "defaultMessage": "全部展开"
+  },
+  "@yovoice.history.collapseAll": {
+    "defaultMessage": "全部收起"
+  },
+  "@yovoice.history.expandItem": {
+    "defaultMessage": "展开「{name}」完整内容"
+  },
+  "@yovoice.history.collapseItem": {
+    "defaultMessage": "收起「{name}」完整内容"
+  },
+  "@yovoice.player.panCanvas": {
+    "defaultMessage": "平移画布"
+  },
+  "@yovoice.player.panHint": {
+    "defaultMessage": "手型模式拖动平移；也可中键拖动或 Shift＋滚轮横向滚动"
+  },
+  "@yovoice.player.resizePanel": {
+    "defaultMessage": "调整音频区高度"
+  },
+  "@yovoice.assistant.question.single": {
+    "defaultMessage": "请选择一项，也可以填写自定义回答。"
+  },
+  "@yovoice.assistant.question.multiple": {
+    "defaultMessage": "可多选，也可以补充自定义回答。"
+  },
+  "@yovoice.assistant.question.custom": {
+    "defaultMessage": "自定义回答"
+  },
+  "@yovoice.assistant.question.submit": {
+    "defaultMessage": "提交回答"
+  },
+  "@yovoice.assistant.question.cancel": {
+    "defaultMessage": "取消提问"
+  },
+  "@yovoice.assistant.question.later": {
+    "defaultMessage": "稍后回答"
+  },
+  "@yovoice.assistant.question.resume": {
+    "defaultMessage": "继续回答"
+  },
+  "@yovoice.assistant.question.cancelled": {
+    "defaultMessage": "已取消此问题"
+  },
+  "@yovoice.music.durationAuto": {
+    "defaultMessage": "AI 自动"
+  },
+  "@yovoice.music.durationCustom": {
+    "defaultMessage": "自定义时长"
+  },
+  "@yovoice.music.durationSeconds": {
+    "defaultMessage": "目标秒数"
+  },
+  "@yovoice.music.durationUnsupported": {
+    "defaultMessage": "当前模型不支持"
+  },
+  "@yovoice.music.durationYuEHint": {
+    "defaultMessage": "YuE2 按歌词和旋律谱安排长度；这是规划目标，实际时长以生成结果为准。"
+  },
+  "@yovoice.music.durationACEHint": {
+    "defaultMessage": "ACE-Step 支持原生时长控制，当前适配最长 5 分钟；AI 自动由模型决定。"
+  },
+  "@yovoice.music.vocalVoice": {
+    "defaultMessage": "演唱音色"
+  },
+  "@yovoice.music.vocalVoice.auto": {
+    "defaultMessage": "AI 自动"
+  },
+  "@yovoice.music.vocalVoice.male": {
+    "defaultMessage": "男声"
+  },
+  "@yovoice.music.vocalVoice.female": {
+    "defaultMessage": "女声"
+  },
+  "@yovoice.music.vocalVoice.reference": {
+    "defaultMessage": "参考音色"
+  },
+  "@yovoice.music.vocalVoiceHint": {
+    "defaultMessage": "男声、女声是演唱方向；参考音色用于音色指导，当前模型不承诺克隆。"
+  },
+  "@yovoice.music.generateLyrics": {
+    "defaultMessage": "生成歌词"
+  },
+  "@yovoice.music.optimizeLyrics": {
+    "defaultMessage": "优化歌词"
+  },
+  "@yovoice.music.undoLyrics": {
+    "defaultMessage": "撤销歌词替换"
+  },
+  "@yovoice.music.lyricsRequirement": {
+    "defaultMessage": "歌词要求"
+  },
+  "@yovoice.music.lyricsPreviewHint": {
+    "defaultMessage": "先预览后应用，只替换歌词；作品名称、风格和其他设置保持不变。"
+  },
+  "@yovoice.music.lyricsPreview": {
+    "defaultMessage": "歌词结果预览"
+  },
+  "@yovoice.music.lyricsSource": {
+    "defaultMessage": "当前选中或整段歌词"
+  },
+  "@yovoice.music.lyricsChanged": {
+    "defaultMessage": "歌词已经改变，请重新生成或手动复制结果，避免覆盖新内容。"
+  },
+  "@yovoice.music.lyricsTooLong": {
+    "defaultMessage": "替换后超过4000字，请缩短结果或选择更小的片段。"
+  }
 }

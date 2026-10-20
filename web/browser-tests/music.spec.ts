@@ -37,7 +37,8 @@ test('新建音乐作品：示例、风格标签、段落标记、纯音乐与�
   // 音乐作品使用独立检查器：只列音乐模型，时长与语言写入作品。
   const model = page.getByRole('combobox', { name: '模型' });
   await expect(model).toContainText('ACE-Step 1.5 Turbo');
-  await page.getByRole('radio', { name: '02:00' }).click();
+  await page.getByRole('combobox', { name: '目标时长', exact: true }).click();
+  await page.getByRole('option', { name: '02:00', exact: true }).click();
   await page.getByRole('combobox', { name: '演唱语言' }).click();
   await page.getByRole('option', { name: '粤语' }).click();
   await page.getByRole('radio', { name: '纯音乐' }).click();
@@ -79,7 +80,7 @@ test('选中 YuE2：长度由歌词决定，纯音乐先写谱再交给乐器，
   // YuE2 也能生成纯音乐：保留纯音乐，歌词变为可选的段落结构，生成方式固定按谱；ACE-Step 专属参数隐藏。
   await expect(page.getByRole('radio', { name: '纯音乐' })).toBeChecked();
   await expect(page.getByLabel('歌词', { exact: true })).toHaveAttribute('placeholder', /段落标记/);
-  await expect(page.getByRole('radio', { name: '02:00' })).toHaveCount(0);
+  await expect(page.getByRole('combobox', { name: '目标时长', exact: true })).toBeVisible();
   await expect(page.getByRole('combobox', { name: '演唱语言' })).toHaveCount(0);
   await expect(page.getByRole('radio', { name: '自由发挥' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '先写旋律谱' })).toBeEnabled();
@@ -94,7 +95,7 @@ test('选中 YuE2：长度由歌词决定，纯音乐先写谱再交给乐器，
   await page.locator('details.advanced > summary').click();
   await expect(page.getByLabel('演唱温度')).toHaveValue('1');
   await expect(page.getByLabel('写谱温度')).toHaveValue('0.7');
-  await expect(page.getByLabel('时长')).toHaveCount(0);
+  await expect(page.getByLabel('时长', { exact: true })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1') ?? '{}').drafts?.[0]?.modelOptions?.yue2?.cot)).toBe('off');
   await page.screenshot({ path: testInfo.outputPath('music-yue2.png') });
 });

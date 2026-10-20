@@ -24,7 +24,7 @@ var audited = map[string]bool{
 	"model.forget": true, "runtime.install": true, "ai.provider.save": true, "ai.provider.delete": true, "ai.provider.use": true,
 	"ai.test": true, "ai.connect": true, "ai.codex.login": true, "melody.plan": true, "melody.cover": true, "melody.dismiss": true, "ai.dismiss": true,
 	"operation.cancel": true, "model.cancel": true, "ai.cancel": true, "logs.export": true, "assets.delete": true,
-	"assistant.proposal": true, "assistant.forget": true,
+	"assistant.proposal": true, "assistant.forget": true, "assistant.answer": true, "resources.clip": true,
 }
 
 // Call 解码桌面界面的 RPC 请求并调用应用服务；耗时操作由 Workbench 调度，结果通过状态事件广播。
@@ -160,6 +160,18 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return w.ImportInstrumentSampleFrom(ctx, bytes.NewReader(b), input.InstrumentSampleInput)
 	case "instrument.catalog.download":
 		return true, w.DownloadCatalogInstrument(p.ID)
+	case "resources.search":
+		var input workbench.ResourceQuery
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.SearchResources(input)
+	case "resources.clip":
+		var input workbench.ResourceClipInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.AddResourceClip(ctx, input)
 	case "instrument.search":
 		return w.SearchInstrumentCandidates(ctx, p.Name)
 	case "instrument.auto.find":
@@ -363,6 +375,12 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			return nil, e
 		}
 		return true, w.SendAssistant(input.Text, input.Context)
+	case "assistant.answer":
+		var input workbench.AssistantAnswerInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return true, w.AnswerAssistantQuestion(input)
 	case "assistant.cancel":
 		w.CancelAssistant()
 		return true, nil

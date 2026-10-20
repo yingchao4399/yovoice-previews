@@ -2,7 +2,10 @@ import { draftCopy } from './i18n/draft-copy';
 import { seedLocale, type UiLocale } from './i18n/locale';
 
 export type Mode = 'speaker' | 'reference' | 'vector' | 'text';
+export interface DurationIntent { mode: 'auto' | 'fixed'; seconds?: number }
+export interface MusicCreationOptions { duration: DurationIntent; voice?: 'auto' | 'male' | 'female' | 'reference'; voiceReferenceAssetId?: string; voiceReferenceDescription?: string }
 export interface SynthesisSettings {
+  music?: MusicCreationOptions;
   modelOptions?: Record<string, Record<string, string | number | boolean>>; speaker?: string; synthesisLanguage?: string; omniSpeed?: number;
   lyrics?: string; instrumental?: boolean;
   // YuE2 的 ABC 旋律谱：带和弦按谱编曲，只有旋律时按旋律填配器。
@@ -161,7 +164,8 @@ export interface AssistantProposal { id: string; action: string; target?: string
 /** 助手记住的一条用户偏好。 */
 export interface AssistantMemo { id: string; text: string; createdAt: string }
 /** 助手消息里按出现顺序排列的一块：文本、思考或一次工具调用。 */
-export interface AssistantBlock { kind: 'text' | 'thinking' | 'tool'; text?: string; card?: AssistantToolCard }
+export interface AssistantQuestion { id: string; sessionId: string; turnId: string; workId?: string; revision?: string; prompt: string; options: string[]; multiple?: boolean; state: 'pending' | 'deferred' | 'answered' | 'cancelled'; selected?: number[]; custom?: string }
+export interface AssistantBlock { kind: 'text' | 'thinking' | 'tool' | 'question'; text?: string; card?: AssistantToolCard; question?: AssistantQuestion }
 /** 助手消息：blocks 为按顺序的内容块，text 为文本块拼接；tools 只出现在旧版本记录里。 */
 export interface AssistantMessage {
   id: string; role: AssistantMessageRole; text?: string; blocks?: AssistantBlock[]; tools?: AssistantToolCard[];
@@ -231,7 +235,7 @@ export function formatBytes(bytes: number): string {
   if (i === 0) return `${Math.round(value)} B`;
   return `${value.toFixed(2)} ${units[i]}`;
 }
-export interface Track { id: string; name: string; fileName: string; kind: 'voices' | 'outputs'; subtitle: string; playRequest?: number }
+export interface Track { id: string; name: string; fileName: string; kind: 'voices' | 'outputs'; subtitle: string; playRequest?: number; startTime?: number }
 /** 资源页的一行，对应 Go 的 workbench.Asset；bytes 为 -1 表示文件已丢失，users 非空表示正在被引用。 */
 export type AssetKind = 'generation' | 'segment' | 'voice' | 'material' | 'image';
 export interface Asset { kind: AssetKind; id: string; name: string; media: 'outputs' | 'voices' | 'images'; fileName: string; projectId?: string; projectTitle?: string; projectKind?: ProjectPage; createdAt: string; duration?: number; bytes: number; users?: string[] }
