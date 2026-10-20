@@ -4,8 +4,11 @@
 
 ## [Unreleased]
 
+## [0.3.1-preview.3] - 2026-10-20
+
 ### English
 
+- Merge the official v0.3.1 release, including the macOS 26 title-bar startup fix, Windows scrolling fix and updated verification workflow, while retaining custom Smart Arrangement, Instrument Library and VST3 management.
 - Prevent old score tracks remaining after creating a new work; add score-area resizing and collapse controls with a shared dock height budget.
 - Separate generated AI audio and model catalogs, and include the official v0.3.1 Windows scrolling-mask fix.
 - Keep AI-material playback and seeking available when moving between library lists, searches and details; retry failed media loads.
@@ -14,6 +17,7 @@
 
 ### 简体中文
 
+- 完整合入官方 v0.3.1，包括 macOS 26 标题栏启动修复、Windows 滚动修复和验证流程更新；保留定制智能编曲、音源库与乐器及 VST3 管理。
 - 修复新建作品后残留旧曲谱轨道；曲谱区支持调整高度和收起，底部面板共同限制高度以保留作品信息。
 - 区分 AI 生成音源与模型目录，并纳入官方 v0.3.1 的 Windows 滚动蒙版修复。
 - 修复 AI 素材在音源库列表、搜索与详情切换后无法播放的问题，保留试听进度并支持失败后重试。

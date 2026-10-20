@@ -15,6 +15,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   version:
+    # 上游全平台发布依赖作者的签名证书；定制仓库发布经过验证的 Windows 包。
+    if: github.repository == 'leemysw/yovoice'
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.version.outputs.tag }}

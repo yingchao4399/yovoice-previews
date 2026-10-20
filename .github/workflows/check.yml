@@ -1,7 +1,7 @@
 name: Check and Package
 on:
   push:
-    branches: [main]
+    branches: [main, intelligent-arrangement-v031]
   pull_request:
   workflow_dispatch:
   # 每周全量跑一次浏览器测试，包括日常提交不跑的已封存用例。
@@ -128,6 +128,9 @@ jobs:
         run: |
           choco install innosetup --no-progress -y
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup 安装失败" }
+      # 定制 VST3 宿主构建需要 uv；不依赖 runner 的偶然预装状态。
+      - uses: astral-sh/setup-uv@v6
+        if: runner.os == 'Windows'
       - name: Package Windows
         if: runner.os == 'Windows'
         shell: pwsh
