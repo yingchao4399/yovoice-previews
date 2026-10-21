@@ -106,6 +106,22 @@ func TestNewChoirPartDefaultsToReviewedWordlessPhrase(t *testing.T) {
 	}
 }
 
+func TestPreflightReportsUnsupportedDirectScoreBeforeGeneration(t *testing.T) {
+	w, e := New(t.TempDir())
+	must(t, e)
+	defer w.Close()
+	d := workflowDraft()
+	part := &d.Arrangement.Sections[0].Phrases[1].Parts[0]
+	part.Generation = generationTestSettings()
+	part.Generation.Mode = "score"
+	ref := ArrangementPartRef{0, 1, 0}
+	r, e := w.ArrangementGenerationPreflight(ArrangementAIPrepareInput{Draft: d, ModelID: "ace-step-1.5-turbo-q8", Target: &ref})
+	must(t, e)
+	if len(r.Issues) == 0 || !strings.Contains(strings.Join(r.Issues, "；"), "不接收逐音符曲谱") {
+		t.Fatalf("预检没有提前指出不支持的模式：%+v", r)
+	}
+}
+
 func TestAICandidateCannotBeAdoptedByFileExistenceOrTruncation(t *testing.T) {
 	w, e := New(t.TempDir())
 	must(t, e)

@@ -11,6 +11,7 @@
 - Retain original candidates and measured checks, require audition and explicit region fitting before adoption, and prepare exact-pitch AI sample mappings for score playback.
 - Align single-note ABC duration with the requested sustain, preserve tempo and dynamics in sampler phrases, and invalidate relevant caches when timing changes.
 - Write release rests into score conditions, detect still-active choir endings, preserve confirmed phrases while new candidates await review, and keep checking failures recoverable.
+- Prevent overlapping original/fitted audition playback and explain unsupported score-conditioned generation before starting a task.
 
 ### 简体中文
 
@@ -19,6 +20,7 @@
 - 保留原始候选及本地测量结果，经区段适配和试听确认后采用；为采样器建立精确音高的 AI 音色映射。
 - 单音 ABC 与所需持续时长一致；采样演奏保留段落速度与力度变化，相关时间条件变化后旧候选正确失效。
 - 谱条件明确写入收尾休止，检查合唱末尾是否仍在发声；新候选不遮蔽已确认版本，检查异常可恢复并保留原片。
+- 原片与适配片互斥试听；不支持的谱条件生成组合在任务开始前说明原因与可选路径。
 
 ## [0.3.1-preview.4] - 2026-10-21
 

@@ -5,22 +5,30 @@ import { readFile } from 'node:fs/promises';
 const fileName = 'choir.wav';
 const storageRoot = 'D:\\音乐工作室\\yovoice-data';
 
-async function openLibrary(page: Page) {
+async function openLibrary(page: Page, generationState?: 'needs_review' | 'needs_fit') {
   page.on('pageerror', error => console.error('播放测试页面错误:', error.message));
   const state = emptyState();
   state.preferences = { ...state.preferences, introSeen: true, tourSeen: true };
   state.arrangementMaterials = [{ id: 'choir', projectId: 'project', planHash: 'plan', sectionIndex: 0, phraseIndex: 0, partIndex: 0,
     instrument: '合唱', role: 'pad', technique: '无词哼唱', modelId: 'yue2-3b-q8', fileName, duration: 12, createdAt: '2026-10-20T09:00:00Z' }];
+  if (generationState) {
+    state.arrangementMaterials[0].reviewStatus = 'needs_review';
+    state.arrangementMaterials[0].generation = { version: 'ai-source-v3', settings: { assetKind: 'phrase', mode: 'score', method: 'direct', lengthMode: 'phrase', soundType: 'wordless', tailSeconds: 1.5 }, partId: 'part', scoreHash: 'score', coreSeconds: 9, requestSeconds: 11, effectiveOffset: .2, effectiveSeconds: 9, tailSeconds: 1.5, modelId: 'yue2-3b-q8', engineVersion: 'v0.9.1' };
+    state.arrangementMaterials[0].generationResult = { state: generationState, actualSeconds: 12, truncationKnown: true, derivedFile: 'fitted.wav', attempt: 1, checks: generationState === 'needs_fit' ? [{ code: 'ENDING', status: 'review', message: '结尾仍在发声，请增加尾音' }] : [] };
+  }
   state.instrumentSources = [{ id: 'xiao', name: '箫', instrument: '箫', origin: 'real', samples: [
     { id: 'xiao-d4', fileName: 'xiao-d4.wav', sha256: 'test', rootPitch: 62, articulation: 'sustain', velocityLow: 1, velocityHigh: 127, duration: 12 },
   ] }];
   await page.addInitScript(({ state, storageRoot }) => {
     const listeners: ((event: MessageEvent) => void)[] = [];
     window.__workbenchMediaBase = '/media/';
+    const reviews: unknown[] = [];
+    (window as unknown as { __reviewRequests: unknown[] }).__reviewRequests = reviews;
     window.chrome = { ...window.chrome, webview: {
       addEventListener: (_name, listener) => { listeners.push(listener); },
       postMessage: (request: unknown) => {
         const { id, method } = request as { id: string; method: string };
+        if (method === 'arrangement.material.review') reviews.push(request);
         const result = method === 'state.get' ? { state, catalog: [{ id: 'yue2-3b-q8', name: 'YuE2 3B', family: 'yue2', precision: 'Q8', version: '1' }] } : method === 'storage.info' ? { root: storageRoot } : null;
         queueMicrotask(() => listeners.forEach(listener => listener({ data: { id, result } } as MessageEvent)));
       },
@@ -89,3 +97,27 @@ test('AI 生成素材与模型在独立分类内搜索和显示', async ({ page 
   await expect(page.getByRole('heading', { name: 'YuE2 3B' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '合唱 · 无词哼唱' })).toHaveCount(0);
 });
+
+for (const status of ['needs_review', 'needs_fit'] as const) {
+  test(`AI 候选 ${status}：原片与适配试听可拖动，采用遵守技术检查状态`, async ({ page }) => {
+    await openLibrary(page, status);
+    await page.getByRole('tab', { name: 'AI 音源与模型' }).click();
+    await page.getByRole('button', { name: '查看详情' }).click();
+    const adopt = page.getByRole('button', { name: '试听正确并采用', exact: true });
+    await expect(adopt).toBeDisabled();
+    await page.getByRole('button', { name: '试听原片', exact: true }).click();
+    await expect.poll(() => page.locator('audio').evaluateAll(elements => elements.some(e => (e as HTMLAudioElement).currentSrc.endsWith('/choir.wav') && !(e as HTMLAudioElement).paused))).toBe(true);
+    await page.getByRole('slider', { name: '试听原片 · progress' }).fill('5');
+    await page.getByRole('button', { name: '试听适配后', exact: true }).click();
+    await expect.poll(() => page.locator('audio').evaluateAll(elements => elements.filter(e => !(e as HTMLAudioElement).paused).length)).toBe(1);
+    await page.getByRole('slider', { name: '试听适配后 · progress' }).fill('8');
+    if (status === 'needs_fit') {
+      await expect(adopt).toBeDisabled();
+      await expect(page.getByText('结尾仍在发声，请增加尾音')).toBeVisible();
+    } else {
+      await expect(adopt).toBeEnabled();
+      await adopt.click();
+      await expect.poll(() => page.evaluate(() => (window as unknown as { __reviewRequests: { data: unknown }[] }).__reviewRequests.map(r => r.data))).toEqual([{ id: 'choir', confirmed: true }]);
+    }
+  });
+}

@@ -159,6 +159,9 @@ func (w *Workbench) ArrangementGenerationPreflight(in ArrangementAIPrepareInput)
 	if err != nil {
 		return r, err
 	}
+	if r.Settings.Method == "direct" && r.Settings.Mode == "score" && !r.Capability.ScoreConditioning {
+		r.Issues = append(r.Issues, "当前模型适配器不接收逐音符曲谱；请选择已支持谱条件的模型，或改为音色按谱演奏／自由乐句。不会忽略曲谱继续生成")
+	}
 	core := job.seconds
 	if in.Draft.Score != nil {
 		core = in.Draft.Score.Seconds(job.phrase.EndBar+1, 1) - in.Draft.Score.Seconds(job.phrase.StartBar, 1)
