@@ -115,7 +115,13 @@ test('多轨分割、移动、静音播放、调整高度和重载', async ({ pa
   await page.locator('.multitrack-clip').nth(1).click();
   const moving = (await page.locator('.multitrack-clip').nth(1).boundingBox())!;
   const destination = (await page.locator('.multitrack-lane').nth(1).boundingBox())!;
-  await page.locator('.multitrack-clip').nth(1).dragTo(page.locator('.multitrack-lane').nth(1), { targetPosition: { x: destination.width / 10 + moving.width / 2, y: destination.height / 2 } });
+  // 等待应用的指针拖动预览到达目标轨后再松手，避免原生 dragTo 在渲染前结束手势。
+  await page.mouse.move(moving.x + moving.width / 2, moving.y + moving.height / 2);
+  await page.mouse.down();
+  try {
+    await page.mouse.move(destination.x + destination.width / 10 + moving.width / 2, destination.y + destination.height / 2, { steps: 8 });
+    await expect(page.locator('.multitrack-lane').nth(1).locator('.multitrack-clip')).toHaveCount(1);
+  } finally { await page.mouse.up(); }
   await expect(page.locator('.multitrack-lane').nth(1).locator('.multitrack-clip')).toHaveCount(1);
   await page.keyboard.press('Control+z');
   await expect(page.locator('.multitrack-lane').first().locator('.multitrack-clip')).toHaveCount(2);

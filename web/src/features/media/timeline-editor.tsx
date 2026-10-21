@@ -478,10 +478,13 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
                 if (e.metaKey || e.ctrlKey || e.shiftKey || track.locked) return;
                 const ids = selectedIds.includes(c.id) ? selectedIds : [c.id];
                 if (!selectedIds.includes(c.id)) selectClip(c);
+                  const pickedLanes = value.tracks.flatMap((lane, index) => lane.clips.some(clip => ids.includes(clip.id)) ? [index] : []);
+                  const minimumLaneDelta = -Math.min(...pickedLanes), maximumLaneDelta = value.tracks.length - 1 - Math.max(...pickedLanes);
                 const rect = e.currentTarget.closest('.multitrack-lane')!.getBoundingClientRect(), pps = rect.width / scale;
                 beginGesture(e, (dx, dy, alt) => {
                   let delta = dx / pps;
-                  const laneDelta = Math.round(dy / rect.height);
+                    // 边缘自动滚动不能把整组选区推到不存在的轨道，锁轨仍由 moveGroup 校验。
+                    const laneDelta = Math.max(minimumLaneDelta, Math.min(maximumLaneDelta, Math.round(dy / rect.height)));
                   const moving = snap && !alt && laneDelta === 0 ? Timeline.following(value, ids) : ids;
                   const picked = value.tracks.flatMap(t => t.clips.filter(c => moving.includes(c.id)));
                   const result = snap && !alt ? Timeline.snap(value, moving, picked.flatMap(c => [c.start + delta, c.start + c.duration + delta]), 7 / pps, time) : { delta: 0, guide: undefined };
