@@ -152,82 +152,20 @@ func (w *Workbench) PrepareArrangementAI(in ArrangementAIPrepareInput) error {
 	_, err = w.start("generate", msg.ActivityGenerate, nil, nil, func(ctx context.Context) error {
 		var failures []string
 		for i, task := range tasks {
-			if err := ctx.Err(); err != nil {
-				return err
+			if e := w.runArrangementGenerationTask(ctx, d, task, in, i, len(tasks)); e != nil {
+				if ctx.Err() != nil {
+					return ctx.Err()
+				}
+				failures = append(failures, e.Error())
 			}
-			if task.sampler {
-				if err := w.renderGeneratedSamplePhrase(ctx, d, task); err != nil {
-					return err
+			// 当前下一项完成后优先处理已提交的试听反馈，再继续原批次。
+			if e := w.drainArrangementRetries(ctx, d, func(task arrangementGenerationTask, retry ArrangementAIPrepareInput) error {
+				return w.runArrangementGenerationTask(ctx, d, task, retry, i, len(tasks))
+			}); e != nil {
+				if ctx.Err() != nil {
+					return ctx.Err()
 				}
-				continue
-			}
-			w.progress(msg.ActivityRendering, msg.Params{"stage": "ai", "done": i, "total": len(tasks)}, int64(i), int64(len(tasks)))
-			modelIndex := slices.IndexFunc(state.Models, func(m schema.InstalledModel) bool { return m.ID == task.contract.ModelID })
-			if modelIndex < 0 {
-				return msg.Err(msg.ErrModelRequired, nil)
-			}
-			for attempt := 1; attempt <= 3; attempt++ {
-				m := schema.ArrangementMaterial{ID: schema.NewID(), ProjectID: d.ID, PartID: task.job.part.ID, PlanHash: arrangementJobHash(*d.Arrangement, task.job.ref), ScoreHash: arrangementConditionHash(d, task.job.ref), SectionIndex: task.job.ref.SectionIndex, PhraseIndex: task.job.ref.PhraseIndex, PartIndex: task.job.ref.PartIndex, Instrument: task.job.part.Instrument, Role: task.job.part.Role, Technique: task.job.part.Technique, Phrase: task.job.phrase.Name, Prompt: task.music.Text, Tempo: d.Arrangement.Tempo, Key: d.Arrangement.Key, ModelID: task.contract.ModelID, ReviewStatus: "needs_review", CreatedAt: time.Now().UTC()}
-				c := task.contract
-				seed := 1234 + attempt - 1
-				c.Seed = &seed
-				music := task.music
-				music.Seed = &seed
-				m.Generation = &c
-				m.Condition = "free_audio"
-				if c.Settings.Mode == "score" {
-					m.Condition = "score_conditioned"
-				}
-				if c.Pitch != nil {
-					m.Condition = "sample_candidate"
-				}
-				m.FileName = "import-" + m.ID + ".wav"
-				m.GenerationResult = &schema.ArrangementGenerationResult{State: "generating", Attempt: attempt}
-				if e := w.persistGenerationMaterial(m); e != nil {
-					return e
-				}
-				path, e := w.Store.MediaPath("outputs", m.FileName)
-				if e != nil {
-					return e
-				}
-				result, e := w.engine.GenerateArrangement(ctx, *state.RuntimePath, state.Models[modelIndex], state.Preferences.Backend, music, c, path, func(code msg.Code, params msg.Params) { w.progress(code, params, int64(i), int64(len(tasks))) })
-				result.Attempt = attempt
-				m.GenerationResult = &result
-				m.Duration = result.ActualSeconds
-				if e != nil {
-					result.State = "failed"
-					result.Checks = append(result.Checks, schema.GenerationCheck{Code: "ENGINE", Status: "fail", Message: e.Error()})
-					m.GenerationResult = &result
-					if persistErr := w.persistGenerationMaterial(m); persistErr != nil {
-						return persistErr
-					}
-					if ctx.Err() != nil {
-						return ctx.Err()
-					}
-					lower := strings.ToLower(e.Error())
-					if strings.Contains(lower, "out of memory") || strings.Contains(lower, "allocation failed") {
-						failures = append(failures, e.Error()+"；资源不足，已暂停该项，未自动改用其他模型或音源")
-						break
-					}
-					if attempt == 3 {
-						failures = append(failures, e.Error())
-					}
-					continue
-				}
-				// 原片先落库，检查/取消失败也不删除已返回内容。
-				if e = w.persistGenerationMaterial(m); e != nil {
-					return e
-				}
-				m, e = w.checkAndPersistGeneration(ctx, m)
-				if e != nil {
-					return e
-				}
-				if m.GenerationResult.State != "failed" {
-					break
-				}
-				if attempt == 3 {
-					failures = append(failures, task.job.phrase.Name+" · "+task.job.part.Instrument+" 三次候选均未通过本地检查")
-				}
+				failures = append(failures, e.Error())
 			}
 		}
 		if len(failures) > 0 {
@@ -236,6 +174,101 @@ func (w *Workbench) PrepareArrangementAI(in ArrangementAIPrepareInput) error {
 		return nil
 	}, "", d.ID)
 	return err
+}
+
+func (w *Workbench) runArrangementGenerationTask(ctx context.Context, d schema.Draft, task arrangementGenerationTask, in ArrangementAIPrepareInput, i, total int) error {
+	state := w.Store.Read()
+	if !task.sampler && (!RuntimeReady(state) || state.RuntimePath == nil) {
+		return msg.Err(msg.ErrRuntimeRequired, nil)
+	}
+	var failures []string
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if task.sampler {
+		if err := w.renderGeneratedSamplePhrase(ctx, d, task); err != nil {
+			return err
+		}
+		return nil
+	}
+	w.progress(msg.ActivityRendering, msg.Params{"stage": "ai", "done": i, "total": total}, int64(i), int64(total))
+	modelIndex := slices.IndexFunc(state.Models, func(m schema.InstalledModel) bool { return m.ID == task.contract.ModelID })
+	if modelIndex < 0 {
+		return msg.Err(msg.ErrModelRequired, nil)
+	}
+	for attempt := 1; attempt <= 3; attempt++ {
+		music := task.music
+		if in.RetryFeedback != "" {
+			music.Text += " User audition feedback for this retry: " + in.RetryFeedback + ". Preserve the requested instrument, technique, source policy, score and phrase length; address only this feedback."
+		}
+		m := schema.ArrangementMaterial{ID: schema.NewID(), ProjectID: d.ID, PartID: task.job.part.ID, PlanHash: arrangementJobHash(*d.Arrangement, task.job.ref), ScoreHash: arrangementConditionHash(d, task.job.ref), SectionIndex: task.job.ref.SectionIndex, PhraseIndex: task.job.ref.PhraseIndex, PartIndex: task.job.ref.PartIndex, Instrument: task.job.part.Instrument, Role: task.job.part.Role, Technique: task.job.part.Technique, Phrase: task.job.phrase.Name, Prompt: music.Text, UserFeedback: in.RetryFeedback, Tempo: d.Arrangement.Tempo, Key: d.Arrangement.Key, ModelID: task.contract.ModelID, ReviewStatus: "needs_review", CreatedAt: time.Now().UTC()}
+		c := task.contract
+		// 每一轮助手修复都改变采样随机种子，避免重复同一候选；请求合同仍保持不变。
+		seed := 1234 + in.RepairRound*17 + attempt - 1
+		c.Seed = &seed
+		music.Seed = &seed
+		m.Generation = &c
+		m.Condition = "free_audio"
+		if c.Settings.Mode == "score" {
+			m.Condition = "score_conditioned"
+		}
+		if c.Pitch != nil {
+			m.Condition = "sample_candidate"
+		}
+		m.FileName = "import-" + m.ID + ".wav"
+		m.GenerationResult = &schema.ArrangementGenerationResult{State: "generating", Attempt: attempt, RepairRound: in.RepairRound}
+		if e := w.persistGenerationMaterial(m); e != nil {
+			return e
+		}
+		path, e := w.Store.MediaPath("outputs", m.FileName)
+		if e != nil {
+			return e
+		}
+		result, e := w.engine.GenerateArrangement(ctx, *state.RuntimePath, state.Models[modelIndex], state.Preferences.Backend, music, c, path, func(code msg.Code, params msg.Params) { w.progress(code, params, int64(i), int64(total)) })
+		result.Attempt = attempt
+		result.RepairRound = in.RepairRound
+		m.GenerationResult = &result
+		m.Duration = result.ActualSeconds
+		if e != nil {
+			result.State = "failed"
+			result.Checks = append(result.Checks, schema.GenerationCheck{Code: "ENGINE", Status: "fail", Message: e.Error()})
+			m.GenerationResult = &result
+			if persistErr := w.persistGenerationMaterial(m); persistErr != nil {
+				return persistErr
+			}
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+			lower := strings.ToLower(e.Error())
+			if strings.Contains(lower, "out of memory") || strings.Contains(lower, "allocation failed") {
+				failures = append(failures, e.Error()+"；资源不足，已暂停该项，未自动改用其他模型或音源")
+				break
+			}
+			if attempt == 3 {
+				failures = append(failures, e.Error())
+			}
+			continue
+		}
+		// 原片先落库，检查/取消失败也不删除已返回内容。
+		if e = w.persistGenerationMaterial(m); e != nil {
+			return e
+		}
+		m, e = w.checkAndPersistGeneration(ctx, m)
+		if e != nil {
+			return e
+		}
+		if m.GenerationResult.State != "failed" {
+			break
+		}
+		if attempt == 3 {
+			failures = append(failures, task.job.phrase.Name+" · "+task.job.part.Instrument+" 三次候选均未通过本地检查")
+		}
+	}
+
+	if len(failures) > 0 {
+		return fmt.Errorf("%s", strings.Join(failures, "；"))
+	}
+	return nil
 }
 
 func (w *Workbench) checkAndPersistGeneration(ctx context.Context, m schema.ArrangementMaterial) (schema.ArrangementMaterial, error) {

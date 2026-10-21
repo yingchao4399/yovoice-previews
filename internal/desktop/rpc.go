@@ -325,13 +325,15 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 		return w.FitArrangementMaterial(input)
 	case "arrangement.material.retry":
 		var input struct {
-			ID    string       `json:"id"`
-			Draft schema.Draft `json:"draft"`
+			ID       string       `json:"id"`
+			Draft    schema.Draft `json:"draft"`
+			Feedback string       `json:"feedback,omitempty"`
 		}
 		if e := json.Unmarshal(data, &input); e != nil {
 			return nil, e
 		}
-		return true, w.RetryArrangementMaterial(input.ID, input.Draft)
+		_, e := w.RetryArrangementMaterialWithFeedback(input.ID, input.Draft, input.Feedback)
+		return true, e
 	case "arrangement.material.delete":
 		return true, w.DeleteArrangementMaterial(p.ID)
 	case "arrangement.band.save":

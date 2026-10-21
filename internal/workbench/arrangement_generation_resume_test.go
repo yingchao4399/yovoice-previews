@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
@@ -116,6 +117,26 @@ func TestFailedSampleCandidateCanBePreparedAgain(t *testing.T) {
 	err = w.PrepareArrangementAI(ArrangementAIPrepareInput{Draft: d, ModelID: m.ModelID, Target: &ref})
 	if !errors.As(err, &callErr) || callErr.Code != msg.ErrModelRequired {
 		t.Fatalf("失败的代表采样不能阻止重新生成：%v", err)
+	}
+}
+
+func TestAssistantRepairRoundsAreBoundedAndDeterministicFailuresNeedAPlan(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	d, ref := recoveryDraft(t, w)
+	m := recoveryCandidate(t, w, d, ref, "failed")
+	m.GenerationResult.RepairRound = 3
+	must(t, w.persistGenerationMaterial(m))
+	if round, err := w.RetryArrangementMaterialWithRound(m.ID, d); err == nil || round != 3 || !strings.Contains(err.Error(), "第四轮") {
+		t.Fatalf("第四轮必须停止自主重试并交给问答卡：round=%d err=%v", round, err)
+	}
+
+	m.GenerationResult.RepairRound = 1
+	m.GenerationResult.Checks = []schema.GenerationCheck{{Code: "DURATION", Status: "fail", Message: "有效区段缺少尾音"}}
+	must(t, w.persistGenerationMaterial(m))
+	if _, err := w.RetryArrangementMaterialWithRound(m.ID, d); err == nil || !strings.Contains(err.Error(), "禁止原样重试") {
+		t.Fatalf("确定性时长问题不能原样重试：%v", err)
 	}
 }
 

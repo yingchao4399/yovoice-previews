@@ -35,6 +35,8 @@ type Workbench struct {
 	edit sync.Mutex
 	// 采样检查、适配和试听采用串行化；耗时检查不占用作品编辑锁。
 	generationReview sync.Mutex
+	// 串行提交和认领试听重做请求，避免同一候选重复排队。
+	generationRetry sync.Mutex
 	// mu 保护后台操作的取消函数与完成通道。
 	// cancel/done 是占用推理引擎的主操作（生成、内核安装、迁移）；installCancel/installDone 是模型下载与导入，
 	// 二者互不阻塞，下载大模型时仍可用已安装的模型生成。

@@ -9,16 +9,21 @@ import (
 
 // DeleteArrangementMaterial 只删除未被工程/音色引用的候选，不破坏已采用素材。
 func (w *Workbench) DeleteArrangementMaterial(id string) error {
-	w.generationReview.Lock()
-	defer w.generationReview.Unlock()
+	w.generationRetry.Lock()
+	defer w.generationRetry.Unlock()
 	w.edit.Lock()
 	defer w.edit.Unlock()
+	w.generationReview.Lock()
+	defer w.generationReview.Unlock()
 	state := w.Store.Read()
 	i := slices.IndexFunc(state.ArrangementMaterials, func(m schema.ArrangementMaterial) bool { return m.ID == id })
 	if i < 0 {
 		return fmt.Errorf("候选已经不存在")
 	}
 	m := state.ArrangementMaterials[i]
+	if m.RetryRequest != nil && (m.RetryRequest.Status == "running" || m.RetryRequest.Status == "queued" && state.Activity != nil && state.Activity.Status == "running") {
+		return fmt.Errorf("此候选正在排队重做，请先取消并等待当前生成结束，再删除候选")
+	}
 	if m.GenerationResultState() == "generating" || m.GenerationResultState() == "checking" {
 		return fmt.Errorf("请先取消该生成任务，再删除候选")
 	}

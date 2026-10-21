@@ -20,11 +20,13 @@ type ArrangementPartRef struct {
 }
 
 type ArrangementAIPrepareInput struct {
-	Draft     schema.Draft        `json:"draft"`
-	ModelID   string              `json:"modelId"`
-	Target    *ArrangementPartRef `json:"target,omitempty"`
-	Retry     bool                `json:"-"`
-	RetryCell string              `json:"-"`
+	Draft         schema.Draft        `json:"draft"`
+	ModelID       string              `json:"modelId"`
+	Target        *ArrangementPartRef `json:"target,omitempty"`
+	Retry         bool                `json:"-"`
+	RetryCell     string              `json:"-"`
+	RepairRound   int                 `json:"-"`
+	RetryFeedback string              `json:"-"`
 }
 
 func arrangementPlanHash(plan schema.ArrangementPlan) string {

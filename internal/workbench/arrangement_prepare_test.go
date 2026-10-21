@@ -1,6 +1,7 @@
 package workbench
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -9,6 +10,23 @@ import (
 	"yovoice/internal/catalog"
 	"yovoice/internal/schema"
 )
+
+func TestArrangementAIStepKeepsInspectionOutcome(t *testing.T) {
+	step := schema.ArrangementJobStep{Status: "running", Error: "stale"}
+	setArrangementAIStepReview(&step, false, nil)
+	if step.Status != "needs_review" || step.Error == "" {
+		t.Fatalf("未通过检查的 AI 素材必须保留待确认状态和原因：%+v", step)
+	}
+	inspectErr := errors.New("音源文件缺失")
+	setArrangementAIStepReview(&step, false, inspectErr)
+	if step.Status != "needs_review" || step.Error != inspectErr.Error() {
+		t.Fatalf("检查失败原因不能被后续状态清理：%+v", step)
+	}
+	setArrangementAIStepReview(&step, true, nil)
+	if step.Status != "ready" || step.Error != "" {
+		t.Fatalf("检查通过后应清除旧错误：%+v", step)
+	}
+}
 
 func awaitPreparation(t *testing.T, w *Workbench, id string) schema.ArrangementJob {
 	t.Helper()

@@ -76,6 +76,10 @@ func New(root string) (store *Store, err error) {
 		}
 	}
 	for i := range s.state.ArrangementMaterials {
+		if retry := s.state.ArrangementMaterials[i].RetryRequest; retry != nil && retry.Status == "running" {
+			retry.Status = "failed"
+			retry.Error = "重做曾中断，已保留原候选和已生成成果；请重新试听或重试本项"
+		}
 		r := s.state.ArrangementMaterials[i].GenerationResult
 		if r != nil && (r.State == "queued" || r.State == "generating" || r.State == "raw_saved" || r.State == "checking") {
 			r.State = "interrupted"

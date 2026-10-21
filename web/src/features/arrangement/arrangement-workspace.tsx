@@ -18,6 +18,7 @@ import { ArrangementReference } from './arrangement-reference';
 import { DurationControl } from '../../shared/ui/duration-control';
 import { ArrangementGenerationSettingsButton } from './arrangement-generation-settings';
 import { bindArrangementSources, matchedRealSource, realPartReady, sameInstrument } from './arrangement-sources';
+import { MaterialReviewQueue } from './material-review-queue';
 
 const sourceModes = ['auto', 'real', 'ai', 'hybrid'] as const;
 const audioModels = modelCatalog.filter(model => model.family === 'ace_step' || model.family === 'yue2');
@@ -180,6 +181,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
     setBandNotice(t('@yovoice.arrangement.bandApplied'));
   }
   return <VStack className="settings-page arrangement-page" gap={6}>
+    {draft.kind === 'score' ? <MaterialReviewQueue key={draft.id} draft={draft} state={state} locale={locale} /> : null}
     <HStack as="header" hAlign="between" vAlign="center" wrap="wrap" gap={3}><VStack gap={1}><h1>{t('@yovoice.arrangement.title')}</h1><small>{t('@yovoice.arrangement.intro')}</small></VStack><Button size="sm" icon={<Plus />} label={t('@yovoice.arrangement.new')} onClick={() => create(input)} /></HStack>
     <SettingsGroup title={t('@yovoice.arrangement.project')}>
       <SettingsRow label={t('@yovoice.arrangement.current')} hint={t('@yovoice.arrangement.projectHint')}>
