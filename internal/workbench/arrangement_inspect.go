@@ -119,7 +119,8 @@ func sampleNoteIssue(part schema.ArrangementPart, note schema.ScoreNote, source 
 	}
 	pitchMatch := false
 	for _, s := range tech {
-		if absInt(s.RootPitch-note.Pitch) <= 7 && (s.GenerationID == "" && !s.ExactPitch || s.RootPitch == note.Pitch) {
+		low, high := arrangementSamplePitchBounds(s)
+		if note.Pitch >= low && note.Pitch <= high {
 			pitchMatch = true
 			if note.Velocity >= s.VelocityLow && note.Velocity <= s.VelocityHigh {
 				return ""
