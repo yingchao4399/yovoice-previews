@@ -55,6 +55,8 @@ async function dragEdge(page: Page, clip: Locator, edge: 'start' | 'end', delta:
 
 
 test('多轨分割、移动、静音播放、调整高度和重载', async ({ page }, testInfo) => {
+  // 与同场景诊断用例一致：多步编辑、播放和重载共用总时限，断言超时保持不变。
+  test.setTimeout(90_000);
   const state = emptyState();
   const draft = state.drafts[0];
   state.history = ['片段 A', '片段 B'].map((title, index) => ({ id: String(index + 1).repeat(32), title, fileName: 'timeline.wav', createdAt: '2026-09-27T10:00:00Z', duration: 2, settings: draft }));

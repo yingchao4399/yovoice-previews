@@ -149,6 +149,8 @@ func (w *Workbench) checkGenerationMaterial(ctx context.Context, m schema.Arrang
 }
 
 func (w *Workbench) FitArrangementMaterial(in ArrangementMaterialFitInput) (schema.ArrangementMaterial, error) {
+	w.generationRetry.Lock()
+	defer w.generationRetry.Unlock()
 	w.generationReview.Lock()
 	defer w.generationReview.Unlock()
 	state := w.Store.Read()
@@ -157,6 +159,9 @@ func (w *Workbench) FitArrangementMaterial(in ArrangementMaterialFitInput) (sche
 		return schema.ArrangementMaterial{}, fmt.Errorf("找不到候选素材")
 	}
 	m := state.ArrangementMaterials[i]
+	if m.RetryRequest != nil && (m.RetryRequest.Status == "queued" || m.RetryRequest.Status == "running") {
+		return m, fmt.Errorf("此候选正在排队重做，请等待新候选，不能同时修改原片区段")
+	}
 	if m.Generation == nil || m.GenerationResult == nil {
 		return m, fmt.Errorf("旧素材没有生成合同，请重新生成")
 	}
@@ -202,6 +207,8 @@ func (w *Workbench) FitArrangementMaterial(in ArrangementMaterialFitInput) (sche
 }
 
 func (w *Workbench) ReviewArrangementMaterial(id string, confirmed bool) error {
+	w.generationRetry.Lock()
+	defer w.generationRetry.Unlock()
 	w.generationReview.Lock()
 	defer w.generationReview.Unlock()
 	state := w.Store.Read()
@@ -212,6 +219,9 @@ func (w *Workbench) ReviewArrangementMaterial(id string, confirmed bool) error {
 	m := state.ArrangementMaterials[i]
 	if m.Generation == nil {
 		return w.reviewArrangementMaterialLegacy(id, confirmed)
+	}
+	if confirmed && m.RetryRequest != nil && (m.RetryRequest.Status == "queued" || m.RetryRequest.Status == "running") {
+		return fmt.Errorf("此候选已提交重新生成，请试听新候选后再采用")
 	}
 	if !confirmed {
 		for _, source := range state.InstrumentSources {
@@ -397,30 +407,90 @@ func generationMaterialUsable(m schema.ArrangementMaterial) bool {
 
 // 保留明确的失败候选；单项重试只清除该候选的复用资格，不删除原始文件。
 func (w *Workbench) RetryArrangementMaterial(id string, d schema.Draft) error {
+	_, err := w.RetryArrangementMaterialWithFeedback(id, d, "")
+	return err
+}
+
+func (w *Workbench) RetryArrangementMaterialWithRound(id string, d schema.Draft) (int, error) {
+	return w.RetryArrangementMaterialWithFeedback(id, d, "")
+}
+
+func (w *Workbench) RetryArrangementMaterialWithFeedback(id string, d schema.Draft, feedback string) (int, error) {
+	w.generationRetry.Lock()
+	defer w.generationRetry.Unlock()
 	state := w.Store.Read()
 	i := slices.IndexFunc(state.ArrangementMaterials, func(m schema.ArrangementMaterial) bool { return m.ID == id })
 	if i < 0 {
-		return fmt.Errorf("素材不存在")
+		return 0, fmt.Errorf("素材不存在")
 	}
 	m := state.ArrangementMaterials[i]
 	if m.ProjectID != d.ID || m.Generation == nil {
-		return fmt.Errorf("不能重试其他作品或旧格式素材")
+		return 0, fmt.Errorf("不能重试其他作品或旧格式素材")
 	}
 	ref := ArrangementPartRef{m.SectionIndex, m.PhraseIndex, m.PartIndex}
 	if !arrangementMaterialMatches(m, d, ref) {
-		return fmt.Errorf("曲谱或设置已经变更，请使用当前声部重新准备")
+		return 0, fmt.Errorf("曲谱或设置已经变更，请使用当前声部重新准备")
 	}
-	if m.GenerationResult != nil {
-		m.GenerationResult.State = "rejected"
+	if m.RetryRequest != nil && (m.RetryRequest.Status == "queued" || m.RetryRequest.Status == "running") {
+		if m.RetryRequest.Status == "queued" {
+			go w.resumeArrangementRetriesAfterOperation(d.ID, w.Done())
+		}
+		return m.RetryRequest.Round, nil
 	}
-	if err := w.persistGenerationMaterial(m); err != nil {
-		return err
+	if m.GenerationResult == nil || m.GenerationResult.State != "failed" && m.GenerationResult.State != "needs_review" && m.GenerationResult.State != "needs_fit" {
+		return 0, fmt.Errorf("只允许重试失败或待审核的 AI 候选")
+	}
+	cellKey := func(candidate schema.ArrangementMaterial) string {
+		if candidate.Generation == nil || candidate.Generation.Pitch == nil {
+			return "phrase"
+		}
+		return fmt.Sprintf("%d:%d:%s", *candidate.Generation.Pitch, candidate.Generation.VelocityLow, candidate.Generation.Articulation)
+	}
+	completedRounds := 0
+	for _, candidate := range state.ArrangementMaterials {
+		if candidate.ProjectID == d.ID && arrangementMaterialMatches(candidate, d, ref) && candidate.SectionIndex == m.SectionIndex && candidate.PhraseIndex == m.PhraseIndex && candidate.PartIndex == m.PartIndex && cellKey(candidate) == cellKey(m) && candidate.GenerationResult != nil {
+			completedRounds = max(completedRounds, candidate.GenerationResult.RepairRound)
+			if candidate.RetryRequest != nil {
+				completedRounds = max(completedRounds, candidate.RetryRequest.Round)
+			}
+		}
+	}
+	if completedRounds >= 3 {
+		return completedRounds, fmt.Errorf("该失败声部已完成三轮自主修复；第四轮需要先向用户说明情况并通过问答卡征求选择")
+	}
+	for _, check := range m.GenerationResult.Checks {
+		if check.Status != "fail" {
+			continue
+		}
+		if slices.Contains([]string{"DURATION", "TRUNCATED", "OVERSIZE", "REGION_REQUIRED", "IDENTITY", "ARTICULATION"}, check.Code) {
+			return m.GenerationResult.RepairRound, fmt.Errorf("%s 属于合同、时长或内容适配问题，禁止原样重试；请先预检并提出需要用户决定的局部调整", check.Message)
+		}
 	}
 	cell := ""
 	if m.Generation.Pitch != nil {
 		cell = fmt.Sprintf("%d:%d:%s", *m.Generation.Pitch, m.Generation.VelocityLow, m.Generation.Articulation)
 	}
-	return w.PrepareArrangementAI(ArrangementAIPrepareInput{Draft: d, ModelID: m.ModelID, Target: &ref, Retry: true, RetryCell: cell})
+	round := completedRounds + 1
+	feedback = strings.TrimSpace(feedback)
+	if len([]rune(feedback)) > 1000 {
+		return round, fmt.Errorf("自定义试听意见不能超过1000字")
+	}
+	if state.Activity != nil && state.Activity.Kind == "generate" && state.Activity.ProjectID == d.ID && state.Activity.Status == "running" {
+		m.RetryRequest = &schema.ArrangementMaterialRetry{Status: "queued", Feedback: feedback, Round: round}
+		if err := w.persistGenerationMaterial(m); err != nil {
+			return round, err
+		}
+		go w.resumeArrangementRetriesAfterOperation(d.ID, w.Done())
+		return round, nil
+	}
+	if err := w.PrepareArrangementAI(ArrangementAIPrepareInput{Draft: d, ModelID: m.ModelID, Target: &ref, Retry: true, RetryCell: cell, RepairRound: round, RetryFeedback: feedback}); err != nil {
+		return round, err
+	}
+	m.GenerationResult.State = "rejected"
+	if err := w.persistGenerationMaterial(m); err != nil {
+		return round, err
+	}
+	return round, nil
 }
 
 // 仅供界面说明，未知内容不伪装成自动音频识别。

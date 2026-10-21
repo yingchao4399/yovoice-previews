@@ -17,9 +17,14 @@ func (w *Workbench) registerArrangementTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{Name: "apply_resource_band", Description: "将search_resources返回的乐队组合应用于当前计划；只匹配同乐器、角色、来源和可用奏法，保留锁定声部及已有AI模型选择，不复制旧歌曲。先get_work和查询kind=band，组合缺文件或不能演奏当前谱时报告具体原因，不自动下载。"}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
 		ProjectID  string `json:"projectId"`
 		ResourceID string `json:"resourceId"`
-	}) (*mcp.CallToolResult, any, error) { d, err := w.assistantWork(in.ProjectID); if err != nil {
-		return nil, nil, err
-	}; fixed, err := w.ApplyResourceBand(ResourceBandInput{Draft: d, ResourceID: in.ResourceID}); return nil, map[string]any{"saved": err == nil, "projectId": d.ID, "arrangement": fixed.Arrangement}, err })
+	}) (*mcp.CallToolResult, any, error) {
+		d, err := w.assistantWork(in.ProjectID)
+		if err != nil {
+			return nil, nil, err
+		}
+		fixed, err := w.ApplyResourceBand(ResourceBandInput{Draft: d, ResourceID: in.ResourceID})
+		return nil, map[string]any{"saved": err == nil, "projectId": d.ID, "arrangement": fixed.Arrangement}, err
+	})
 	mcp.AddTool(server, &mcp.Tool{Name: "add_resource_clip", Description: "把库存中实际存在的本地音频（已有AI乐句、已生成歌曲、导入音频或单个采样）复制为工程素材并放到独立可编辑音轨；start/offset/duration以秒为单位，duration=0使用剩余长度。先search_resources确认ID与来源，先get_work读取工程。遵守真实/AI来源限制，原文件保持；整曲是片段素材，不会假装可逐音演奏。重拼合保留该手工轨道。"}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
 		ProjectID  string  `json:"projectId"`
 		ResourceID string  `json:"resourceId"`
@@ -150,6 +155,30 @@ func (w *Workbench) registerArrangementTools(server *mcp.Server) {
 	})
 	mcp.AddTool(server, &mcp.Tool{Name: "arrangement_jobs", Description: "读取当前作品持久备料批次和每个声部的真实进度、失败原因；已完成素材不会因后续失败丢失。"}, func(ctx context.Context, req *mcp.CallToolRequest, in arrangementToolInput) (*mcp.CallToolResult, any, error) {
 		return nil, w.ArrangementJobs(in.ProjectID), nil
+	})
+	mcp.AddTool(server, &mcp.Tool{Name: "retry_arrangement_material", Description: "只重试当前作品中指定的失败 AI 候选，最多三轮自主修复，并保留此前成果。调用前先 inspect_arrangement、读取 arrangement_jobs 和候选检查原因；工具会拒绝时长、内容或能力合同不匹配的原样重试。第三轮仍失败时必须在第四轮通过 ask_user 问答卡让用户选择局部/整体重新规划或其他处理；不得改变用户的音乐意图、乐器和来源限制。"}, func(ctx context.Context, req *mcp.CallToolRequest, in struct {
+		ProjectID  string `json:"projectId"`
+		MaterialID string `json:"materialId"`
+	}) (*mcp.CallToolResult, any, error) {
+		d, err := w.assistantWork(in.ProjectID)
+		if err != nil {
+			return nil, nil, err
+		}
+		if in.MaterialID == "" {
+			return nil, nil, fmt.Errorf("请提供需要重试的失败候选 materialId")
+		}
+		round, err := w.RetryArrangementMaterialWithRound(in.MaterialID, d)
+		if err != nil && round >= 3 {
+			q, questionErr := w.AskAssistantQuestion(AssistantQuestionInput{
+				Prompt:  "这个声部经过三轮局部修复仍未通过。下一步会改变任务范围，请选择处理方式。",
+				Options: []string{"只重新规划并生成这个声部，保留其他已完成部分", "重新规划整首编曲", "先查看失败原因和可选方案，暂不重规划"},
+			})
+			if questionErr != nil {
+				return nil, nil, questionErr
+			}
+			return nil, map[string]any{"state": "awaiting_user", "repairRound": round, "question": q}, nil
+		}
+		return nil, map[string]any{"started": err == nil, "repairRound": round, "projectId": d.ID, "materialId": in.MaterialID}, err
 	})
 	mcp.AddTool(server, &mcp.Tool{Name: "render_arrangement", Description: "预检后把真实采样和已准备AI乐句拼合到可编辑多轨时间线；缺音源拒绝执行，不退回SF2。调用返回仅代表已启动，用get_generation_status确认结果。"}, func(ctx context.Context, req *mcp.CallToolRequest, in arrangementToolInput) (*mcp.CallToolResult, any, error) {
 		d, e := w.assistantWork(in.ProjectID)

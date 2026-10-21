@@ -120,9 +120,10 @@ type AudioAsset struct {
 	Duration         float64 `json:"duration"`
 }
 
-// ArrangementMaterial is a generated phrase stem. It is not a pitched one-shot
-// sample, so it must never be fed into the note sampler as one.
+// ArrangementMaterial 保存 AI 原片和验收记录；只有核验且确认的单音候选可登记为采样，
+// 独立乐句不能冒充单音交给采样器。
 type ArrangementMaterial struct {
+	RetryRequest     *ArrangementMaterialRetry      `json:"retryRequest,omitempty"`
 	Generation       *ArrangementGenerationContract `json:"generation,omitempty"`
 	GenerationResult *ArrangementGenerationResult   `json:"generationResult,omitempty"`
 	ID               string                         `json:"id"`
@@ -144,6 +145,7 @@ type ArrangementMaterial struct {
 	Technique        string                         `json:"technique,omitempty"`
 	Phrase           string                         `json:"phrase"`
 	Prompt           string                         `json:"prompt"`
+	UserFeedback     string                         `json:"userFeedback,omitempty"`
 	Tempo            float64                        `json:"tempo"`
 	Key              string                         `json:"key,omitempty"`
 	ModelID          string                         `json:"modelId"`

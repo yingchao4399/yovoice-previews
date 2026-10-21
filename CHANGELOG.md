@@ -4,8 +4,12 @@
 
 ## [Unreleased]
 
+## [0.3.1-preview.5] - 2026-10-21
+
 ### English
 
+- Review each generated AI candidate directly in Smart Arrangement with a seekable player, adoption, regeneration and custom feedback; generation continues while the user listens.
+- Persist per-item regeneration requests and process them after the current item, retain completed assets, and reject stale requests after score changes. Continue missing sample preparation after a representative sound is confirmed.
 - Add per-part AI generation settings and an arrangement-only duration contract, keeping ordinary song generation unchanged.
 - Separate instrumental and wordless-vocal requests; preserve key aliases and reject unsupported modes instead of silently using C major.
 - Retain original candidates and measured checks, require audition and explicit region fitting before adoption, and prepare exact-pitch AI sample mappings for score playback.
@@ -16,6 +20,8 @@
 
 ### 简体中文
 
+- 智能编曲页逐项弹出 AI 音源试听确认卡，支持拖动试听、确认采用、重新生成与自定义意见；试听期间后续素材继续生成。
+- 单项重做请求持久保存，在正在生成的下一项完成后优先处理，保留已有成果；曲谱变更后拒绝执行旧请求，代表采样确认后继续准备所缺音色。
 - 新增声部二级生成设置和编曲专用长度合同，普通歌曲生成继续使用原路径。
 - 分开器乐与无词人声条件，正确归一调性别名；无法表示的调式明确提示，不再静默改为 C 大调。
 - 保留原始候选及本地测量结果，经区段适配和试听确认后采用；为采样器建立精确音高的 AI 音色映射。

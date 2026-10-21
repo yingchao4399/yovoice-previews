@@ -195,17 +195,13 @@ func (w *Workbench) runArrangementJob(ctx context.Context, job schema.Arrangemen
 			return
 		}
 		step.Status = "ready"
+		step.Error = ""
 		if step.Source == "ai" {
 			ref := ArrangementPartRef{step.SectionIndex, step.PhraseIndex, step.PartIndex}
 			inspection, e := w.InspectArrangement(ArrangementInspectInput{Draft: job.Draft, AIModelID: job.ModelID, Stage: "render"})
-			if e != nil {
-				step.Status = "failed"
-				step.Error = e.Error()
-			} else if !slices.ContainsFunc(inspection.Parts, func(p ArrangementPartInspection) bool { return p.Ref == ref && p.Ready }) {
-				step.Status = "needs_review"
-			}
+			ready := e == nil && slices.ContainsFunc(inspection.Parts, func(p ArrangementPartInspection) bool { return p.Ref == ref && p.Ready })
+			setArrangementAIStepReview(step, ready, e)
 		}
-		step.Error = ""
 		if w.updateArrangementJob(job) != nil {
 			return
 		}
@@ -216,6 +212,18 @@ func (w *Workbench) runArrangementJob(ctx context.Context, job schema.Arrangemen
 	}
 	job.Error = ""
 	_ = w.updateArrangementJob(job)
+}
+
+func setArrangementAIStepReview(step *schema.ArrangementJobStep, ready bool, inspectErr error) {
+	step.Status = "ready"
+	step.Error = ""
+	if inspectErr != nil {
+		step.Status = "needs_review"
+		step.Error = inspectErr.Error()
+	} else if !ready {
+		step.Status = "needs_review"
+		step.Error = "AI 素材已生成，但本句尚未通过可演奏检查或试听确认"
+	}
 }
 
 func (w *Workbench) waitArrangementOperation(ctx context.Context, download bool) error {

@@ -1,8 +1,12 @@
 package workbench
 
 import (
+	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
+	"yovoice/internal/assistant"
 	"yovoice/internal/assistant/fakeocho"
 	"yovoice/internal/schema"
 )
@@ -37,6 +41,51 @@ func TestAssistantQuestionToolAndOriginalSessionContinuation(t *testing.T) {
 	if answers != 2 {
 		t.Fatalf("重复回答产生了额外回合：%d", answers)
 	}
+}
+
+func TestRetryToolPresentsFourthTurnChoiceAfterThreeRepairs(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	t.Cleanup(w.Close)
+	d, ref := recoveryDraft(t, w)
+	m := recoveryCandidate(t, w, d, ref, "failed")
+	m.GenerationResult.RepairRound = 3
+	must(t, w.persistGenerationMaterial(m))
+	_, err = w.SaveAIProvider(AIProviderInput{Preset: "ollama", BaseURL: fakeModels(t).URL + "/v1"})
+	must(t, err)
+	_, err = w.AIModels(context.Background(), "")
+	must(t, err)
+	t.Setenv("YOVOICE_OCHO_PATH", selfExecutable(t))
+	data, err := json.Marshal(fakeocho.Plan{Turns: [][]fakeocho.Step{{{Call: "retry_arrangement_material", Args: mustJSON(map[string]any{"projectId": d.ID, "materialId": m.ID})}, {Result: "success"}}}})
+	must(t, err)
+	path := filepath.Join(t.TempDir(), "repair-plan.json")
+	must(t, os.WriteFile(path, data, 0600))
+	w.assistant = assistant.New(w.Store.Root, assistant.Options{Tools: assistantTools, NewServer: w.newAssistantServer, ExtraEnv: []string{fakeocho.PlanEnv + "=" + path}})
+	must(t, w.SendAssistant("继续修复当前编曲失败声部", AssistantContext{Page: "arrangement", WorkID: d.ID, Locale: schema.UiLocaleZhCN}))
+	messages := waitChatIdle(t, w)
+	if messages[len(messages)-1].Status != "completed" {
+		t.Fatalf("第四轮问答流程未完成：%+v", messages[len(messages)-1])
+	}
+	state := w.Store.Read()
+	found := false
+	for _, msg := range assistantSessionByID(state, state.AssistantSessions.CurrentID).Messages {
+		for _, block := range msg.Blocks {
+			if block.Question != nil && block.Question.State == "pending" && len(block.Question.Options) >= 3 {
+				found = true
+			}
+		}
+	}
+	if !found {
+		t.Fatal("三轮失败后没有创建持久问答卡")
+	}
+}
+
+func mustJSON(v any) json.RawMessage {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return b
 }
 
 func questionWorkbench(t *testing.T) (*Workbench, schema.AssistantQuestion) {

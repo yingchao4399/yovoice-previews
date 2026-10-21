@@ -22,7 +22,7 @@ var assistantTools = []string{
 	"plan_melody", "cover_melody", "transform_melody",
 	"open_work", "open_page", "list_models", "list_voices", "list_characters", "save_character", "status",
 	"get_app_status", "get_recent_errors", "remember_preference", "forget_preference", "propose_action",
-	"arrangement_inventory", "inspect_arrangement", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "render_arrangement",
+	"arrangement_inventory", "inspect_arrangement", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "retry_arrangement_material", "render_arrangement",
 	"search_resources",
 	"add_resource_clip",
 	"apply_resource_band",

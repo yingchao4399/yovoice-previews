@@ -60,12 +60,21 @@ type ArrangementGenerationResult struct {
 	DerivedFile     string            `json:"derivedFile,omitempty"`
 	SourceID        string            `json:"sourceId,omitempty"`
 	Attempt         int               `json:"attempt"`
+	RepairRound     int               `json:"repairRound,omitempty"`
 }
 
 type GenerationCheck struct {
 	Code    string `json:"code"`
 	Status  string `json:"status"` // pass、fail、review
 	Message string `json:"message"`
+}
+
+// ArrangementMaterialRetry 保存试听后的局部重做请求，切换页面不丢失。
+type ArrangementMaterialRetry struct {
+	Status   string `json:"status"` // queued、running、completed、failed
+	Feedback string `json:"feedback,omitempty"`
+	Round    int    `json:"round"`
+	Error    string `json:"error,omitempty"`
 }
 
 func (m ArrangementMaterial) GenerationResultState() string {
