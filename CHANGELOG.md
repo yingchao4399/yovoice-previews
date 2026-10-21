@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.3.1-preview.6] - 2026-10-21
+
+### English
+
+- Share verified sample pitch, velocity and sustain limits between arrangement planning, score writing and playback checks. Allow expandable AI instruments to prepare missing coverage without restricting the new melody to existing samples. Supply installed audio-model capabilities to planning; validate per-part model overrides and repair unsupported YuE2 phrase conditions before preparing audio.
+
+### 简体中文
+
+- 智能编曲规划、写谱与演奏检查统一使用已确认采样的音高、力度和持续时长，不再扩大 AI 单音的可用音域。允许同模型可扩充音色按新旋律增量补齐，不因已有少量音高而限制创作。规划读取已安装音频模型的能力与实测边界；写谱按声部模型和实现方式校验，并提前修复无法用于 YuE2 的谱条件。
+
 ## [0.3.1-preview.5] - 2026-10-21
 
 ### English
