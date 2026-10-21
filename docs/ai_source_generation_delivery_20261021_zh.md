@@ -22,9 +22,12 @@
 | 完整浏览器 | `browser-auto-recovery-complete.log`，152/152，13.2 分钟 | 含封存用例，普通语音、故事、音乐、编曲、助手、库、时间线等 |
 | 试听及诊断问答专项 | 5/5 | 试听采用门槛、队列、重做、稍后与问答 |
 | 恢复与重启专项 | `recovery-resume-targeted.log` | 已保存事件跨重启续接 |
+| 实际线上 Ocho | `live-ocho-final.json`，DeepSeek Flash | 实际调用作品、库存、生成状态、生成预检与问答工具；选择后续接，原谱与计划保持不变 |
 | Windows 自包含检查 | ServiceChecks、UpdateChecks | 请求、错误、保存、更新版本与资产协议 |
 | 安装包构建 | `windows-package-build-final.log`，退出码 0 | 完整包、更新包，Windows x64 |
 | 最终打包服务 | `packaged-service-final.json` | 隔离目录启动、前端、真实 D4 工程导入、预检、重演奏、导出、错误拒绝、正常退出 |
+| 本机覆盖安装 | `installed-verification.json`、`installed-service-final.json` | 安装器退出码 0；901 个应用文件一致，124 个内核文件保留，13 张数据库表内容不变；安装服务再次通过真实 D4 工程导入/演奏/导出 |
+| 原生启动 | `installed-native-start.json` 与宿主日志 | 新安装的原生窗口与服务启动，宿主记录 `service.ready`；没有把进程检查当作界面视觉验收 |
 
 日志在本地 `artifacts/ai-source-research/`。公开源码不包含数据库、模型、密钥或研究音频。重复的时间线诊断文件已移除，其场景和断言保留于 `web/browser-tests/timeline.spec.ts`；未通过删除业务断言缩小回归范围。
 
@@ -40,6 +43,6 @@
 
 ## 发布与安装
 
-本轮源码更新到用户仓库 `yingchao4399/yovoice-previews` 的 `development/ai-source-generation`，沿用草稿 PR #1。Preview.5 发行保留草稿直到安装及剩余真实端到端门槛完成。
+本轮源码更新到用户仓库 `yingchao4399/yovoice-previews` 的 `development/ai-source-generation`，沿用草稿 PR #1。Preview.5 完整包、更新包与 SHA256 清单已上传，GitHub 返回的两个包摘要与本地一致。发行保留草稿，剩余模型能力门槛不能以已完成安装代替。
 
-安装前正常退出 yovoice 并备份同一安装目录与数据库，随后覆盖更新并检查版本、数据与实际服务；运行中的程序不得强制覆盖。源码上传、构建成功和隔离服务测试都不等于本机已安装新版本。
+用户正常退出并同意更新后，已备份原安装与数据库，再覆盖同一个安装，未新增第二套应用。安装器成功且无需重启系统。安装后原生应用与服务启动正常，版本为 `0.3.1-preview.5+b329a5b710a2cfcd1c81d89bcd899be6556f1c6a`；后续证据文档提交不改变该包的程序代码。作品、历史、音源、模型和 API 配置均通过安装前后的逐表摘要核对。
