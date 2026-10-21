@@ -61,6 +61,9 @@ type ArrangementGenerationResult struct {
 	SourceID        string            `json:"sourceId,omitempty"`
 	Attempt         int               `json:"attempt"`
 	RepairRound     int               `json:"repairRound,omitempty"`
+	RecoverySession string            `json:"recoverySession,omitempty"`
+	RecoveryQueued  bool              `json:"recoveryQueued,omitempty"`
+	RecoveryError   string            `json:"recoveryError,omitempty"`
 }
 
 type GenerationCheck struct {

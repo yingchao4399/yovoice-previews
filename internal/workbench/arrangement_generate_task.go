@@ -173,6 +173,9 @@ func (w *Workbench) PrepareArrangementAI(in ArrangementAIPrepareInput) error {
 		}
 		return nil
 	}, "", d.ID)
+	if err == nil {
+		w.scheduleArrangementRecovery(d.ID)
+	}
 	return err
 }
 

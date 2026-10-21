@@ -37,7 +37,7 @@ export interface ScoreTrack { id: string; partIds?: string[]; name: string; role
 export interface ScoreSection { name: string; start: number; end: number; tempo?: number }
 export interface Score { tempo: number; timeSignature: number[]; key?: string; sections?: ScoreSection[]; tracks: ScoreTrack[] }
 export type ArrangementSource = 'real' | 'ai' | 'auto';
-export interface ArrangementJob { id: string; projectId: string; mode: string; status: string; error?: string; steps: { partId?: string; instrument: string; source: string; status: string; error?: string }[] }
+export interface ArrangementJob { id: string; projectId: string; mode: string; status: string; error?: string; steps: { partId?: string; instrument: string; source: string; status: string; error?: string; recoverySession?: string; recoveryQueued?: boolean; recoveryError?: string }[] }
 export interface ArrangementPart { id?: string; instrument: string; role: string; technique?: string; source: ArrangementSource; sourceId?: string; reason?: string; locked?: boolean; allowSubstitution?: boolean; generation?: ArrangementGenerationSettings }
 export interface ArrangementPhrase { id?: string; name: string; startBar: number; endBar: number; parts: ArrangementPart[] }
 export interface ArrangementSection { id?: string; name: string; startBar: number; endBar: number; phrases: ArrangementPhrase[] }

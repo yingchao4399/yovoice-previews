@@ -8,6 +8,7 @@
 
 ### English
 
+- Continue independent arrangement parts after an item fails, retain per-item errors, and automatically queue Ocho diagnostics with actual candidate checks and model preflight. Show recovery questions in the arrangement page; require scoped consent before replanning.
 - Review each generated AI candidate directly in Smart Arrangement with a seekable player, adoption, regeneration and custom feedback; generation continues while the user listens.
 - Keep track dragging within existing lanes when edge scrolling is active, preserving grouped moves and locked tracks.
 - Persist per-item regeneration requests and process them after the current item, retain completed assets, and reject stale requests after score changes. Continue missing sample preparation after a representative sound is confirmed.
@@ -21,6 +22,7 @@
 
 ### 简体中文
 
+- 单个声部失败后继续其他独立声部，保留逐项错误；自动将失败交给 Ocho 读取实际候选检查和模型预检。处理范围问答直接显示在编曲页，重新规划前必须确认范围。
 - 智能编曲页逐项弹出 AI 音源试听确认卡，支持拖动试听、确认采用、重新生成与自定义意见；试听期间后续素材继续生成。
 - 修复片段拖到音轨区边缘时自动滚动导致目标轨号越界、跨轨移动失效的问题，保留分组移动和锁轨保护。
 - 单项重做请求持久保存，在正在生成的下一项完成后优先处理，保留已有成果；曲谱变更后拒绝执行旧请求，代表采样确认后继续准备所缺音色。

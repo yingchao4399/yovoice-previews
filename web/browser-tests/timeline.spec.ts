@@ -55,7 +55,7 @@ async function dragEdge(page: Page, clip: Locator, edge: 'start' | 'end', delta:
 
 
 test('多轨分割、移动、静音播放、调整高度和重载', async ({ page }, testInfo) => {
-  // 与同场景诊断用例一致：多步编辑、播放和重载共用总时限，断言超时保持不变。
+  // 多步编辑、播放和重载共用总时限，断言超时保持不变。
   test.setTimeout(90_000);
   const state = emptyState();
   const draft = state.drafts[0];
@@ -303,7 +303,9 @@ test('音轨末尾上传独立素材，裁剪后保存重载与导出', async ({
   expect(stored.drafts[0].timeline.tracks[0].clips[0]).toMatchObject({ start: 0.5, duration: 1, offset: 0.5 });
   await page.getByRole('button', { name: '播放', exact: true }).click();
   await expect(page.getByRole('button', { name: '暂停', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '暂停', exact: true }).click();
+  // 片段仅1.5秒；在观察到播放状态后同步暂停，避免稳定性等待跨过自然结束时刻。
+  await page.getByRole('button', { name: '暂停', exact: true }).evaluate((button: HTMLButtonElement) => button.click());
+  await expect(page.getByRole('button', { name: '播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '导出音轨', exact: true }).click();
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: '导出 WAV', exact: true }).click();

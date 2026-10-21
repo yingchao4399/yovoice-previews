@@ -178,3 +178,46 @@ func TestAIPreparationCommitsEachPhraseBeforeLaterFailure(t *testing.T) {
 		}
 	}
 }
+
+func TestPreparationContinuesAfterFailedAIStep(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	executable, err := os.Executable()
+	must(t, err)
+	model := filepath.Join(w.Store.Root, "models", "fake.gguf")
+	must(t, os.WriteFile(model, []byte("test"), 0600))
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.Models = []schema.InstalledModel{{ID: "ace-step-1.5-turbo-bf16", Path: model}}
+		s.RuntimePath = &executable
+		s.RuntimeBackend = ptr("cpu")
+		s.RuntimeVersion = ptr(catalog.EngineVersion)
+		s.Preferences.Backend = "cpu"
+	}, true))
+	d := workflowDraft()
+	d.Arrangement.Seconds = 4
+	section := &d.Arrangement.Sections[0]
+	section.EndBar = 2
+	section.Phrases = nil
+	d.Score.Tracks = d.Score.Tracks[:1]
+	d.Score.Tracks[0].Notes = nil
+	for i := 0; i < 2; i++ {
+		part := schema.ArrangementPart{Instrument: "二胡", Role: "melody", Source: "ai", Generation: generationTestSettings()}
+		if i == 0 {
+			part.Technique = "模拟编曲失败"
+		}
+		section.Phrases = append(section.Phrases, schema.ArrangementPhrase{Name: "句", StartBar: i + 1, EndBar: i + 1, Parts: []schema.ArrangementPart{part}})
+		d.Score.Tracks[0].Notes = append(d.Score.Tracks[0].Notes, schema.ScoreNote{Bar: i + 1, Beat: 1, Pitch: 62, Length: 1, Velocity: 90})
+	}
+	job, err := w.PrepareArrangement(ArrangementPrepareInput{Draft: d, Mode: "ai", AIModelID: "ace-step-1.5-turbo-bf16"})
+	must(t, err)
+	finished := awaitPreparation(t, w, job.ID)
+	if finished.Status != "failed" || finished.Steps[0].Status != "failed" || finished.Steps[1].Status != "needs_review" {
+		t.Fatalf("单项失败应保留原因并继续生成后续声部，不冒充整批成功：%+v", finished)
+	}
+	if !slices.ContainsFunc(w.Store.Read().ArrangementMaterials, func(m schema.ArrangementMaterial) bool {
+		return m.PhraseIndex == 1 && m.Duration > 0 && (m.GenerationResultState() == "needs_review" || m.GenerationResultState() == "needs_fit")
+	}) {
+		t.Fatal("失败声部阻止了后续候选实际生成")
+	}
+}
