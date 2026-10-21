@@ -141,6 +141,7 @@ func TestArrangementThreeStagesCreateEditableTimeline(t *testing.T) {
 		s.Preferences.Backend = "cpu"
 	}, true))
 	// Stage 1: an AI phrase really becomes a WAV in the source library.
+	d.Arrangement.Sections[0].Phrases[1].Parts[0].Generation = generationTestSettings()
 	must(t, wb.PrepareArrangementAI(ArrangementAIPrepareInput{Draft: d, ModelID: "ace-step-1.5-turbo-bf16"}))
 	<-wb.Done()
 	state := wb.Store.Read()
@@ -171,6 +172,10 @@ func TestArrangementThreeStagesCreateEditableTimeline(t *testing.T) {
 	// its planned second. The plan and score remain editable in the same draft.
 	for _, m := range wb.Store.Read().ArrangementMaterials {
 		if m.ReviewStatus == "needs_review" {
+			if m.Generation != nil && m.GenerationResult.State == "needs_fit" {
+				_, e := wb.FitArrangementMaterial(ArrangementMaterialFitInput{ID: m.ID, Seconds: m.Generation.CoreSeconds, TailSeconds: m.Generation.TailSeconds})
+				must(t, e)
+			}
 			must(t, wb.ReviewArrangementMaterial(m.ID, true))
 		}
 	}
@@ -242,6 +247,7 @@ func TestArrangementUsesOnlySelectedAIModel(t *testing.T) {
 	defer wb.Close()
 	d := workflowDraft()
 	d.Arrangement.Sections[0].Phrases[0].Parts[0].Source = "ai"
+	d.Arrangement.Sections[0].Phrases[0].Parts[0].Generation = generationTestSettings()
 	materials := make([]schema.ArrangementMaterial, 0, 4)
 	for _, model := range []string{"model-a", "model-b"} {
 		for phrase := range d.Arrangement.Sections[0].Phrases {
@@ -282,6 +288,7 @@ func TestArrangementAIJobsCanSelectOnePart(t *testing.T) {
 		t.Fatal("editing an unrelated real part invalidated the AI phrase")
 	}
 	d.Arrangement.Sections[0].Phrases[0].Parts[0].Source = "ai"
+	d.Arrangement.Sections[0].Phrases[0].Parts[0].Generation = generationTestSettings()
 	all, err := arrangementAIJobs(*d.Arrangement, nil)
 	must(t, err)
 	if len(all) != 2 {
@@ -300,6 +307,7 @@ func TestArrangementAIOnlyDoesNotRequireSoundFont(t *testing.T) {
 	defer wb.Close()
 	d := workflowDraft()
 	d.Arrangement.Sections[0].Phrases[0].Parts[0].Source = "ai"
+	d.Arrangement.Sections[0].Phrases[0].Parts[0].Generation = generationTestSettings()
 	model := filepath.Join(wb.Store.Root, "models", "ace-step.gguf")
 	must(t, os.WriteFile(model, []byte("test"), 0600))
 	executable, err := os.Executable()
@@ -311,10 +319,15 @@ func TestArrangementAIOnlyDoesNotRequireSoundFont(t *testing.T) {
 		s.RuntimeVersion = ptr(catalog.EngineVersion)
 		s.Preferences.Backend = "cpu"
 	}, true))
+	d.Arrangement.Sections[0].Phrases[1].Parts[0].Generation = generationTestSettings()
 	must(t, wb.PrepareArrangementAI(ArrangementAIPrepareInput{Draft: d, ModelID: "ace-step-1.5-turbo-bf16"}))
 	<-wb.Done()
 	for _, m := range wb.Store.Read().ArrangementMaterials {
 		if m.ReviewStatus == "needs_review" {
+			if m.Generation != nil && m.GenerationResult.State == "needs_fit" {
+				_, e := wb.FitArrangementMaterial(ArrangementMaterialFitInput{ID: m.ID, Seconds: m.Generation.CoreSeconds, TailSeconds: m.Generation.TailSeconds})
+				must(t, e)
+			}
 			must(t, wb.ReviewArrangementMaterial(m.ID, true))
 		}
 	}
@@ -366,6 +379,10 @@ func testArrangementRealPhrases(t *testing.T, replacement bool) {
 	}
 	for _, m := range wb.Store.Read().ArrangementMaterials {
 		if m.ReviewStatus == "needs_review" {
+			if m.Generation != nil && m.GenerationResult.State == "needs_fit" {
+				_, e := wb.FitArrangementMaterial(ArrangementMaterialFitInput{ID: m.ID, Seconds: m.Generation.CoreSeconds, TailSeconds: m.Generation.TailSeconds})
+				must(t, e)
+			}
 			must(t, wb.ReviewArrangementMaterial(m.ID, true))
 		}
 	}

@@ -16,6 +16,11 @@ func PhraseABC(music schema.Score, track schema.ScoreTrack, start, end int) (str
 	if start < 1 || end < start || end > schema.ScoreMaxBars {
 		return "", fmt.Errorf("乐句范围无效")
 	}
+	for bar := start + 1; bar <= end; bar++ {
+		if music.BarTempo(bar) != music.BarTempo(start) {
+			return "", fmt.Errorf("YuE2 当前谱条件不支持句内变速，请按速度分段，或使用音色按谱演奏")
+		}
+	}
 	per := music.BeatsPerBar()
 	barTicks := int(math.Round(per * abcQuarter))
 	var notes []ABCNote
@@ -43,9 +48,9 @@ func PhraseABC(music schema.Score, track schema.ScoreTrack, start, end int) (str
 			return "", fmt.Errorf("YuE2 当前旋律条件只支持单声部，本句存在重叠音符")
 		}
 	}
-	key := music.Key
-	if _, ok := abcKeys[key]; !ok {
-		key = "C"
+	key, keyErr := NormalizeKey(music.Key)
+	if keyErr != nil {
+		return "", keyErr
 	}
 	unit := 32
 	for ; unit <= 1024; unit *= 2 {

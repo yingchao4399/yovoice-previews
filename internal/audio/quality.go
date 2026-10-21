@@ -12,6 +12,7 @@ type SignalQuality struct {
 	Peak            float64 `json:"peak"`
 	ClippedFraction float64 `json:"clippedFraction"`
 	OnsetSeconds    float64 `json:"onsetSeconds"`
+	EndRMS          float64 `json:"endRms"`
 }
 
 func InspectSignal(path string) (SignalQuality, error) {
@@ -50,6 +51,8 @@ func InspectSignal(path string) (SignalQuality, error) {
 		return q, fmt.Errorf("音频格式无效")
 	}
 	count, clipped := 0, 0
+	endEnergy, endCount := 0.0, 0
+	endStart := max(0, len(data)-int(rate)*int(channels)*stride/10)
 	first := -1
 	for i := 0; i+stride <= len(data); i += stride {
 		var v float64
@@ -68,6 +71,10 @@ func InspectSignal(path string) (SignalQuality, error) {
 			return q, fmt.Errorf("音频含无效数值")
 		}
 		v = math.Abs(v)
+		if i >= endStart {
+			endEnergy += v * v
+			endCount++
+		}
 		q.Peak = max(q.Peak, v)
 		if v >= .999 {
 			clipped++
@@ -81,6 +88,9 @@ func InspectSignal(path string) (SignalQuality, error) {
 		return q, fmt.Errorf("AI 乐句没有有效声音，请重新生成")
 	}
 	q.ClippedFraction = float64(clipped) / float64(count)
+	if endCount > 0 {
+		q.EndRMS = math.Sqrt(endEnergy / float64(endCount))
+	}
 	q.OnsetSeconds = float64(max(first, 0)) / float64(channels) / float64(rate)
 	if q.ClippedFraction > .003 {
 		return q, fmt.Errorf("AI 乐句削波比例 %.2f%%，请重新生成或降低模型输出增益", q.ClippedFraction*100)

@@ -49,13 +49,18 @@ func WAVSeconds(seconds int) []byte {
 	if seconds > 30 {
 		seconds = 30
 	}
-	b := make([]byte, 44+seconds*32000)
+	b := make([]byte, 44+seconds*176400)
 	copy(b, WAV()[:44])
+	binary.LittleEndian.PutUint16(b[22:], 2)
+	binary.LittleEndian.PutUint32(b[24:], 44100)
+	binary.LittleEndian.PutUint32(b[28:], 176400)
+	binary.LittleEndian.PutUint16(b[32:], 4)
 	binary.LittleEndian.PutUint32(b[4:], uint32(len(b)-8))
 	binary.LittleEndian.PutUint32(b[40:], uint32(len(b)-44))
-	for i := 44; i+1 < len(b); i += 2 {
-		sample := int16(5000 * math.Sin(2*math.Pi*440*float64((i-44)/2)/16000))
+	for i := 44; i+3 < len(b); i += 4 {
+		sample := int16(5000 * math.Sin(2*math.Pi*440*float64((i-44)/4)/44100))
 		binary.LittleEndian.PutUint16(b[i:], uint16(sample))
+		binary.LittleEndian.PutUint16(b[i+2:], uint16(sample))
 	}
 	return b
 }
@@ -112,7 +117,7 @@ func RunFakeEngine() {
 		}
 		if p.Request.Options["stop_after"] != "abc" && p.Request.Audio == "" {
 			audio := WAV()
-			if strings.HasPrefix(p.Request.Text, "Dry isolated solo ") {
+			if strings.HasPrefix(p.Request.Text, "Dry isolated ") || strings.HasPrefix(p.Request.Text, "Isolated ") {
 				audio = WAVSeconds(10)
 				if seconds, ok := p.Request.Options["duration_seconds"].(float64); ok {
 					audio = WAVSeconds(int(seconds))

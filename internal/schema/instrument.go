@@ -32,14 +32,19 @@ type PluginInstrument struct {
 }
 
 type InstrumentSample struct {
-	ID           string  `json:"id"`
-	FileName     string  `json:"fileName"`
-	SHA256       string  `json:"sha256"`
-	RootPitch    int     `json:"rootPitch"`
-	Articulation string  `json:"articulation"`
-	VelocityLow  int     `json:"velocityLow"`
-	VelocityHigh int     `json:"velocityHigh"`
-	Duration     float64 `json:"duration"`
+	Generation       *ArrangementGenerationContract `json:"generation,omitempty"`
+	GenerationPrompt string                         `json:"generationPrompt,omitempty"`
+	ExactPitch       bool                           `json:"exactPitch,omitempty"`
+	GenerationID     string                         `json:"generationId,omitempty"`
+	SustainSeconds   float64                        `json:"sustainSeconds,omitempty"`
+	ID               string                         `json:"id"`
+	FileName         string                         `json:"fileName"`
+	SHA256           string                         `json:"sha256"`
+	RootPitch        int                            `json:"rootPitch"`
+	Articulation     string                         `json:"articulation"`
+	VelocityLow      int                            `json:"velocityLow"`
+	VelocityHigh     int                            `json:"velocityHigh"`
+	Duration         float64                        `json:"duration"`
 }
 
 type PluginDependency struct {

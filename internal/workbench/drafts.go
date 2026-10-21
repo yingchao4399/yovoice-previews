@@ -120,6 +120,9 @@ func (w *Workbench) DeleteDraft(id string) error {
 	for _, material := range s.ArrangementMaterials {
 		if material.ProjectID == id {
 			candidates = append(candidates, material.FileName)
+			if material.GenerationResult != nil && material.GenerationResult.DerivedFile != "" {
+				candidates = append(candidates, material.GenerationResult.DerivedFile)
+			}
 		}
 	}
 	err := w.Store.Update(func(s *schema.State) {

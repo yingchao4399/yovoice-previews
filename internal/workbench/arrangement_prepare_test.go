@@ -120,7 +120,7 @@ func TestAIPreparationCommitsEachPhraseBeforeLaterFailure(t *testing.T) {
 	d.Score.Tracks = d.Score.Tracks[:1]
 	d.Score.Tracks[0].Notes = nil
 	for i := 0; i < 4; i++ {
-		p := schema.ArrangementPart{Instrument: "二胡", Role: "melody", Source: "ai"}
+		p := schema.ArrangementPart{Instrument: "二胡", Role: "melody", Source: "ai", Generation: generationTestSettings()}
 		if i == 3 {
 			p.Technique = "模拟编曲失败"
 		}
@@ -132,12 +132,15 @@ func TestAIPreparationCommitsEachPhraseBeforeLaterFailure(t *testing.T) {
 	must(t, w.PrepareArrangementAI(ArrangementAIPrepareInput{Draft: d, ModelID: "ace-step-1.5-turbo-bf16"}))
 	<-w.Done()
 	state := w.Store.Read()
-	if len(state.ArrangementMaterials) != 3 || state.Activity.Status != "failed" {
+	if len(state.ArrangementMaterials) != 6 || state.Activity.Status != "failed" {
 		t.Fatalf("后三句失败不应删除已完成素材：count=%d activity=%+v", len(state.ArrangementMaterials), state.Activity)
 	}
 	var ids []string
 	for _, m := range state.ArrangementMaterials {
 		ids = append(ids, m.ID)
+		if m.Duration == 0 {
+			continue
+		}
 		path, e := w.Store.MediaPath("outputs", m.FileName)
 		must(t, e)
 		if _, e = os.Stat(path); e != nil {
@@ -148,7 +151,7 @@ func TestAIPreparationCommitsEachPhraseBeforeLaterFailure(t *testing.T) {
 	must(t, w.PrepareArrangementAI(ArrangementAIPrepareInput{Draft: d, ModelID: "ace-step-1.5-turbo-bf16"}))
 	<-w.Done()
 	state = w.Store.Read()
-	if len(state.ArrangementMaterials) != 4 || state.Activity.Status != "completed" {
+	if len(state.ArrangementMaterials) != 7 || state.Activity.Status != "completed" {
 		t.Fatalf("修复后未仅生成最后一句：%+v", state.Activity)
 	}
 	for _, id := range ids {

@@ -311,6 +311,29 @@ func Call(ctx context.Context, w *workbench.Workbench, method string, data json.
 			return nil, e
 		}
 		return true, w.PrepareArrangementAI(input)
+	case "arrangement.generation.preflight":
+		var input workbench.ArrangementAIPrepareInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.ArrangementGenerationPreflight(input)
+	case "arrangement.material.fit":
+		var input workbench.ArrangementMaterialFitInput
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return w.FitArrangementMaterial(input)
+	case "arrangement.material.retry":
+		var input struct {
+			ID    string       `json:"id"`
+			Draft schema.Draft `json:"draft"`
+		}
+		if e := json.Unmarshal(data, &input); e != nil {
+			return nil, e
+		}
+		return true, w.RetryArrangementMaterial(input.ID, input.Draft)
+	case "arrangement.material.delete":
+		return true, w.DeleteArrangementMaterial(p.ID)
 	case "arrangement.band.save":
 		var input workbench.BandPresetInput
 		if e := json.Unmarshal(data, &input); e != nil {
