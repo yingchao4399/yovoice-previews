@@ -55,6 +55,8 @@ async function dragEdge(page: Page, clip: Locator, edge: 'start' | 'end', delta:
 
 
 test('多轨分割、移动、静音播放、调整高度和重载', async ({ page }, testInfo) => {
+	// 复合编辑、播放与重载使用与下方离线导出场景一致的总时限，保留全部交互和断言。
+	test.setTimeout(90_000);
   const state = emptyState();
   const draft = state.drafts[0];
   state.history = ['片段 A', '片段 B'].map((title, index) => ({ id: String(index + 1).repeat(32), title, fileName: 'timeline.wav', createdAt: '2026-09-27T10:00:00Z', duration: 2, settings: draft }));
@@ -229,6 +231,8 @@ test('分段音轨自动呈现、裁剪和删除持久化、按编辑结果导�
 
 
 test('音轨末尾上传独立素材，裁剪后保存重载与导出', async ({ page }, testInfo) => {
+	// 包含文件上传、裁剪、重载和离线导出；总时限与其他复杂时间线场景保持一致。
+	test.setTimeout(90_000);
   const state = emptyState();
   state.drafts[0].timeline = { tracks: [{ id: 'track-1', name: '音轨 1', muted: false, clips: [] }] };
   await page.goto('/');

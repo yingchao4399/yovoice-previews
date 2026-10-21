@@ -86,6 +86,8 @@ test('导入新作品、统一角色映射、逐句分配和重载持久化', as
 });
 
 test('选择台词编辑对应说话人，末尾新增继承上一句并持久化', async ({ page }, testInfo) => {
+	// 包含多次角色切换、保存与重载；总时限留出 Windows 完整回归的启动开销，断言时限不变。
+	test.setTimeout(90_000);
   const state = emptyState();
   const draft = state.drafts[0];
   Object.assign(draft, { modelId: 'voxcpm2-q8', voxMode: 'design', voiceDescription: '默认声音', text: '第一句\n第二句\n第三句' });

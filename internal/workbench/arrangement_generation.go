@@ -115,13 +115,13 @@ func generationCapability(modelID, version string) (ArrangementGenerationCapabil
 		}
 		if modelID == "yue2-3b-q8" {
 			c.IsolatedInstrumentReliability = "requires_review"
-			c.Evidence = "本机 Q8 已验证语义帧预算会生效；旧 melody 路线存在截断与错八度。编曲已改用 full 谱条件，每项仍须核验实际音高、选择完整区段并试听，不能把传入曲谱等同于准确演奏。"
+			c.Evidence = "本机 Q8 已验证语义帧预算生效，显式收尾休止改善了无词合唱的结束。一份 D4 箫长音通过技术检查和用户试听，并完成入库、按谱演奏、跨作品复用与工程重开。A5 箫在 melody 与 full 谱条件下仍有错八度；不能将 D4 的结果推广到其他音高、力度或奏法，每项仍须检查和试听。"
 		}
 	case "ace_step":
 		c.MinDuration = 10
 		c.DurationGranularity = 1
 		if modelID == "ace-step-1.5-turbo-q8" {
-			c.Evidence = "本机 Q8 已返回 10 秒原片，但尚未确认独立音色；9 秒轮指实测出现 VAE 显存分配失败。8GB 显存机器请逐项运行，不宣称 300 秒上限已通过实测。"
+			c.Evidence = "本机 Q8 已返回 10 秒原片，但当前 A5 箫单音的三次备料候选均未通过音高检查；9 秒轮指出现过 VAE 显存分配失败。此包还量化了规划器，需注意引擎文档所述的规划采样偏差风险，尚不能据此归因本次错音。8GB 显存机器请逐项运行；当前未验证精确单音或 300 秒生成。"
 		}
 	default:
 		return c, fmt.Errorf("请选择 YuE2 或 ACE-Step 音频模型；线上语言模型只负责规划和写谱")
@@ -277,9 +277,19 @@ func (w *Workbench) ArrangementGenerationPreflight(in ArrangementAIPrepareInput)
 				if m.ProjectID != in.Draft.ID || m.PartID != job.part.ID || m.Technique != job.part.Technique || m.Generation == nil || m.Generation.TargetSourceID != job.part.SourceID || m.GenerationResultState() == "rejected" || m.Generation.Version != arrangementAdapterVersion || m.Generation.EngineVersion != version || m.Generation.Settings.SoundType != r.Settings.SoundType || m.Generation.Pitch == nil || !arrangementSameInstrument(m.Instrument, job.part.Instrument) || m.Generation.ModelID != modelID || *m.Generation.Pitch != c.Pitch || m.Generation.Articulation != c.Articulation || m.Generation.VelocityLow != c.VelocityLow || m.Generation.CoreSeconds+.001 < c.SustainSeconds {
 					continue
 				}
-				c.MaterialID = m.ID
-				c.State = m.GenerationResultState()
-				break
+				if w.generationCandidateRetained(m) {
+					c.MaterialID = m.ID
+					c.State = m.GenerationResultState()
+					break
+				}
+				// 新失败候选不遮蔽旧健康候选；全部不可用时才显示最新失败原因。
+				if c.MaterialID == "" {
+					c.MaterialID = m.ID
+					c.State = m.GenerationResultState()
+					if c.State == "needs_review" || c.State == "needs_fit" || c.State == "confirmed" {
+						c.State = "failed"
+					}
+				}
 			}
 		}
 		seen := map[string]bool{}

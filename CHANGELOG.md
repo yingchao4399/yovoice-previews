@@ -12,6 +12,7 @@
 - Align single-note ABC duration with the requested sustain, preserve tempo and dynamics in sampler phrases, and invalidate relevant caches when timing changes.
 - Write release rests into score conditions, detect still-active choir endings, preserve confirmed phrases while new candidates await review, and keep checking failures recoverable.
 - Prevent overlapping original/fitted audition playback and explain unsupported score-conditioned generation before starting a task.
+- Resume checks from intact saved AI originals after restart, and allow failed or damaged candidates to be prepared again instead of blocking on an existing file.
 
 ### 简体中文
 
@@ -21,6 +22,7 @@
 - 单音 ABC 与所需持续时长一致；采样演奏保留段落速度与力度变化，相关时间条件变化后旧候选正确失效。
 - 谱条件明确写入收尾休止，检查合唱末尾是否仍在发声；新候选不遮蔽已确认版本，检查异常可恢复并保留原片。
 - 原片与适配片互斥试听；不支持的谱条件生成组合在任务开始前说明原因与可选路径。
+- 重启后从完整保存的 AI 原片继续检查；失败或损坏候选可重新备料，不再因已有文件而卡住。
 
 ## [0.3.1-preview.4] - 2026-10-21
 

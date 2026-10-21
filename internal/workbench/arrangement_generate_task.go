@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"os"
 	"slices"
 	"strings"
 	"time"
@@ -38,12 +37,15 @@ func (w *Workbench) PrepareArrangementAI(in ArrangementAIPrepareInput) error {
 	if err != nil {
 		return err
 	}
-	state := w.Store.Read()
 	for _, job := range jobs {
 		if err := w.repairConfirmedAISamples(job.part); err != nil {
 			return err
 		}
 	}
+	if err := w.recoverInterruptedGeneration(d, jobs, in.ModelID); err != nil {
+		return err
+	}
+	state := w.Store.Read()
 	inspection, err := w.InspectArrangement(ArrangementInspectInput{Draft: d, Stage: "score", AIModelID: in.ModelID})
 	if err != nil {
 		return err
@@ -64,14 +66,8 @@ func (w *Workbench) PrepareArrangementAI(in ArrangementAIPrepareInput) error {
 		if pre.Settings.Method == "direct" {
 			found := false
 			for _, m := range state.ArrangementMaterials {
-				if m.GenerationResultState() != "rejected" && m.ProjectID == d.ID && arrangementMaterialMatches(m, d, job.ref) && m.Generation != nil && m.Generation.Pitch == nil && m.ModelID == pre.Contract.ModelID {
-					p, e := w.Store.MediaPath("outputs", m.FileName)
-					if e == nil {
-						_, e = os.Stat(p)
-					}
-					if e == nil {
-						found = true
-					}
+				if m.ProjectID == d.ID && arrangementMaterialMatches(m, d, job.ref) && m.Generation != nil && m.Generation.Pitch == nil && m.ModelID == pre.Contract.ModelID && w.generationCandidateRetained(m) {
+					found = true
 				}
 			}
 			if found && !in.Retry {
@@ -106,7 +102,7 @@ func (w *Workbench) PrepareArrangementAI(in ArrangementAIPrepareInput) error {
 			if in.RetryCell != "" && cell.Key != in.RetryCell {
 				continue
 			}
-			if !in.Retry && (cell.State == "reused" || cell.MaterialID != "") {
+			if !in.Retry && (cell.State == "reused" || cell.MaterialID != "" && (cell.State == "needs_review" || cell.State == "needs_fit" || cell.State == "confirmed")) {
 				continue
 			}
 			// 每种奏法先生成一项，用户确认后才展开同组剩余音高与力度层。
