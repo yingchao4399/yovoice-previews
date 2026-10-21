@@ -6,7 +6,7 @@ import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/Segme
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { Token } from '@astryxdesign/core/Token';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { Lightbulb, Maximize2, Sparkles, Undo2 } from 'lucide-react';
+import { Lightbulb, Maximize2, ListMusic, Undo2 } from 'lucide-react';
 import { AppDialog } from '../../shared/ui/app-dialog';
 import { isUntitled, isYuE, type Draft, type State, type UiLocale } from '../../shared/workbench';
 import { createMusicDraft, instrumentalSections, lyricSections, splitTags } from './music-draft';
@@ -132,8 +132,8 @@ export function MusicEditor({ draft, state, change, locale, onError }: {
       {draft.instrumental && !yue ? null
         : <TextArea ref={lyrics} className="music-lyrics" label={t('@yovoice.music.lyrics')} isLabelHidden value={draft.lyrics ?? ''} maxLength={4000} rows={draft.instrumental ? 6 : yue ? 10 : 14} hasSpellCheck={false} placeholder={t(draft.instrumental ? '@yovoice.music.structurePlaceholder' : '@yovoice.music.lyricsPlaceholder')} onChange={value => change({ lyrics: value.slice(0, 4000) })} />}
     {!draft.instrumental ? <HStack gap={2} vAlign="center" wrap="wrap" className="lyrics-tools">
-      <Button size="sm" variant="ghost" icon={<Sparkles />} label={t('@yovoice.music.optimizeLyrics')} isDisabled={!draft.lyrics?.trim()} onClick={() => openLyrics('optimize')} />
-      <Button size="sm" variant="ghost" icon={<Sparkles />} label={t('@yovoice.music.generateLyrics')} onClick={() => openLyrics('generate')} />
+      <Button size="sm" variant="ghost" icon={<ListMusic />} label={t('@yovoice.music.optimizeLyrics')} isDisabled={!draft.lyrics?.trim()} onClick={() => openLyrics('optimize')} />
+      <Button size="sm" variant="ghost" icon={<ListMusic />} label={t('@yovoice.music.generateLyrics')} onClick={() => openLyrics('generate')} />
       {lyricsUndo?.projectId === draft.id ? <Button size="sm" variant="ghost" icon={<Undo2 />} label={t('@yovoice.music.undoLyrics')} isDisabled={draft.lyrics !== lyricsUndo.after} onClick={() => { change({ lyrics: lyricsUndo.before }); setLyricsUndo(undefined); }} /> : null}
     </HStack> : null}
     </VStack>

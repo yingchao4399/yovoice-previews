@@ -84,16 +84,11 @@ if name == 'xcrun' and args[:2] == ['notarytool', 'submit']:
     signed = [call for call in calls if call[0] == 'codesign' and '--sign' in call]
     cli_index = next(i for i, call in enumerate(signed) if call[-1] == str(cli))
     assert signed[cli_index - 1][-1] == str(cli_ocho) and 'runtime' in signed[cli_index - 1]
-    # 正式签名必须先处理发音库，再签保持加固运行时的引擎。
-    library = app / 'Contents/Resources/tools/kokoro/libespeak-ng.dylib'
-    library.parent.mkdir(parents=True)
-    library.touch()
+    # 正式签名的引擎保留加固运行时，并允许加载下载的 Kokoro 发音库。
     result, calls = run(YOVOICE_CODESIGN_IDENTITY=identity)
     assert result.returncode == 0, result.stderr
-    signed = [call for call in calls if call[0] == 'codesign' and '--sign' in call]
-    library_index = next(i for i, call in enumerate(signed) if call[-1] == str(library))
-    engine_index = next(i for i, call in enumerate(signed) if call[-1].endswith('/engine/audiocpp_server'))
-    assert library_index < engine_index and 'runtime' in signed[engine_index]
+    engine = next(call for call in calls if call[0] == 'codesign' and '--sign' in call and call[-1].endswith('/engine/audiocpp_server'))
+    assert 'runtime' in engine and 'desktop/macos/engine-entitlements.plist' in engine
     # ocho 存在时必须带加固运行时签名，并先于主应用（公证要求包内可执行文件全部签名）。
     ocho = app / 'Contents/Resources/tools/ocho/ocho'
     ocho.parent.mkdir(parents=True)

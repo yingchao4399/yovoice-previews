@@ -107,30 +107,7 @@ func writeState(path string, state schema.State) error {
 	if e != nil {
 		return e
 	}
-	return writeFileAtomic(path, b)
-}
-
-// writeFileAtomic 先写临时文件并落盘再改名，读取方不会看到写到一半的内容。
-func writeFileAtomic(path string, b []byte) error {
-	f, e := os.CreateTemp(filepath.Dir(path), ".tmp-*")
-	if e != nil {
-		return e
-	}
-	defer os.Remove(f.Name())
-	if _, e = f.Write(b); e == nil {
-		e = f.Sync()
-	}
-	if ce := f.Close(); e == nil {
-		e = ce
-	}
-	if e != nil {
-		return e
-	}
-	if e = os.Rename(f.Name(), path); e != nil {
-		return e
-	}
-	syncDir(filepath.Dir(path))
-	return nil
+	return platform.WriteFileAtomic(path, b, 0600)
 }
 
 func PrepareDefault() error {

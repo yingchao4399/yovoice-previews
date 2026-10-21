@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 	"yovoice/internal/msg"
 	"yovoice/internal/schema"
 )
@@ -77,7 +78,7 @@ func (w *Workbench) RenameMedia(kind, id, name string) error {
 // 校准歌词最多记录的行数，与正文长度上限同一量级。
 const maxLyricTimes = 2000
 
-// SetLyricTimes 保存播放页校准的歌词时间：每行的开始秒数，按顺序不减，不超过音频时长；空列表恢复按时长估算。
+// SetLyricTimes 保存播放页校准的歌词时间：每行的开始秒数，按顺序不减，不超过音频时长；空列表清除校准和逐字对齐，恢复自动定位。
 func (w *Workbench) SetLyricTimes(id string, times []float64) error {
 	w.edit.Lock()
 	defer w.edit.Unlock()
@@ -100,10 +101,45 @@ func (w *Workbench) SetLyricTimes(id string, times []float64) error {
 	return w.Store.Update(func(s *schema.State) {
 		for i := range s.History {
 			if s.History[i].ID == id {
+				// 手动校准比之前的逐字对齐新，两者只留一份；清除时一并清掉。
 				s.History[i].LyricTimes = slices.Clone(times)
+				s.History[i].LyricWords = nil
 				if len(times) == 0 {
 					s.History[i].LyricTimes = nil
 				}
+			}
+		}
+	}, true)
+}
+
+// 手动编辑的逐字时间最多记录的字数，单字长度上限防止把整段正文塞进一个字。
+const maxLyricWords, maxLyricWordRunes = 20000, 64
+
+// SetLyricWords 保存播放页逐字编辑的时间：每个字的开始与结束秒数，开始不减，结束不早于开始，不超过音频时长。
+// 与对齐模型的结果一样写进 LyricWords 并替换逐行校准。
+func (w *Workbench) SetLyricWords(id string, words []schema.LyricWord) error {
+	w.edit.Lock()
+	defer w.edit.Unlock()
+	if _, e := w.MediaFile("outputs", id); e != nil {
+		return e
+	}
+	i := slices.IndexFunc(w.Store.Read().History, func(g schema.Generation) bool { return g.ID == id })
+	if i < 0 {
+		return msg.Err(msg.ErrAudioMissing, nil)
+	}
+	duration := w.Store.Read().History[i].Duration
+	if len(words) == 0 || len(words) > maxLyricWords {
+		return msg.Err(msg.ErrRequestInvalid, nil)
+	}
+	for j, word := range words {
+		if word.Word == "" || utf8.RuneCountInString(word.Word) > maxLyricWordRunes || math.IsNaN(word.Start) || math.IsNaN(word.End) || word.Start < 0 || word.End < word.Start || word.End > duration+1 || (j > 0 && word.Start < words[j-1].Start) {
+			return msg.Err(msg.ErrRequestInvalid, nil)
+		}
+	}
+	return w.Store.Update(func(s *schema.State) {
+		for i := range s.History {
+			if s.History[i].ID == id {
+				s.History[i].LyricWords, s.History[i].LyricTimes = slices.Clone(words), nil
 			}
 		}
 	}, true)

@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
+import { Text } from '@astryxdesign/core/Text';
 import { useTranslator, type TranslatorFn } from '@astryxdesign/core/i18n';
 import { X } from 'lucide-react';
 import type { Activity, Draft, State } from '../../shared/workbench';
@@ -74,7 +75,7 @@ export function AssistantNudge({ nudge, launcher, onAct, onClose }: { nudge: Nud
   return <HStack className="assistant-nudge" data-testid="assistant-nudge" data-tone={nudge.tone} data-launcher={launcher || undefined} gap={2} vAlign="start" role="status">
     <AssistantAvatar working={false} size={24} />
     <VStack className="grow" gap={2}>
-      <span className="assistant-nudge-text">{nudge.text}</span>
+      <Text type="inherit" color="inherit" className="assistant-nudge-text">{nudge.text}</Text>
       <HStack gap={2}><Button size="sm" variant="primary" label={nudge.action} onClick={() => onAct(nudge)} /></HStack>
     </VStack>
     <Button size="sm" variant="ghost" isIconOnly icon={<X size={13} />} label={t('@yovoice.assistant.nudge.close')} onClick={onClose} />

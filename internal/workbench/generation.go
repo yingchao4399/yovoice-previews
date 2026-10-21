@@ -128,7 +128,7 @@ func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID str
 	if d.Kind == "score" {
 		return w.startScore(d, saveDraft, d)
 	}
-	d.EnsureCueIDs()
+	d.Normalize()
 	original := d
 	if cueID != "" {
 		if d.Subtitles == nil {
@@ -184,6 +184,9 @@ func (w *Workbench) startGeneration(d schema.Draft, previewID, cueID, clipID str
 		}
 	}
 	return w.start("generate", msg.ActivityGenerate, nil, nil, func(ctx context.Context) error {
+		if e := w.ensureKokoro(ctx, s, parts); e != nil {
+			return e
+		}
 		if d.Subtitles != nil && previewID == "" {
 			return w.generateSegments(ctx, s, parts, clipID)
 		}

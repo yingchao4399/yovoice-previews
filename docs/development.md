@@ -37,12 +37,14 @@ For browser-only UI development, run `make dev` and open `http://127.0.0.1:5173`
 
 | Command | Output |
 | --- | --- |
-| `make app-build` | Runnable app in `artifacts/macos-arm64/` or `artifacts/windows-x64/` |
-| `make app-package` | macOS DMG/ZIP or Windows Setup EXE in `artifacts/` |
+| `make app-build` | Runnable app in `artifacts/macos-arm64/`, `artifacts/windows-x64/` or `artifacts/linux-x64/` |
+| `make app-package` | macOS DMG/ZIP, Windows Setup EXE, or Linux `.tar.gz` and `.deb` in `artifacts/` |
 | `make cli-build` | CLI executable and `artifacts/tools/` |
 | `python3 scripts/package-cli.py` | Standalone CLI ZIP in `artifacts/` |
 
 Keep `tools/` beside the CLI executable. Complete packages must be built on their target platform. macOS DMG packaging requires a logged-in desktop session and Finder automation permission.
+
+The Linux app is built on Linux x64 and needs WebKitGTK 4.1 at run time (`sudo apt install libwebkit2gtk-4.1-0`); building needs no GTK headers because the host in `desktop/linux/` loads GTK and WebKitGTK with purego. `scripts/desktop/smoke-linux.sh` starts the packaged app in Xvfb (`xvfb-run`) and checks the bridge, audio, saving and quitting.
 
 On Windows without GNU Make, use PowerShell:
 
@@ -72,7 +74,7 @@ For processes, request flow and the data directory, see [Architecture](architect
 | --- | --- |
 | `cmd/` | CLI and local service entry points |
 | `internal/` | Go service, split into packages by responsibility (see below) |
-| `desktop/macos/`, `desktop/windows/` | Native app hosts |
+| `desktop/macos/`, `desktop/windows/`, `desktop/linux/` | Native app hosts |
 | `web/src/` | Frontend application |
 | `web/browser-tests/` | Browser tests |
 | `scripts/` | Build and packaging tools |

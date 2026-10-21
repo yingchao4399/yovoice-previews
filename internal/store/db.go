@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
+	"yovoice/internal/platform"
 	"yovoice/internal/schema"
 
 	"modernc.org/sqlite"
@@ -19,26 +19,7 @@ import (
 const (
 	DatabaseFile = "yovoice.db"
 	backupFile   = "yovoice.backup.db"
-	// schemaVersion 记录在 PRAGMA user_version，表结构变化时在 migrations 中追加步骤。
-	schemaVersion = 6
 )
-
-// migrations[i] 把数据库从版本 i 升级到 i+1；全部在同一事务内执行。
-var migrations = []string{
-	`CREATE TABLE settings (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
-	 CREATE TABLE characters (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
-	 CREATE TABLE drafts (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
-	 CREATE TABLE voices (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
-	 CREATE TABLE models (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
-	 CREATE TABLE history (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
-	 CREATE TABLE ai_providers (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);
-	 CREATE TABLE private (key TEXT PRIMARY KEY, data TEXT NOT NULL);`,
-	`CREATE TABLE instrument_sources (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
-	`CREATE TABLE arrangement_materials (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
-	`CREATE TABLE band_presets (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
-	`CREATE TABLE arrangement_jobs (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
-	`CREATE TABLE arrangement_scores (key TEXT PRIMARY KEY, pos INTEGER NOT NULL, data TEXT NOT NULL);`,
-}
 
 // row 是一行已编码的记录；pos 保留列表顺序，data 为实体的 JSON。
 type row struct {
@@ -175,38 +156,11 @@ func openDB(path string) (*sql.DB, error) {
 	// 写入频率很低，每次事务重新打开连接的开销可以忽略；连接级 PRAGMA 由 DSN 在每次打开时设置。
 	db.SetMaxOpenConns(1)
 	db.SetMaxIdleConns(0)
-	if e = migrate(db); e != nil {
+	if e = migrate(db, filepath.Dir(abs)); e != nil {
 		db.Close()
 		return nil, e
 	}
 	return db, nil
-}
-
-func migrate(db *sql.DB) error {
-	var version int
-	if e := db.QueryRow("PRAGMA user_version").Scan(&version); e != nil {
-		return e
-	}
-	if version > schemaVersion {
-		return fmt.Errorf("数据库版本 %d 高于当前应用支持的版本 %d，请升级应用", version, schemaVersion)
-	}
-	if version == schemaVersion {
-		return nil
-	}
-	tx, e := db.Begin()
-	if e != nil {
-		return e
-	}
-	defer tx.Rollback()
-	for v := version; v < schemaVersion; v++ {
-		if _, e = tx.Exec(migrations[v]); e != nil {
-			return e
-		}
-	}
-	if _, e = tx.Exec(fmt.Sprintf("PRAGMA user_version = %d", schemaVersion)); e != nil {
-		return e
-	}
-	return tx.Commit()
 }
 
 // checkDB 做快速完整性检查；返回的错误若为损坏类，调用方转入恢复流程。
@@ -356,7 +310,7 @@ func createDB(path string, state schema.State, private map[string]string) error 
 	if e = os.Rename(tmp, path); e != nil {
 		return e
 	}
-	syncDir(filepath.Dir(path))
+	platform.SyncDir(filepath.Dir(path))
 	return nil
 }
 
@@ -416,15 +370,4 @@ func syncFile(path string) error {
 		e = ce
 	}
 	return e
-}
-
-// syncDir 让改名在断电后也能保留；Windows 不支持对目录调用 Sync，忽略即可。
-func syncDir(dir string) {
-	if runtime.GOOS == "windows" {
-		return
-	}
-	if f, e := os.Open(dir); e == nil {
-		_ = f.Sync()
-		_ = f.Close()
-	}
 }

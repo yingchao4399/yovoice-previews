@@ -6,7 +6,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack, Layout } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
-import { PanelLeft, PanelRight, Check, Disc3, Download, History, Plus, LoaderCircle, MoreHorizontal, Save } from 'lucide-react';
+import { PanelLeft, PanelRight, Check, Disc3, FolderOpen, History, Plus, LoaderCircle, MoreHorizontal, Save } from 'lucide-react';
 import { NewProject, Projects } from '../features/library/projects';
 import { BookImport } from '../features/library/book-import';
 import { VoiceTarget } from '../features/library/voice-target';
@@ -33,13 +33,13 @@ import { TimelineEditor } from '../features/media/timeline-editor';
 import { Player } from '../features/media/player';
 import { Selector } from '../shared/selector';
 import { ConfirmDelete } from '../shared/ui/app-dialog';
-import { call, isDesktop, mediaUrl, saveAudio } from '../shared/lib/client';
+import { call, exportOutput, isDesktop } from '../shared/lib/client';
 import { noticeMessage } from '../shared/lib/call-error';
 import { dismissSplash } from '../shared/lib/splash';
 import { IntroScreen } from './intro-screen';
 import { GuideTour } from './guide-tour';
 import { formatNotice } from '../shared/i18n/format';
-import { isKokoroModel, isYuE, isReferenceModel, isBreezeModel, modelEngineReady, runtimeStatus, runtimeUsable, isVoxModel, requiresVoice, projectKind, createDraft, synthesisSettings, performanceSettings, cueSettings, normalizeDraft, type Character, type Draft, type EngineInfo, type State, type ModelPackage, type Voice, type Generation, type Track, type AssistantContext, modelTab, preferredModel } from '../shared/workbench';
+import { isAligner, isKokoroModel, isYuE, isReferenceModel, isBreezeModel, modelEngineReady, runtimeStatus, runtimeUsable, isVoxModel, requiresVoice, projectKind, createDraft, synthesisSettings, performanceSettings, cueSettings, type Character, type Draft, type EngineInfo, type State, type ModelPackage, type Voice, type Generation, type Track, type AssistantContext, modelTab, preferredModel, featureHidden } from '../shared/workbench';
 // 助手（含形象与点阵动画）首屏后再加载，不占主包。
 const AssistantDock = lazy(() => import('../features/assistant/assistant-dock').then(module => ({ default: module.AssistantDock })));
 const AssistantTitleButton = lazy(() => import('../features/assistant/assistant-dock').then(module => ({ default: module.AssistantTitleButton })));
@@ -53,6 +53,8 @@ import { UpdateDialogHost } from '../features/update/update-dialog';
 import { UpdateNotice } from '../features/update/update-notice';
 import { PronunciationDialog, type Pronunciation } from './pronunciation-dialog';
 import type { DraftSession } from './use-draft-session';
+import { watchAssistantLive } from '../shared/lib/assistant-live';
+import { readLocal, writeLocal } from '../shared/lib/local-store';
 const Settings = lazy(() => import('../features/settings/settings').then(module => ({ default: module.Settings })));
 const VoicePicker = lazy(() => import('../features/media/voice-picker').then(module => ({ default: module.VoicePicker })));
 
@@ -70,19 +72,18 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   const previousVoices = useRef<Voice[]>([]);
   const [page, setPage] = useState(() => {
     if (isDesktop) {
-      try {
-        const saved = localStorage.getItem('yovoice-active-page');
-        const listPages = ['text', 'story', 'music', 'score', 'arrangement', 'instruments', 'characters', 'settings'];
-        return saved && listPages.includes(saved) ? saved : 'text';
-      } catch {
-        return 'text';
-      }
+      const saved = readLocal('yovoice-active-page');
+      const listPages = ['text', 'story', 'music', 'score', 'arrangement', 'instruments', 'characters', 'settings'];
+      return saved && listPages.includes(saved) ? saved : 'text';
     }
     return 'create';
   });
   useEffect(() => {
-    try { localStorage.setItem('yovoice-active-page', page); } catch { /* 存储不可用时忽略 */ }
+    writeLocal('yovoice-active-page', page);
   }, [page]);
+  // 页面第一次打开时才挂载，之后保持挂载（切走只隐藏），切回来时保留编辑、滚动与播放状态；启动时只渲染当前页。
+  const [visited, setVisited] = useState(() => new Set([page]));
+  if (!visited.has(page)) setVisited(new Set(visited).add(page));
   // 作品只在编辑页和版本记录页处于打开状态。
   useEffect(() => setActive(page === 'create' || page === 'arrangement' || page === 'history'), [page, setActive]);
   const [settingsFocus, setSettingsFocus] = useState<{ tab: string; modelId: string; request: number } | undefined>();
@@ -98,16 +99,19 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   const [pronunciation, setPronunciation] = useState<Pronunciation | null>(null);
   const [showInspector, setShowInspector] = useState(false);
   // 助手面板：开关与展开状态跨启动保留；⌘J/Ctrl+J、宿主标题栏按钮与编辑器 AI 写作栏都能打开。
-  const [assistantOpen, setAssistantOpen] = useState(() => { try { return localStorage.getItem('yovoice-assistant-open') === 'true'; } catch { return false; } });
-  const [assistantExpanded, setAssistantExpanded] = useState(() => { try { return localStorage.getItem('yovoice-assistant-expanded') === 'true'; } catch { return false; } });
+  const [assistantOpen, setAssistantOpen] = useState(() => readLocal('yovoice-assistant-open') === 'true');
+  const [assistantExpanded, setAssistantExpanded] = useState(() => readLocal('yovoice-assistant-expanded') === 'true');
   // 右下角入口与标题栏入口二选一：入口在时标题栏不重复显示，移走后才由标题栏接替；浮窗打开时两处入口都收起。
-  const [launcherHidden, setLauncherHidden] = useState(() => { try { return localStorage.getItem('yovoice-assistant-launcher') === 'hidden'; } catch { return false; } });
+  const [launcherHidden, setLauncherHidden] = useState(() => readLocal('yovoice-assistant-launcher') === 'hidden');
   const showLauncher = (show: boolean) => {
     setLauncherHidden(!show);
-    try { localStorage.setItem('yovoice-assistant-launcher', show ? 'shown' : 'hidden'); } catch { /* 存储不可用时只在本次生效 */ }
+    writeLocal('yovoice-assistant-launcher', show ? 'shown' : 'hidden');
   };
-  useEffect(() => { try { localStorage.setItem('yovoice-assistant-open', String(assistantOpen)); localStorage.setItem('yovoice-assistant-expanded', String(assistantExpanded)); } catch { /* 存储不可用时只在本次生效 */ } }, [assistantOpen, assistantExpanded]);
+  useEffect(() => { writeLocal('yovoice-assistant-open', String(assistantOpen)); writeLocal('yovoice-assistant-expanded', String(assistantExpanded)); }, [assistantOpen, assistantExpanded]);
+  // 在设置中隐藏 Ocho 后，浮窗、各处入口、快捷键与主动提示都不再出现。
+  const assistantHidden = featureHidden(state.preferences, 'assistant');
   useEffect(() => {
+    if (assistantHidden) return;
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'j') { event.preventDefault(); setAssistantOpen(open => !open); }
     };
@@ -115,43 +119,40 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
     window.addEventListener('keydown', onKey);
     window.addEventListener('workbench-toggle-assistant', onToggle);
     return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('workbench-toggle-assistant', onToggle); };
-  }, []);
+  }, [assistantHidden]);
   // 编辑页的当前页面键（text/story/music/score），其余页面直接用页面名。
   const assistantPage = page === 'create' || page === 'history' ? projectKind(draft) : page === 'voices' ? 'voices' : page;
   const askAssistantPanel = { openWork: (workId: string) => { const target = state.drafts.find(item => item.id === workId); if (target) selectDraft(target); }, openSettings: () => openSettings(draft.modelId, 'ai') };
-  // 助手要求界面跳转：open_work/open_page 事件各消费一次。
+  // 助手要求界面跳转（open_work/open_page）与保存了正打开的作品，各消费一次；只订阅变化，流式输出时不重绘整个界面。
   const consumedNav = useRef<string | undefined>(undefined);
   const applyAssistantNav = useEffectEvent((nav: NonNullable<State['assistantLive']>['nav']) => {
     if (!nav) return;
     if (nav.workId) askAssistantPanel.openWork(nav.workId);
     else if (nav.page) setPage(nav.page);
   });
-  useEffect(() => {
-    const nav = state.assistantLive?.nav;
-    if (!nav || nav.id === consumedNav.current) return;
-    consumedNav.current = nav.id;
-    applyAssistantNav(nav);
-  }, [state.assistantLive?.nav]);
   // 助手保存了正打开的作品：本地没有未保存修改时，编辑器即时换上新内容。
   const consumedUpdate = useRef<string | undefined>(undefined);
   const applyAssistantUpdate = useEffectEvent((update: NonNullable<State['assistantLive']>['update']) => {
     if (!update) return;
     if (update.workId !== draft.id || page !== 'create' || session.saving || window.__workbenchDraft !== undefined) return;
     const fresh = state.drafts.find(item => item.id === update.workId);
-    if (fresh) { setDraft(normalizeDraft(fresh)); setDraftPersisted(true); }
+    if (fresh) { setDraft(fresh); setDraftPersisted(true); }
   });
-  useEffect(() => {
-    const update = state.assistantLive?.update;
-    if (!update || update.id === consumedUpdate.current) return;
-    consumedUpdate.current = update.id;
-    applyAssistantUpdate(update);
-  }, [state.assistantLive?.update]);
+  // 新请求先记入状态，与同一次推送里的作品列表一起渲染后再处理，打开刚创建的作品时才能找到它。
+  const [liveRequest, setLiveRequest] = useState<Pick<NonNullable<State['assistantLive']>, 'nav' | 'update'>>({});
+  useEffect(() => watchAssistantLive(live => {
+    const nav = live?.nav, update = live?.update;
+    if (nav && nav.id !== consumedNav.current) { consumedNav.current = nav.id; setLiveRequest(current => ({ ...current, nav })); }
+    if (update && update.id !== consumedUpdate.current) { consumedUpdate.current = update.id; setLiveRequest(current => ({ ...current, update })); }
+  }), []);
+  useEffect(() => applyAssistantNav(liveRequest.nav), [liveRequest.nav]);
+  useEffect(() => applyAssistantUpdate(liveRequest.update), [liveRequest.update]);
 
   // 宽屏下右侧检查器的收起状态，跨作品、跨启动保留。
-  const [inspectorCollapsed, setInspectorCollapsed] = useState(() => { try { return localStorage.getItem('workbench-inspector-collapsed') === '1'; } catch { return false; } });
+  const [inspectorCollapsed, setInspectorCollapsed] = useState(() => readLocal('workbench-inspector-collapsed') === '1');
   const toggleInspector = useCallback(() => setInspectorCollapsed(current => {
     const next = !current;
-    try { localStorage.setItem('workbench-inspector-collapsed', next ? '1' : '0'); } catch { /* 存储不可用时只在本次生效 */ }
+    writeLocal('workbench-inspector-collapsed', next ? '1' : '0');
     return next;
   }), []);
   // 窗口右上角的右侧面板开关：创作区较窄时检查器已自动收起（见 styles.css 的 studio 容器查询），开关改为展开或收回检查器。
@@ -169,12 +170,12 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   }, [page, toggleInspectorPanel]);
   // 标题栏的右侧面板开关由宿主绘制：离开工作区时让宿主隐藏它。
   useEffect(() => { if (isDesktop) void call('inspector.available', { available: page === 'create' }).catch(() => undefined); }, [page]);
-  useEffect(() => { if (isDesktop) void call('assistant.entry', { visible: launcherHidden && !assistantOpen }).catch(() => undefined); }, [launcherHidden, assistantOpen]);
+  useEffect(() => { if (isDesktop) void call('assistant.entry', { visible: launcherHidden && !assistantOpen && !assistantHidden }).catch(() => undefined); }, [launcherHidden, assistantOpen, assistantHidden]);
   const editor = useRef<HTMLTextAreaElement>(null); const previousHistory = useRef<string | undefined>(undefined); const knownHistory = useRef(new Set<string>());
   const onError = useCallback((message: string) => setError(message), [setError]);
   useEffect(() => {
     if (!isDesktop) return;
-    const saved = localStorage.getItem('astryx-resizable:workbench-sidebar');
+    const saved = readLocal('astryx-resizable:workbench-sidebar');
     if (saved) void call('sidebar.save', JSON.parse(saved)).catch(error => setError(noticeMessage(error)));
   }, [navigation.size, navigation.isCollapsed, setError]);
   const run = useCallback((action: () => Promise<unknown>) => { void action().catch(e => setError(noticeMessage(e))); }, [setError]);
@@ -232,7 +233,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   };
   // 界面就绪或加载出错时收起启动动画，出错时要让错误提示露出来；开场画面与启动动画同一造型，直接接续。
   useEffect(() => { if (error || showIntro) dismissSplash(true); else if (ready) dismissSplash(); }, [ready, error, showIntro]);
-  useEffect(() => { if (ready) setDraft(current => Timeline.accept(normalizeDraft(current), state.history)); }, [state.history, draft.id, ready, setDraft]);
+  useEffect(() => { if (ready) setDraft(current => Timeline.accept(current, state.history)); }, [state.history, draft.id, ready, setDraft]);
   const generate = () => {
     if (state.activity?.status === 'running') return;
     if (draft.kind === 'score' && draft.arrangement) { setPage('arrangement'); return; }
@@ -266,15 +267,15 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   }, []);
   async function newDraft(next: Draft) {
     if (draftPersisted) await persistDraft(draft); await persistDraft(next);
-    setDraft(normalizeDraft(next)); setPage('create');
+    setDraft(next); setPage('create');
   }
   // 整本书导入的多个章节作品：倒序保存让第一章排在最前，最后打开第一章。
   async function importBook(drafts: Draft[]) {
     for (const item of drafts.slice(1).reverse()) await call('draft.save', item);
     await newDraft(drafts[0]);
   }
-  function selectDraft(item: Draft) { run(async () => { if (draftPersisted) await persistDraft(draft); setDraft(normalizeDraft(item.id === draft.id ? draft : item)); setDraftPersisted(true); setPage('create'); }); }
-  function openArrangementDraft(item: Draft) { run(async () => { if (draftPersisted) await persistDraft(draft); setDraft(normalizeDraft(item.id === draft.id ? draft : item)); setDraftPersisted(true); setPage('arrangement'); }); }
+  function selectDraft(item: Draft) { run(async () => { if (draftPersisted) await persistDraft(draft); setDraft(item.id === draft.id ? draft : item); setDraftPersisted(true); setPage('create'); }); }
+  function openArrangementDraft(item: Draft) { run(async () => { if (draftPersisted) await persistDraft(draft); setDraft(item.id === draft.id ? draft : item); setDraftPersisted(true); setPage('arrangement'); }); }
   function selectVoice(voice: Voice) { if (voicePicker !== 'add') change(voicePicker === 'emotion' ? { emotionVoiceId: voice.id } : { voiceId: voice.id, referenceText: voice.referenceText ?? '' }); setVoicePicker(null); }
   function annotate(selection: TextSelection) {
     setPronunciation({ ...selection, sound: '' });
@@ -292,7 +293,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   useEffect(() => trackAssistantFocus(), []);
   // 主动提示：面板关着、开着主动提示且助手可用时，生成或下载结束会在右下角冒出建议。
   const assistantReady = !state.assistantMissing && !!state.aiProviders?.find(item => item.id === state.aiProviderID)?.model;
-  const [nudge, dismissNudge] = useAssistantNudge(state, assistantReady && !assistantOpen && !state.preferences.assistantQuiet);
+  const [nudge, dismissNudge] = useAssistantNudge(state, assistantReady && !assistantHidden && !assistantOpen && !state.preferences.assistantQuiet);
   const actOnNudge = (next: Nudge) => {
     dismissNudge();
     setAssistantOpen(true);
@@ -320,7 +321,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   const projectList = state.drafts.map(d => d.id === draft.id ? { ...draft, createdAt: d.createdAt, updatedAt: d.updatedAt } : d);
   const [voiceQuery, setVoiceQuery] = useState('');
   const [historyQuery, setHistoryQuery] = useState('');
-  const openHistory = (item: Draft) => run(async () => { if (draftPersisted) await persistDraft(draft); setDraft(normalizeDraft(item)); setDraftPersisted(true); setHistoryQuery(''); setPreviewTrack(null); setPage('history'); });
+  const openHistory = (item: Draft) => run(async () => { if (draftPersisted) await persistDraft(draft); setDraft(item); setDraftPersisted(true); setHistoryQuery(''); setPreviewTrack(null); setPage('history'); });
   const [characterEditor, setCharacterEditor] = useState<Character | null>(null);
   const characterActive = !!characterEditor && page === 'characters';
   const characterReturnPage = useRef('create');
@@ -347,7 +348,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
     const source = draftId === 'new' ? { ...createDraft(false, state.preferences.uiLocale), kind: 'text' as const } : projectList.find(d => d.id === draftId);
     if (!source || (source.subtitles && !source.subtitles.speakers.some(s => s.id === speakerId))) throw new Error('@yovoice.error.draftIDInvalid');
     const next = source.subtitles ? { ...source, subtitles: { ...source.subtitles, cues: source.subtitles.cues.map(cue => cue.speakerId === speakerId ? { ...cue, performance: undefined } : cue), speakers: source.subtitles.speakers.map(s => s.id === speakerId ? { ...s, characterId: voice.id, settings: structuredClone(voice.settings) } : s) } } : { ...source, ...structuredClone(voice.settings), characterId: voice.id, performance: undefined };
-    if (draftId === draft.id) { await persistDraft(next); setDraft(normalizeDraft(next)); setPage('create'); }
+    if (draftId === draft.id) { await persistDraft(next); setDraft(next); setPage('create'); }
     else await newDraft(next);
     if (next.subtitles) setCueSelection(current => ({ draftId: next.id, index: Math.max(0, next.subtitles!.cues.findIndex(c => c.speakerId === speakerId)), revision: (current?.revision ?? 0) + 1 }));
   }
@@ -402,9 +403,8 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   });
   // 直接导出音频；新版本的文件名已带时间与内容摘要，旧的哈希文件名改用音频标题。
   const exportVersion = (item: Generation) => run(async () => {
-    const url = await mediaUrl('outputs', item.fileName);
-    try { const stem = item.fileName.replace(/\.wav$/, ''); await saveAudio(await (await fetch(url)).blob(), /^[0-9a-f]{32}$/.test(stem) ? item.title : stem); }
-    finally { if (url.startsWith('blob:')) URL.revokeObjectURL(url); }
+    const stem = item.fileName.replace(/\.wav$/, '');
+    await exportOutput(item.id, item.fileName, /^[0-9a-f]{32}$/.test(stem) ? item.title : stem);
   });
   const audition = (value: Track) => {
     if (page === 'create') setTrack({ ...value, playRequest: performance.now() });
@@ -423,7 +423,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
   const showTimeline = projectKind(draft) === 'story' || !!draft.timeline && (!music || musicView === 'audio');
   // 音乐与编曲作品都不使用配音时间线和“存为声音”。
   const instrumental = music || scoring;
-  const sidebar = <SidebarNav page={page} setPage={setPage} newDraft={<NewProject locale={state.preferences.uiLocale} modelId={defaultModelId} modelFor={modelFor} create={newDraft} onError={onError} button={{ 'data-testid': 'nav-new', className: 'new-project', width: '100%', size: 'md' }} />} state={state} draft={draft} selectDraft={selectDraft} removeDraft={setDeleteTarget} resizable={navigation.props} />;
+  const sidebar = <SidebarNav page={page} setPage={setPage} newDraft={<NewProject hidden={state.preferences.hiddenFeatures} locale={state.preferences.uiLocale} modelId={defaultModelId} modelFor={modelFor} create={newDraft} onError={onError} button={{ 'data-testid': 'nav-new', className: 'new-project', width: '100%', size: 'md' }} />} state={state} draft={draft} selectDraft={selectDraft} removeDraft={setDeleteTarget} resizable={navigation.props} />;
   const currentCharacter = state.characters.find(c => c.id === (activeSpeaker?.characterId ?? selectedCharacter));
   const currentPerformance = activeSpeaker ? activeCue?.performance : draft.performance;
   const performances = currentCharacter?.performances ?? [];
@@ -441,17 +441,17 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
         else if (currentCharacter) change({ ...performanceSettings(currentCharacter.settings, performance), performance });
       }} /> : null}
   </VStack>} catalog={catalog} close={() => setShowInspector(false)} draft={inspectorDraft} state={state} change={changeSpeaker} chooseVoice={() => setVoicePicker('voice')} chooseEmotion={() => setVoicePicker('emotion')} play={audition} generate={generate} cancel={() => run(() => call('operation.cancel'))} settings={() => openSettings(inspectorDraft.modelId)} advanced={advanced} setAdvanced={setAdvanced} />;
-  // 播放器工具栏右侧：导出当前音频，查看历史（语音生成是“历史生成”，音乐与编曲是本作品的“版本记录”），删除在历史里处理；音乐另有播放页。
+  // 播放器工具栏右侧：打开当前音频所在位置（导出在“更多”菜单里），查看历史（语音生成是“历史生成”，音乐与编曲是本作品的“版本记录”），删除在历史里处理；音乐另有播放页。
   const historyLabel = t(projectKind(draft) === 'text' ? '@yovoice.history.generations' : '@yovoice.history.versions');
   const playerActions = projectKind(draft) === 'story' ? undefined : <HStack gap={2} vAlign="center">
-    {currentVersion ? <Button className="player-tool" label={t('@yovoice.app.exportVersion')} tooltip={t('@yovoice.app.exportVersion')} size="sm" icon={<Download />} isDisabled={busy} onClick={() => exportVersion(currentVersion)} /> : null}
-    {currentVersion && music ? <Button className="player-tool" label={t('@yovoice.music.nowPlaying')} tooltip={t('@yovoice.music.nowPlaying')} size="sm" variant="ghost" icon={<Disc3 />} onClick={() => setNowPlaying(currentVersion)} /> : null}
+    {currentVersion ? <Button className="player-tool" label={t('@yovoice.player.reveal')} tooltip={t('@yovoice.player.reveal')} size="sm" icon={<FolderOpen />} onClick={() => { void call('media.reveal', { kind: 'outputs', id: currentVersion.id }).catch(e => onError(noticeMessage(e))); }} /> : null}
+    {currentVersion && music && currentVersion.source !== 'score' ? <Button className="player-tool" label={t('@yovoice.music.nowPlaying')} tooltip={t('@yovoice.music.nowPlaying')} size="sm" variant="ghost" icon={<Disc3 />} onClick={() => setNowPlaying(currentVersion)} /> : null}
     {/* 历史入口始终保留：还没生成过时也能进入历史页查看其他作品的生成记录。 */}
     <Button className="player-tool" label={historyLabel} tooltip={historyLabel} size="sm" variant="ghost" icon={<History />} onClick={() => openHistory(draft)} />
     <HistoryVersionMenu items={historyItems} selected={track?.kind === 'outputs' ? track.id : undefined} select={switchVersion} />
     {currentVersion ? <DropdownMenu presentation="popover" placement="above" alignment="end" hasChevron={false} menuWidth="max-content" button={{ size: 'sm', variant: 'ghost', isIconOnly: true, icon: <MoreHorizontal />, label: t('@yovoice.history.audioActions'), tooltip: t('@yovoice.history.audioActions') }} items={[
+      { label: t('@yovoice.app.exportVersion'), isDisabled: busy, onClick: () => exportVersion(currentVersion) },
       ...(projectKind(draft) === 'text' ? [{ label: t('@yovoice.voice.save'), onClick: () => setVoiceEditor(currentVersion) }, { label: t('@yovoice.character.saveAs'), onClick: () => characterFromGeneration(currentVersion) }] : []),
-      { label: t('@yovoice.player.reveal'), onClick: () => { void call('media.reveal', { kind: 'outputs', id: currentVersion.id }).catch(e => onError(noticeMessage(e))); } },
     ]} /> : null}
   </HStack>;
   // 复用：音乐版本把风格、歌词和参数填回当前作品；其余新建一个同参数的作品。
@@ -469,37 +469,37 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
     : <Button size="sm" variant="primary" label={generateLabel} aria-keyshortcuts="Control+Enter" isDisabled={!generateReady} onClick={generate} />;
   return <VStack className={`workbench ${isDesktop ? 'desktop' : 'preview'}`} style={{ '--app-nav': `${navigation.size}px` } as CSSProperties} gap={0}>
     {!isDesktop ? <HStack as="header" className="browser-titlebar" gap={2} vAlign="center"><Button label={navigation.isCollapsed ? t('@yovoice.app.expandSidebar') : t('@yovoice.app.collapseSidebar')} isIconOnly variant="ghost" size="sm" icon={<PanelLeft size={17} />} aria-expanded={!navigation.isCollapsed} onClick={toggleSidebar} /><b>yovoice</b><small>{t('@yovoice.app.browserPreview')}</small>
-      {ready && launcherHidden && !assistantOpen ? <Suspense fallback={null}><AssistantTitleButton state={state} open={assistantOpen} toggle={() => setAssistantOpen(open => !open)} /></Suspense> : null}
+      {ready && !assistantHidden && launcherHidden && !assistantOpen ? <Suspense fallback={null}><AssistantTitleButton open={assistantOpen} toggle={() => setAssistantOpen(open => !open)} /></Suspense> : null}
       {page === 'create' ? <Button label={inspectorCollapsed ? t('@yovoice.app.expandInspector') : t('@yovoice.app.collapseInspector')} isIconOnly variant="ghost" size="sm" icon={<PanelRight size={17} />} aria-expanded={!inspectorCollapsed} onClick={toggleInspectorPanel} /> : null}</HStack> : null}
     <AppShell variant="elevated" sideNav={navigation.isCollapsed ? undefined : sidebar} mobileNav={{ breakpoint: 'none' }} height="fill"><VStack className="app-sheet" gap={0}>
       {characterEditor ? <VStack style={{ display: page === 'characters' ? 'flex' : 'none', height: '100%', minHeight: 0 }} gap={0}><PageBoundary name="character-editor"><CharacterEditor active={page === 'characters'} initial={characterEditor} state={state} catalog={catalog} settings={openSettings} apply={characterOrigin.current ? async saved => { const origin = characterOrigin.current!; await applyToTarget(saved, origin.draftId, origin.speakerId); setCharacterEditor(null); } : undefined} close={() => { setCharacterEditor(null); setPage(characterReturnPage.current); }} /></PageBoundary></VStack> : null}
-      <VStack className="page-panel" style={{ display: characterActive ? 'none' : 'flex' }} gap={0}><Layout height="fill" footer={<VStack className="workbench-docks" gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="timeline" resetKey={draft.id}>{scoring || musicScore ? <ScoreDock key={`score:${draft.id}`} draft={draft} change={change} playhead={track ? playback : undefined} seek={time => setSeekRequest({ time, nonce: performance.now() })} /> : null}{showTimeline ? <TimelineEditor exportProject={async () => { await persistDraft(draft); await call('project.export', { id: draft.id, name: draft.title }); }} key={`timeline:${draft.id}`} selectedCue={selectedCue} cueSelectionRevision={cueSelection?.revision ?? 0} playbackCue={setPlayingCue} selectCue={selectCue} draft={draft} busy={busy} regenerate={async (cueId, clipId) => { await persistDraft(draft); await call('generation.cue', { draft, cueId, clipId }); }} value={draft.timeline ?? { tracks: [] }} history={state.history} change={timeline => change({ timeline })} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget} onError={onError} /> : <Player onProgress={(time, playing) => { reportPlayhead(time); setPlayback({ time, playing }); }} seekRequest={scoring || musicScore ? seekRequest : undefined} actions={playerActions} reveal={false} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget || !!nowPlaying} track={track} onError={onError} />}</PageBoundary></VStack>} content={<VStack className="content-frame" gap={0}>
+      <VStack className="page-panel" style={{ display: characterActive ? 'none' : 'flex' }} gap={0}><Layout height="fill" footer={visited.has('create') ? <VStack className="workbench-docks" gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="timeline" resetKey={draft.id}>{scoring || musicScore ? <ScoreDock key={`score:${draft.id}`} draft={draft} change={change} playhead={track ? playback : undefined} seek={time => setSeekRequest({ time, nonce: performance.now() })} /> : null}{showTimeline ? <TimelineEditor exportProject={async () => { await persistDraft(draft); await call('project.export', { id: draft.id, name: draft.title }); }} key={`timeline:${draft.id}`} selectedCue={selectedCue} cueSelectionRevision={cueSelection?.revision ?? 0} playbackCue={setPlayingCue} selectCue={selectCue} draft={draft} busy={busy} regenerate={async (cueId, clipId) => { await persistDraft(draft); await call('generation.cue', { draft, cueId, clipId }); }} value={draft.timeline ?? { tracks: [] }} history={state.history} change={timeline => change({ timeline })} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget} onError={onError} /> : <Player onProgress={(time, playing) => { reportPlayhead(time); setPlayback({ time, playing }); }} seekRequest={scoring || musicScore ? seekRequest : undefined} actions={playerActions} reveal={false} suspended={page !== 'create' || voicePicker !== null || characterActive || !!voiceEditor || !!voiceTarget || !!nowPlaying} track={track} onError={onError} />}</PageBoundary></VStack> : null} content={<VStack className="content-frame" gap={0}>
         {!ready ? <p className="loading" role="status">{t('@yovoice.app.loading')}</p> : <>
 
-          <VStack className="page-panel" gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="create" resetKey={draft.id}>
+          {visited.has('create') ? <VStack className="page-panel" gap={0} style={{ display: page === 'create' ? 'flex' : 'none' }}><PageBoundary name="create" resetKey={draft.id}>
             <Studio showInspector={showInspector} inspector={inspector} inspectorCollapsed={inspectorCollapsed} collapsedAction={collapsedAction}
           title={<input className="document-title" aria-label={t('@yovoice.app.titleLabel')} maxLength={120} value={draft.title} onChange={e => change({ title: e.target.value })} />}
           writingClassName={`${draft.subtitles ? 'writing-subtitles' : ''} ${draft.timeline ? 'writing-timeline' : ''} ${scoring ? 'writing-score' : ''}`.trim()}>
           {scoring ? <><ScoreEditor key={draft.id} draft={draft} change={change} locale={state.preferences.uiLocale} onError={onError} />{editorFooter()}</> : music ? <><MusicWorkspace key={draft.id} draft={draft} state={state} change={change} locale={state.preferences.uiLocale} onError={onError} view={musicView} setView={setMusicView} save={() => persistDraft(draft)} />{editorFooter()}</> : draft.subtitles ? <SubtitleEditor key={draft.id} history={state.history} playingCue={playingCue} failedCue={activity?.projectId === draft.id && activity.status === 'failed' ? activity.cueId : undefined} draft={draft} characters={state.characters ?? []} change={change} selectedCue={selectedCue} selectCue={selectCue} renderFooter={editorFooter} /> : <><textarea ref={editor} className="script-editor" aria-label={t('@yovoice.app.scriptLabel')} placeholder={t('@yovoice.app.scriptPlaceholder')} maxLength={12000} value={draft.text} spellCheck={false} dir={draft.language === 'ar' ? 'rtl' : 'auto'} onChange={e => change({ text: e.target.value })} />{editorFooter()}</>}
         </Studio>
-          </PageBoundary></VStack>
-          {(['story', 'music', 'score'] as const).map(kind => <VStack key={kind} id={`projects-${kind}-panel`} className="page-panel" gap={0} style={{ display: page === kind ? 'flex' : 'none' }}><PageBoundary name={`projects-${kind}`}>
+          </PageBoundary></VStack> : null}
+          {(['story', 'music', 'score'] as const).filter(kind => visited.has(kind)).map(kind => <VStack key={kind} id={`projects-${kind}-panel`} className="page-panel" gap={0} style={{ display: page === kind ? 'flex' : 'none' }}><PageBoundary name={`projects-${kind}`}>
             <Projects onError={onError} kind={kind} title={kind === 'story' ? undefined : t('@yovoice.project.music')} controls={kind === 'story' ? undefined : musicTabs} drafts={projectList} open={selectDraft} history={openHistory} create={kind === 'story' ? <HStack gap={2} vAlign="center"><BookImport state={state} modelId={defaultModelId} configureAI={() => openSettings(defaultModelId, 'ai')} create={importBook} onError={onError} /><NewProject kind={kind} locale={state.preferences.uiLocale} modelId={defaultModelId} modelFor={modelFor} create={newDraft} onError={onError} /></HStack> : <NewProject kind={kind} locale={state.preferences.uiLocale} modelId={defaultModelId} modelFor={modelFor} create={newDraft} onError={onError} />} copy={item => run(() => newDraft({ ...structuredClone(item), id: crypto.randomUUID().replaceAll('-', ''), title: (item.title + t('@yovoice.draft.copySuffix')).slice(0, 120), createdAt: undefined, updatedAt: undefined }))} remove={setDeleteTarget} save={async next => { await persistDraft(draft); await persistDraft(next); if (next.id === draft.id) setDraft(next); }} />
           </PageBoundary></VStack>)}
-          <VStack className="page-panel" gap={0} style={{ display: page === 'arrangement' ? 'flex' : 'none' }}><PageBoundary name="arrangement">
-            <ArrangementWorkspace active={page === 'arrangement'} draft={draft} state={state} change={change} locale={state.preferences.uiLocale} openSettings={() => openSettings('', 'ai')} openScore={() => setPage('create')} openDraft={openArrangementDraft} onAssemblyReady={saved => { if (draft.id === saved.id) { setDraft(normalizeDraft(saved)); setPage('create'); } }} create={input => void newDraft({ ...createScoreDraft(state.preferences.uiLocale, false), arrangementInput: input }).then(() => setPage('arrangement')).catch(onError)} />
-          </PageBoundary></VStack>
-          <VStack id="voice-library-panel" className="page-panel" gap={0} style={{ display: page === 'characters' ? 'flex' : 'none' }}><PageBoundary name="characters">
+          {visited.has('arrangement') ? <VStack className="page-panel" gap={0} style={{ display: page === 'arrangement' ? 'flex' : 'none' }}><PageBoundary name="arrangement">
+            <ArrangementWorkspace active={page === 'arrangement'} draft={draft} state={state} change={change} locale={state.preferences.uiLocale} openSettings={() => openSettings('', 'ai')} openScore={() => setPage('create')} openDraft={openArrangementDraft} onAssemblyReady={saved => { if (draft.id === saved.id) { setDraft(saved); setPage('create'); } }} create={input => void newDraft({ ...createScoreDraft(state.preferences.uiLocale, false), arrangementInput: input }).then(() => setPage('arrangement')).catch(onError)} />
+          </PageBoundary></VStack> : null}
+          {visited.has('characters') ? <VStack id="voice-library-panel" className="page-panel" gap={0} style={{ display: page === 'characters' ? 'flex' : 'none' }}><PageBoundary name="characters">
             <CharacterLibrary controls={libraryTabs} active={page === 'characters' && !voiceTarget && !characterActive} create={createVoice} state={state} catalog={catalog} edit={editCharacter} apply={setVoiceTarget} onError={onError} />
-          </PageBoundary></VStack>
-          <VStack className="page-panel" gap={0} style={{ display: page === 'instruments' ? 'flex' : 'none' }}><PageBoundary name="instruments">
+          </PageBoundary></VStack> : null}
+          {visited.has('instruments') ? <VStack className="page-panel" gap={0} style={{ display: page === 'instruments' ? 'flex' : 'none' }}><PageBoundary name="instruments">
             <InstrumentLibrary state={state} catalog={catalog} openSettings={tab => openSettings('', tab)} />
-          </PageBoundary></VStack>
-          <VStack className="page-panel" gap={0} style={{ display: page === 'settings' ? 'flex' : 'none' }}>
+          </PageBoundary></VStack> : null}
+          {visited.has('settings') ? <VStack className="page-panel" gap={0} style={{ display: page === 'settings' ? 'flex' : 'none' }}>
             <PageBoundary name="settings"><Suspense fallback={<p role="status">{t('@yovoice.app.loadingSettings')}</p>}><Settings focus={settingsFocus} state={state} catalog={catalog} engine={engine} draft={draft} run={run} active={page === 'settings'} onError={onError}
               openProject={id => { const item = state.drafts.find(d => d.id === id); if (item) selectDraft(item); }} /></Suspense></PageBoundary>
-          </VStack>
-          {(['voices', 'history'] as const).map(destination => <VStack key={destination} id={destination === 'voices' ? 'reference-library-panel' : undefined} className="page-panel" gap={0} style={{ display: page === destination ? 'flex' : 'none' }}><PageBoundary name={destination}>
+          </VStack> : null}
+          {(['voices', 'history'] as const).filter(destination => visited.has(destination)).map(destination => <VStack key={destination} id={destination === 'voices' ? 'reference-library-panel' : undefined} className="page-panel" gap={0} style={{ display: page === destination ? 'flex' : 'none' }}><PageBoundary name={destination}>
             <MediaLibrary page={destination} project={draft} controls={destination === 'voices' ? libraryTabs : <HStack gap={2} vAlign="center">
               <Button size="sm" label={t('@yovoice.history.backProject')} onClick={() => { setPreviewTrack(null); setPage('create'); }} />
             </HStack>} state={state}
@@ -512,7 +512,7 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
 
       </VStack>} /></VStack>
     </VStack></AppShell>
-    {ready ? <Suspense fallback={null}><AssistantDock state={state} open={assistantOpen} setOpen={setAssistantOpen} context={{ ...assistantContext, page: assistantContext.page === 'create' ? 'text' : assistantContext.page }} expanded={assistantExpanded} quickActions={quickActions(t, assistantPage === 'create' ? 'text' : assistantPage)} onToggleExpand={() => setAssistantExpanded(expanded => !expanded)} actions={askAssistantPanel} launcherHidden={launcherHidden} showLauncher={showLauncher} nudge={nudge} onNudge={actOnNudge} dismissNudge={dismissNudge} /></Suspense> : null}
+    {ready && !assistantHidden ? <Suspense fallback={null}><AssistantDock state={state} open={assistantOpen} setOpen={setAssistantOpen} context={{ ...assistantContext, page: assistantContext.page === 'create' ? 'text' : assistantContext.page }} expanded={assistantExpanded} quickActions={quickActions(t, assistantPage === 'create' ? 'text' : assistantPage)} onToggleExpand={() => setAssistantExpanded(expanded => !expanded)} actions={askAssistantPanel} launcherHidden={launcherHidden} showLauncher={showLauncher} nudge={nudge} onNudge={actOnNudge} dismissNudge={dismissNudge} /></Suspense> : null}
     <Notifications error={error} clearError={() => setError('')} activity={activity} modelActivity={state.modelActivity} draftId={draft.id} page={page} cancel={() => run(() => call('operation.cancel'))} cancelModel={() => run(() => call('model.cancel'))}
       aiTask={state.aiTask} aiTitle={state.drafts.find(item => item.id === state.aiTask?.projectId)?.title} openAITask={() => { const target = state.drafts.find(item => item.id === state.aiTask?.projectId); if (target) selectDraft(target); }}><UpdateNotice /></Notifications>
     <UpdateDialogHost />
@@ -521,11 +521,12 @@ export function WorkbenchChrome({ state, catalog, engine, ready, session, error,
     {voiceTarget ? <VoiceTarget voice={voiceTarget} drafts={projectList} apply={applyToTarget} close={() => setVoiceTarget(null)} /> : null}
     {deleteTarget ? <ConfirmDelete title={t('@yovoice.app.deleteProjectTitle')} description={t('@yovoice.app.deleteProjectBody', { title: deleteTarget.title })}
       confirmLabel={t('@yovoice.app.deleteProjectConfirm')} busy={deleting} error={formatNotice(t, deleteError)} onClose={() => setDeleteTarget(null)} onConfirm={() => void deleteDraft()} /> : null}
-    {nowPlaying ? <NowPlaying item={nowPlaying} title={nowPlaying.title} versions={state.history.filter(item => item.settings.id === nowPlaying.settings.id && !item.segment)} close={() => setNowPlaying(null)} onError={onError} /> : null}
+    {nowPlaying ? <NowPlaying item={nowPlaying} title={nowPlaying.title} versions={state.history.filter(item => item.settings.id === nowPlaying.settings.id && !item.segment)}
+      aligner={state.models.some(model => isAligner(model.id))} activity={activity} getAligner={() => { setNowPlaying(null); openSettings(catalog.find(model => model.family === 'lyric_align')?.id, 'models'); }} close={() => setNowPlaying(null)} onError={onError} /> : null}
     {voiceEditor ? <VoiceEditor item={voiceEditor} close={() => setVoiceEditor(null)} /> : null}
     {voicePicker ? <Suspense fallback={<p role="status">{t('@yovoice.app.loadingVoicePicker')}</p>}><VoicePicker adding={voicePicker === 'add'} voices={state.voices} onClose={() => setVoicePicker(null)} onSelect={voice => { if ((activeSpeaker || draft.performance) && voicePicker !== 'add') { changeSpeaker(voicePicker === 'emotion' ? { emotionVoiceId: voice.id } : { voiceId: voice.id, referenceText: voice.referenceText ?? '' }); setVoicePicker(null); } else selectVoice(voice); }} /></Suspense> : null}
     {pronunciation ? <PronunciationDialog pronunciation={pronunciation} setPronunciation={setPronunciation} draft={draft} change={change} editor={editor} /> : null}
     {showIntro ? <IntroScreen onStart={finishIntro} /> : null}
-    {showTour ? <GuideTour onClose={finishTour} /> : null}
+    {showTour ? <GuideTour hidden={state.preferences.hiddenFeatures} onClose={finishTour} /> : null}
   </VStack>;
 }

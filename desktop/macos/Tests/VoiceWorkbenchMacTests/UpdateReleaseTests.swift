@@ -44,6 +44,15 @@ final class UpdateReleaseTests: XCTestCase {
         XCTAssertThrowsError(try AppUpdater.verifyArchitecture(file))
     }
 
+    func testSignatureCheckParsesTeamRequirement() throws {
+        // 系统自带的 codesign 由 Apple 签名，不属于任何开发者团队：应因不满足要求而失败，而不是要求本身无法解析。
+        XCTAssertThrowsError(try AppUpdater.verifySignature(URL(fileURLWithPath: "/usr/bin/codesign"), team: "TESTTEAM00")) { error in
+            let message = error.localizedDescription
+            XCTAssertFalse(message.contains("invalid requirement"), message)
+            XCTAssertFalse(message.contains("No such file"), message)
+        }
+    }
+
     func testChecksumMustMatchExactFilenameOnce() throws {
         let hash = String(repeating: "a", count: 64)
         let other = String(repeating: "b", count: 64)

@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"slices"
@@ -16,6 +17,15 @@ type Score struct {
 	Key           string         `json:"key,omitempty"`
 	Sections      []ScoreSection `json:"sections,omitempty"`
 	Tracks        []ScoreTrack   `json:"tracks"`
+}
+
+// MarshalJSON 保证 tracks 总是数组：空乐谱也不写成 null，界面按数组读取。
+func (s Score) MarshalJSON() ([]byte, error) {
+	type plain Score
+	if s.Tracks == nil {
+		s.Tracks = []ScoreTrack{}
+	}
+	return json.Marshal(plain(s))
 }
 
 // ScoreSection 是一个段落，Start/End 为首尾小节（从 1 开始，含 End）；Tempo 为空时沿用乐谱速度。

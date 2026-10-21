@@ -166,6 +166,11 @@ func File(ctx context.Context, client *http.Client, url, destination, hash strin
 	return os.Rename(partial, destination)
 }
 func Extract(ctx context.Context, archive, destination string) error {
+	return ExtractFiles(ctx, archive, destination, nil)
+}
+
+// ExtractFiles 只解出 pick 返回非空路径的条目，并写到该相对路径；pick 为空时解出全部条目。
+func ExtractFiles(ctx context.Context, archive, destination string, pick func(name string) string) error {
 	if e := os.MkdirAll(destination, 0700); e != nil {
 		return e
 	}
@@ -181,6 +186,11 @@ func Extract(ctx context.Context, archive, destination string) error {
 		}
 		name = strings.ReplaceAll(name, "\\", "/")
 		name = strings.TrimPrefix(name, "./")
+		if pick != nil {
+			if name = pick(name); name == "" {
+				return nil
+			}
+		}
 		if !filepath.IsLocal(name) || strings.Contains(name, ":") || strings.Contains(name, "\x00") {
 			return msg.Err(msg.ErrRuntimeArchivePath, nil)
 		}

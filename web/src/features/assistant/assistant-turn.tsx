@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { Collapsible } from '@astryxdesign/core/Collapsible';
-import { HStack, VStack } from '@astryxdesign/core/Layout';
+import { HStack, StackItem, VStack } from '@astryxdesign/core/Layout';
 import { Markdown } from '@astryxdesign/core/Markdown';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
+import { Text } from '@astryxdesign/core/Text';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { useStreamingText } from '@astryxdesign/core/hooks';
-import { Check, Copy, Download, Pause, Play, Settings2, Sparkles, Trash2 } from 'lucide-react';
+import { Check, Copy, Download, Pause, Play, Eraser, Settings2, Trash2 } from 'lucide-react';
 import { formatCallError } from '../../shared/i18n/format';
 import { formatTime, type Activity, type AssistantBlock, type AssistantMessage, type AssistantToolCard, type Generation } from '../../shared/workbench';
 import { splitTurn, turnActivity, turnPhase } from './assistant-model';
@@ -59,8 +60,8 @@ function ProcessTrace({ blocks, working }: { blocks: AssistantBlock[]; working: 
   const detail = working && activity.kind === 'tool' ? activity.card.summary : '';
   const status = <HStack className="assistant-status" gap={2} vAlign="center" role={working ? 'status' : undefined} data-phase={working ? phase : undefined} data-tone={failed && !working ? 'danger' : undefined}>
     {working ? <AssistantOrb phase={phase} size={32} /> : null}
-    <span className="assistant-status-label">{label}</span>
-    {detail ? <span className="assistant-status-detail">{detail}</span> : null}
+    <Text type="inherit" color="inherit" className="assistant-status-label">{label}</Text>
+    {detail ? <Text type="inherit" color="inherit" className="assistant-status-detail">{detail}</Text> : null}
   </HStack>;
   if (!blocks.length) return status;
   return <Collapsible className="assistant-process" trigger={status} isOpen={open ?? false} onOpenChange={setOpen} chevronPosition="end">
@@ -81,14 +82,14 @@ function ProposalCard({ card, onResolve }: { card: AssistantToolCard; onResolve:
   const t = useTranslator();
   const proposal = card.proposal!;
   const destructive = proposal.action.startsWith('delete_');
-  const icon = destructive ? <Trash2 size={15} /> : proposal.action.startsWith('install_') ? <Download size={15} /> : proposal.action === 'cleanup_storage' ? <Sparkles size={15} /> : <Settings2 size={15} />;
+  const icon = destructive ? <Trash2 size={15} /> : proposal.action.startsWith('install_') ? <Download size={15} /> : proposal.action === 'cleanup_storage' ? <Eraser size={15} /> : <Settings2 size={15} />;
   const [busy, setBusy] = useState(false);
   // 失败时恢复按钮，用户可以再试；成功后卡片随状态更新变成结果行。
   const resolve = (confirm: boolean) => { setBusy(true); onResolve(proposal.id, confirm).catch(() => setBusy(false)); };
   return <VStack className="assistant-proposal" gap={2} data-state={proposal.state} data-testid="assistant-proposal" role="group" aria-label={card.summary}>
     <HStack gap={2} vAlign="center">
-      <span className="assistant-proposal-icon" data-tone={destructive ? 'danger' : undefined} aria-hidden>{icon}</span>
-      <span className="assistant-proposal-title grow">{card.summary}</span>
+      <StackItem as="span" className="assistant-proposal-icon" data-tone={destructive ? 'danger' : undefined} aria-hidden>{icon}</StackItem>
+      <Text type="inherit" color="inherit" className="assistant-proposal-title grow">{card.summary}</Text>
     </HStack>
     {proposal.reason ? <small className="assistant-proposal-reason">{proposal.reason}</small> : null}
     {proposal.state === 'pending'

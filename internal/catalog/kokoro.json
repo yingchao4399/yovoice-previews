@@ -1,0 +1,46 @@
+{
+  "wheels": [
+    {
+      "platform": "darwin/arm64",
+      "project": "espeakng-loader",
+      "path": "a8/26/258c0cd43b9bc1043301c5f61767d6a6c3b679df82790c9cb43a3277b865/espeakng_loader-0.2.4-py3-none-macosx_11_0_arm64.whl",
+      "size": 9892565,
+      "sha256": "d27cdca31112226e7299d8562e889d3e38a1e48055c9ee381b45d669072ee59f"
+    },
+    {
+      "platform": "darwin/arm64",
+      "project": "fugashi",
+      "path": "62/32/f16d5e5a3d1f81c73bb2d28c67afa7a21ac50d6e297f11d23112859348af/fugashi-1.5.2-cp311-cp311-macosx_11_0_arm64.whl",
+      "size": 454607,
+      "sha256": "f855953ac6c98cf239d407d341e3298a54119c8de88217037f012096e41ebe7b"
+    },
+    {
+      "platform": "linux/amd64",
+      "project": "espeakng-loader",
+      "path": "de/1e/25ec5ab07528c0fbb215a61800a38eca05c8a99445515a02d7fa5debcb32/espeakng_loader-0.2.4-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "size": 10078484,
+      "sha256": "08721baf27d13d461f6be6eed9a65277e70d68234ff484fd8b9897b222cdcb6d"
+    },
+    {
+      "platform": "linux/amd64",
+      "project": "fugashi",
+      "path": "36/e3/9e2ff9da54441692e3275c358751fc0894a449aa0b71eaea6a11734848ec/fugashi-1.5.2-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "size": 695295,
+      "sha256": "ff899e1767024ba8bc53d8a2cf90bca19a6a54b14ddf05a75d04169f7acb262c"
+    },
+    {
+      "platform": "windows/amd64",
+      "project": "espeakng-loader",
+      "path": "9d/ed/a3d872fbad4f3a3f3db0e8c31768ab14e77cd77306de16b8b20b1e1df7ea/espeakng_loader-0.2.4-py3-none-win_amd64.whl",
+      "size": 9437292,
+      "sha256": "41f1e08ac9deda2efd1ea9de0b81dab9f5ae3c4b24284f76533d0a7b1dd7abd7"
+    },
+    {
+      "platform": "windows/amd64",
+      "project": "fugashi",
+      "path": "09/e4/67eeb715b602e7024e8291554cb60bae2f3d87e9987db1f8a1b4c0a0e567/fugashi-1.5.2-cp311-cp311-win_amd64.whl",
+      "size": 508985,
+      "sha256": "5c5e04cb808f5cd46fc682469702f1e34f6199a264514e5c21b1e17ea4f8313f"
+    }
+  ]
+}

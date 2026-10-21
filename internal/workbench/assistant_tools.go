@@ -56,7 +56,7 @@ func (w *Workbench) newAssistantServer() *mcp.Server {
 }
 
 // workKindOf 把作品的原始 Kind 归并为界面使用的四种类型。
-// modelKind 返回模型适用的作品类型：music、score 或 text（语音与故事共用）；扒谱模型不用于生成，返回空。
+// modelKind 返回模型适用的作品类型：music、score 或 text（语音与故事共用）；扒谱和歌词对齐模型不用于生成，返回空。
 func modelKind(id string) string {
 	m, err := catalog.Lookup(id)
 	if err != nil {
@@ -67,7 +67,7 @@ func modelKind(id string) string {
 		return "music"
 	case "soundfont":
 		return "score"
-	case "sheetsage2":
+	case "sheetsage2", "lyric_align":
 		return ""
 	}
 	return "text"

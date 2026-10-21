@@ -24,6 +24,7 @@ func TestRemoveStaleFiles(t *testing.T) {
 		".state-1":                                       ".state-1",
 		"downloads/upload-1":                             "downloads/upload-1",
 		"downloads/api-upload-1":                         "downloads/api-upload-1",
+		"downloads/export-1.wav":                         "downloads/export-1.wav",
 		"downloads/audio-1/reference.wav":                "downloads/audio-1",
 		"downloads/0123456789abcdef0123456789abcdef.wav": "downloads/0123456789abcdef0123456789abcdef.wav",
 		"runtime/v0.7.3-cuda-111/audiocpp_server":        "runtime/v0.7.3-cuda-111",

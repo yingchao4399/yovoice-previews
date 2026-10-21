@@ -4,31 +4,14 @@ import { SubtitleParser } from '../src/features/create/subtitle-parser';
 import { Timeline } from '../src/features/media/timeline';
 import { CallError, noticeMessage, parseCallError } from '../src/shared/lib/call-error';
 import { formatCallError, formatNotice } from '../src/shared/i18n/format';
-import { alignLyrics, vocalActivity } from '../src/features/music/lyric-align';
-import { activeLyric, lyricRows, lyricTimeline } from '../src/features/music/lyric-timing';
+import { alignLines, alignedTimeline, alignLyrics, vocalActivity, withWords } from '../src/features/music/lyric-align';
+import { activeLyric, estimateWords, lyricRows, lyricTimeline, lyricTokens } from '../src/features/music/lyric-timing';
 import { songLyrics, syntheticSong } from './synthetic-song';
 import { readFileSync } from 'node:fs';
 import { isUiLocale, resolveInitialUiLocale, uiLocales } from '../src/shared/i18n/locale';
-import { createDraft, previewStale, projectKind, requiresVoice, synthesisSettings, normalizeDraft, formatBytes, type Character, type Draft } from '../src/shared/workbench';
+import { createDraft, previewStale, projectKind, requiresVoice, synthesisSettings, formatBytes, type Character, type Draft } from '../src/shared/workbench';
 
 // 不打开页面，直接校验界面依赖的纯逻辑。
-
-test('旧字幕补齐稳定标识，已有标识与无字幕作品保持原对象', () => {
-  const draft: Draft = { ...createDraft(), id: 'd', subtitles: { speakers: [], cues: [{ start: 0, end: 1, text: 'a', speakerId: '1' }, { id: 'kept', start: 1, end: 2, text: 'b', speakerId: '1' }] } };
-  const first = normalizeDraft(draft);
-  expect(first.subtitles!.cues.map(c => c.id)).toEqual(['legacy-d-0', 'kept']);
-  expect(normalizeDraft(draft).subtitles!.cues[0].id).toBe(first.subtitles!.cues[0].id);
-  expect(normalizeDraft(first)).toBe(first);
-  const plain = createDraft();
-  expect(normalizeDraft(plain)).toBe(plain);
-});
-
-test('缺少乐谱的旧编曲作品补上空乐谱，已有乐谱保持原对象', () => {
-  const legacy: Draft = { ...createDraft(), id: 's', kind: 'score' };
-  expect(normalizeDraft(legacy).score).toMatchObject({ tempo: 100, timeSignature: [4, 4], tracks: [] });
-  const scored: Draft = { ...legacy, score: { tempo: 90, timeSignature: [3, 4], tracks: [] } };
-  expect(normalizeDraft(scored)).toBe(scored);
-});
 
 test('试听过期只看文本与参数取值，忽略键顺序和与 Go 默认值相同的缺省字段', () => {
   const settings = synthesisSettings(createDraft());
@@ -160,6 +143,49 @@ test('歌词按音频自动定位：人声片段的开头对上每一行，没�
   expect(alignLyrics(accompaniment.rows, vocalActivity(accompaniment.left, accompaniment.right, accompaniment.rate), accompaniment.duration)).toBeNull();
   const silence = new Float32Array(16000 * 20);
   expect(alignLyrics(song.rows, vocalActivity(silence, silence, 16000), 20)).toBeNull();
+});
+
+test('逐字时间：中文逐字、英文逐词拆分，按人声片段分配，行内停顿不占字', () => {
+  expect(lyricTokens('“你好，world!” 再见').map(token => token.text)).toEqual(['“你', '好，', 'world!” ', '再', '见']);
+  expect(lyricTokens('hello beautiful').map(token => token.weight)).toEqual([2, 3]);
+  // 没有音频时按音节均分，唱完后留出换气，不把最后一个字拖到下一句。
+  const estimated = estimateWords({ text: '一二三四', start: 10, end: 20 });
+  expect(estimated.map(word => word.start)).toEqual([10, 11.875, 13.75, 15.625]);
+  expect(estimated.at(-1)!.end).toBe(17.5);
+  // 合成歌曲已知每个字的开始时间：按真实的行开始时间逐字对齐，多数字误差在 0.1 秒内，最大不超过 0.3 秒。
+  const song = syntheticSong(songLyrics, .3);
+  const lines = withWords(lyricTimeline(songLyrics, song.duration, song.starts), vocalActivity(song.left, song.right, song.rate));
+  const sung = song.words.filter(words => words.length);
+  const errors = lines.filter(line => line.words).flatMap((line, index) => line.words!.map((word, k) => Math.abs(word.start - sung[index][k]))).sort((a, b) => a - b);
+  expect(errors).toHaveLength(sung.flat().length);
+  expect(errors[errors.length >> 1]).toBeLessThan(.1);
+  expect(errors.at(-1)).toBeLessThan(.3);
+  for (const line of lines) line.words?.forEach((word, k) => { expect(word.end).toBeGreaterThan(word.start); if (k) expect(word.start).toBeGreaterThanOrEqual(line.words![k - 1].end); });
+});
+
+test('对齐模型的逐字结果放回歌词行：词被拆开或合并都能对上，歌词改过时不用；长歌交给后端按行分组', () => {
+  // 合成歌曲已知每个字的时间，模拟对齐模型逐字返回（不带标点）。
+  const song = syntheticSong(songLyrics, .3), rows = lyricRows(songLyrics);
+  const aligned = rows.flatMap((row, index) => [...row.text].map((word, k) => ({ word, start: song.words[index][k], end: song.words[index][k] + .2 })));
+  const lines = alignedTimeline(rows, aligned, song.duration)!;
+  const sung = lines.filter(line => !line.instrumental);
+  expect(sung.map(line => line.text)).toEqual(rows.filter(row => !row.instrumental).map(row => row.text));
+  expect(sung.flatMap(line => line.words!.map(word => word.start))).toEqual(song.words.flat());
+  // 行从第一个字开始，一直显示到下一行开始；开头补前奏。
+  expect(lines[0].instrumental).toBe(true);
+  for (let i = 1; i < lines.length; i++) expect(lines[i].start).toBeGreaterThanOrEqual(lines[i - 1].start);
+  // 英文词被拆成两段、中文两个字合成一个词：词的时间按字数平分到每个字，再落到对应的单元上。
+  const mixed = alignedTimeline(lyricRows('Beautiful, 你好'), [{ word: 'beau', start: 1, end: 1.4 }, { word: 'tiful', start: 1.4, end: 2 }, { word: '你好', start: 3, end: 4 }], 10)!;
+  expect(mixed.at(-1)!.words).toEqual([{ text: 'Beautiful, ', start: 1, end: 2 }, { text: '你', start: 3, end: 3.5 }, { text: '好', start: 3.5, end: 4 }]);
+  expect(alignedTimeline(lyricRows('完全不同的一句歌词'), [{ word: '别的', start: 1, end: 2 }], 10)).toBeNull();
+  // 日文、韩文按词给时间时，词里的每个字仍各有先后；对齐模型丢掉的符号不计数，全角标点不影响对应。
+  const korean = alignedTimeline(lyricRows('사랑해，さくら'), [{ word: '사랑해', start: 0, end: 3 }, { word: 'さくら', start: 4, end: 7 }], 10)!;
+  expect(korean[0].words!.map(word => [word.start, word.end])).toEqual([[0, 1], [1, 2], [2, 3], [4, 5], [5, 6], [6, 7]]);
+  // 送去对齐的只有演唱行，开始时间不倒退、结束不早于开始，都在歌曲时长以内。
+  const sent = alignLines(lines, song.duration);
+  expect(sent.map(line => line.text)).toEqual(rows.filter(row => !row.instrumental).map(row => row.text));
+  for (const [i, line] of sent.entries()) { expect(line.end).toBeGreaterThanOrEqual(line.start); expect(line.end).toBeLessThanOrEqual(song.duration); if (i) expect(line.start).toBeGreaterThanOrEqual(sent[i - 1].start); }
+  expect(alignLines([{ text: '甲', start: 5, end: 9 }, { text: '乙', start: 4, end: 20 }], 12)).toEqual([{ text: '甲', start: 5, end: 9 }, { text: '乙', start: 5, end: 12 }]);
 });
 
 test('首次启动按系统语言选择界面语言，繁体与葡语按地区归并，未知语言回退英文', () => {

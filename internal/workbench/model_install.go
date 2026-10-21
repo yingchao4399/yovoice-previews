@@ -47,6 +47,17 @@ func (w *Workbench) DownloadModel(id string) error {
 			return e
 		}
 	}
+	// Kokoro 的发音库不随安装包分发，随模型一起下载，进度计入同一个模型包。
+	var wheels []catalog.KokoroWheel
+	if m.Family == "kokoro_tts" {
+		if wheels, e = kokoroMissing(w.Store.Root); e != nil {
+			return e
+		}
+	}
+	total := m.Size
+	for _, wheel := range wheels {
+		total += wheel.Size
+	}
 	return w.begin("download", msg.ActivityDownload, msg.Params{"name": m.Name}, ptr(id), func(ctx context.Context) error {
 		dir := value(s.Preferences.ModelDirectory)
 		if dir == "" {
@@ -71,7 +82,7 @@ func (w *Workbench) DownloadModel(id string) error {
 		if e != nil {
 			return e
 		}
-		need := int64(100 << 20)
+		need := int64(100<<20) + total - m.Size
 		for _, f := range files {
 			need += max(int64(0), f.Size-download.FileSize(target(f)+".part")-download.FileSize(target(f)))
 		}
@@ -83,14 +94,21 @@ func (w *Workbench) DownloadModel(id string) error {
 		for i, f := range files {
 			if e = download.File(ctx, w.client, urls[i], target(f), f.SHA256, f.Size, func(r, _ int64) {
 				code, params := msg.ActivityDownloading, msg.Params{"name": m.Name}
-				if done+r == m.Size {
+				if done+r == total {
 					code, params = msg.ActivityVerifying, nil
 				}
-				w.progressOf("download", code, params, done+r, m.Size)
+				w.progressOf("download", code, params, done+r, total)
 			}); e != nil {
 				return e
 			}
 			done += f.Size
+		}
+		if len(wheels) > 0 {
+			if e = w.installKokoro(ctx, s.Preferences.DownloadSource, func(r, _ int64) {
+				w.progressOf("download", msg.ActivityDownloading, msg.Params{"name": m.Name}, done+r, total)
+			}); e != nil {
+				return e
+			}
 		}
 		return w.register(id, dest, true)
 	})

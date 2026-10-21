@@ -4,7 +4,7 @@ import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { Check, Download, FileMusic, Layers3, LockKeyhole, Plus, Settings2, Sparkles, UnlockKeyhole } from 'lucide-react';
+import { Check, Download, FileMusic, Layers3, LockKeyhole, Plus, Settings2, ListMusic, UnlockKeyhole } from 'lucide-react';
 import { call, isDesktop } from '../../shared/lib/client';
 import modelCatalog from '../../shared/lib/catalog.json';
 import { formatCallError } from '../../shared/i18n/format';
@@ -221,7 +221,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
               {inspection?.parts.find(item => item.ref.sectionIndex === si && item.ref.phraseIndex === pi && item.ref.partIndex === ai)?.issues.map((issue, index) => <small key={`${issue.code}-${index}`} role="status">{issue.message}</small>)}
               {!part.locked && inspection?.parts.find(item => item.ref.sectionIndex === si && item.ref.phraseIndex === pi && item.ref.partIndex === ai)?.issues.length ? inspection.parts.find(item => item.ref.sectionIndex === si && item.ref.phraseIndex === pi && item.ref.partIndex === ai)?.candidates.filter(candidate => candidate.id !== part.sourceId).slice(0, 3).map(candidate => <Button key={candidate.id} size="sm" variant="secondary" label={`${t('@yovoice.arrangement.useLocal')} ${candidate.name}${candidate.ensemble ? ` · ${t('@yovoice.arrangement.ensembleSample')}` : ''}`} onClick={() => void bindSource(part, candidate.id, false, { sectionIndex: si, phraseIndex: pi, partIndex: ai })} />) : null}
               <Button size="sm" variant="ghost" icon={part.locked ? <LockKeyhole /> : <UnlockKeyhole />} label={part.locked ? t('@yovoice.arrangement.unlock') : t('@yovoice.arrangement.lock')} isIconOnly onClick={() => replacePart(si, pi, ai, { locked: !part.locked })} />
-              {plan.approved && (part.source === 'ai' || (part.source === 'real' && !realPartReady(part, downloadedSources.current ?? state.instrumentSources ?? []))) ? <Button size="sm" variant="secondary" icon={part.source === 'ai' ? <Sparkles size={15} /> : <Download size={15} />}
+              {plan.approved && (part.source === 'ai' || (part.source === 'real' && !realPartReady(part, downloadedSources.current ?? state.instrumentSources ?? []))) ? <Button size="sm" variant="secondary" icon={part.source === 'ai' ? <ListMusic size={15} /> : <Download size={15} />}
                 label={t(part.source === 'ai' ? '@yovoice.arrangement.prepareOneAI' : '@yovoice.arrangement.prepareOneReal')}
                 isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare(part.source === 'ai' ? 'ai' : 'real', { section: si, phrase: pi, part: ai })} /> : null}
               {plan.approved && part.source === 'ai' && readyAI.has(`${si}:${pi}:${ai}`) ? <small>{t('@yovoice.arrangement.materialReady')}</small> : null}
@@ -248,7 +248,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
           {!state.models.some(model => model.id === aiModelID) ? <Button size="sm" variant="ghost" label={t('@yovoice.arrangement.aiModelInstall')} onClick={openSettings} /> : null}
           <HStack gap={2} wrap="wrap">
             <Button size="sm" variant="secondary" icon={<Download size={15} />} label={t('@yovoice.arrangement.prepareReal')} isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare('real')} />
-            <Button size="sm" variant="secondary" icon={<Sparkles size={15} />} label={t('@yovoice.arrangement.prepareAI')} isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare('ai')} />
+            <Button size="sm" variant="secondary" icon={<ListMusic size={15} />} label={t('@yovoice.arrangement.prepareAI')} isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare('ai')} />
             <Button size="sm" variant="primary" icon={<Layers3 size={15} />} label={t('@yovoice.arrangement.prepareBoth')} isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare('both')} />
           </HStack>
           {materialBusy ? <small role="status">{materialPhase}</small> : null}

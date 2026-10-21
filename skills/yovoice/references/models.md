@@ -18,7 +18,7 @@
 
 官方 Qwen3-TTS 还有 0.6B CustomVoice；当前固定模型仓库未发布对应独立 GGUF，暂不列为可下载模型。Safetensors 多文件包未接入当前单文件 GGUF 管理流程。
 
-`yovoice models list --json` 里的 ACE-Step、YuE2 是音乐模型，SheetSage2 是翻唱用的扒谱模型，都只在桌面端“音乐生成”使用，`generate` 不支持；`*-sf2` 是编曲音色库，见[编曲参考](score.md)。
+`yovoice models list --json` 里的 ACE-Step、YuE2 是音乐模型，SheetSage2 是翻唱用的扒谱模型，`lyric-align-q8` 是播放页逐字对齐歌词的可选模型，都只在桌面端“音乐生成”使用，`generate` 不支持；`*-sf2` 是编曲音色库，见[编曲参考](score.md)。
 
 ## 下载与精度
 

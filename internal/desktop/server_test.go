@@ -3,6 +3,7 @@ package desktop
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -88,5 +89,32 @@ func TestHTTPBoundaryAndEvents(t *testing.T) {
 	must(t, e)
 	if audio.StatusCode != 206 || len(b) != 44 || audio.Header.Get("Content-Type") != "audio/wav" {
 		t.Fatal("采样试听媒体读取失败", audio.StatusCode, len(b), audio.Header.Get("Content-Type"))
+	}
+}
+
+// 时间线导出的长音频经 /api/export-audio 上传，不受 RPC 的 28 MB 上限；宿主再按 ID 取路径。
+func TestExportAudioUpload(t *testing.T) {
+	w, e := workbench.New(t.TempDir())
+	must(t, e)
+	defer w.Close()
+	secret := strings.Repeat("b", 64)
+	server := httptest.NewServer(&Server{Workbench: w, Assets: t.TempDir(), Secret: secret})
+	defer server.Close()
+	wav := append([]byte("RIFF\x00\x00\x00\x00WAVE"), bytes.Repeat([]byte{1}, 40<<20)...)
+	r, e := http.NewRequest("POST", server.URL+"/api/export-audio", bytes.NewReader(wav))
+	must(t, e)
+	r.AddCookie(&http.Cookie{Name: "vw-" + secret[:12], Value: secret})
+	r.Header.Set("Origin", server.URL)
+	res, e := server.Client().Do(r)
+	must(t, e)
+	defer res.Body.Close()
+	var reply struct {
+		ID string `json:"id"`
+	}
+	must(t, json.NewDecoder(res.Body).Decode(&reply))
+	path, e := Call(context.Background(), w, "export.path", json.RawMessage(`{"id":"`+reply.ID+`"}`))
+	must(t, e)
+	if info, e := os.Stat(path.(string)); e != nil || info.Size() != int64(len(wav)) {
+		t.Fatalf("上传的导出文件不完整：%v %v", info, e)
 	}
 }

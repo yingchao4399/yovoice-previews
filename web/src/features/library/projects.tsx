@@ -7,7 +7,7 @@ import { TextInput } from '@astryxdesign/core/TextInput';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Copy, FileMusic, FileText, FolderInput, History, Mic, MoreHorizontal, Music, Pencil, Plus, Trash2 } from 'lucide-react';
 import { AppDialog } from '../../shared/ui/app-dialog';
-import { createDraft, formatTime, projectKind, type Draft, type UiLocale } from '../../shared/workbench';
+import { createDraft, formatTime, projectKind, type Draft, type Feature, type UiLocale } from '../../shared/workbench';
 import { call, isDesktop } from '../../shared/lib/client';
 import { noticeMessage } from '../../shared/lib/call-error';
 import { SpeakerAvatar } from '../create/subtitles';
@@ -19,8 +19,10 @@ import { LibraryEmpty, LibraryPage, Ticket } from './library-layout';
 import { TapeCover } from './tape-cover';
 import { overflowTitle } from '../../shared/ui/overflow-title';
 
-export function NewProject({ locale, modelId, modelFor, create, onError, button, kind }: {
+export function NewProject({ locale, modelId, modelFor, create, onError, button, kind, hidden = [] }: {
   kind?: 'text' | 'story' | 'music' | 'score'; locale: UiLocale; modelId?: string;
+  // 在设置中隐藏的功能不出现在新建菜单里；编曲随音乐生成一起隐藏。
+  hidden?: Feature[];
   // 按作品类型给出默认模型（优先已下载的），不给时用各类型的内置默认。
   modelFor?: (kind: 'text' | 'story' | 'music' | 'score') => string; create: (draft: Draft) => Promise<void>; onError: (error: string) => void;
   button?: Omit<ComponentProps<typeof Button>, 'onClick' | 'label'> & { label?: string };
@@ -54,9 +56,11 @@ export function NewProject({ locale, modelId, modelFor, create, onError, button,
     items={[
       // 图标与侧栏导航一致。
       { id: 'text', label: t('@yovoice.project.text'), icon: <Mic className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('text') },
-      { id: 'story', label: t('@yovoice.project.story'), icon: <Pencil className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('story') },
-      { id: 'music', label: t('@yovoice.project.music'), icon: <Music className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('music') },
-      { id: 'score', label: t('@yovoice.project.score'), icon: <FileMusic className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('score') },
+      ...(hidden.includes('story') ? [] : [{ id: 'story', label: t('@yovoice.project.story'), icon: <Pencil className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('story') }]),
+      ...(hidden.includes('music') ? [] : [
+        { id: 'music', label: t('@yovoice.project.music'), icon: <Music className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('music') },
+        { id: 'score', label: t('@yovoice.project.score'), icon: <FileMusic className="project-menu-icon" strokeWidth={1.5} />, onClick: () => void start('score') },
+      ]),
       { id: 'file', label: t('@yovoice.import.file'), icon: <FileText className="project-menu-icon" strokeWidth={1.5} />, onClick: () => fileInput.current?.click() },
       ...(isDesktop ? [{ id: 'import', label: t('@yovoice.timeline.importProject'), icon: <FolderInput className="project-menu-icon" strokeWidth={1.5} />, onClick: () => { setBusy(true); void call<Draft | null>('project.import').then(d => d ? create(d) : undefined).catch(e => onError(noticeMessage(e))).finally(() => setBusy(false)); } }] : []),
     ]} />

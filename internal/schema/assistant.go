@@ -8,17 +8,16 @@ import (
 // 助手对话状态：会话与消息持久化（面板重开可见），进行中的一轮与界面事件只随状态广播、不入库。
 
 // AssistantMessage 是助手对话中的一条消息：用户消息只有 Text；助手消息含按顺序的内容块，
-// Text 为其中文本块的拼接（复制用）。Tools 只出现在旧版本记录里，新消息的工具卡片在 Blocks 中。
+// Text 为其中文本块的拼接（复制用）。
 type AssistantMessage struct {
-	ID          string              `json:"id"`
-	Role        string              `json:"role"` // user 或 assistant
-	Text        string              `json:"text,omitempty"`
-	Blocks      []AssistantBlock    `json:"blocks,omitempty"`
-	Tools       []AssistantToolCard `json:"tools,omitempty"`
-	Status      string              `json:"status,omitempty"` // 助手消息的结束状态：completed、cancelled、failed
-	ErrorCode   msg.Code            `json:"errorCode,omitempty"`
-	ErrorParams msg.Params          `json:"errorParams,omitempty"`
-	CreatedAt   time.Time           `json:"createdAt"`
+	ID          string           `json:"id"`
+	Role        string           `json:"role"` // user 或 assistant
+	Text        string           `json:"text,omitempty"`
+	Blocks      []AssistantBlock `json:"blocks,omitempty"`
+	Status      string           `json:"status,omitempty"` // 助手消息的结束状态：completed、cancelled、failed
+	ErrorCode   msg.Code         `json:"errorCode,omitempty"`
+	ErrorParams msg.Params       `json:"errorParams,omitempty"`
+	CreatedAt   time.Time        `json:"createdAt"`
 }
 
 // AssistantToolCard 是消息内一次工具调用的摘要；Args 为截断后的参数 JSON，点开卡片时查看。

@@ -63,7 +63,7 @@ func TestKokoroOfficialDownload(t *testing.T) {
 			for source, prefix := range map[string]string{
 				"huggingface": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/" + m.Revision,
 				"mirror":      "https://hf-mirror.com/audio-cpp/audio.cpp-gguf/resolve/" + m.Revision,
-				"modelscope":  "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/master",
+				"modelscope":  "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/" + catalog.ModelScopeRevision,
 			} {
 				url, err := m.URL(source)
 				must(t, err)
