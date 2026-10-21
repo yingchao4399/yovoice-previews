@@ -23,6 +23,7 @@
 | 试听及诊断问答专项 | 5/5 | 试听采用门槛、队列、重做、稍后与问答 |
 | 恢复与重启专项 | `recovery-resume-targeted.log` | 已保存事件跨重启续接 |
 | 实际线上 Ocho | `live-ocho-final.json`，DeepSeek Flash | 实际调用作品、库存、生成状态、生成预检与问答工具；选择后续接，原谱与计划保持不变 |
+| 主动故障诊断 | `live-recovery-final.json`，DeepSeek Flash | 隔离目录故意不安装模型，真实备料失败后主动读取任务/生成状态/预检/模型库存并弹出局部、整体或先查看原因的范围卡；不改原谱、不伪造生成成功。范围外工具请求被后端拒绝 |
 | Windows 自包含检查 | ServiceChecks、UpdateChecks | 请求、错误、保存、更新版本与资产协议 |
 | 安装包构建 | `windows-package-build-final.log`，退出码 0 | 完整包、更新包，Windows x64 |
 | 最终打包服务 | `packaged-service-final.json` | 隔离目录启动、前端、真实 D4 工程导入、预检、重演奏、导出、错误拒绝、正常退出 |
