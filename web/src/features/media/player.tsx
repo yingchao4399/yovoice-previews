@@ -4,9 +4,10 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { Play, Pause, Square, FolderOpen, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
-import { call, mediaUrl } from '../../shared/lib/client';
+import { call, mediaUrl, releaseMediaUrl } from '../../shared/lib/client';
 import { noticeMessage } from '../../shared/lib/call-error';
 import { formatTime } from '../../shared/workbench';
+import { waveform as readWaveform } from './waveform';
 import type { Track } from '../../shared/workbench';
 import { ResizeHandle } from '@astryxdesign/core/Resizable';
 import { useAudioPanel } from './use-audio-panel';
@@ -15,7 +16,7 @@ import { TrackPanButton, useTrackViewport } from './use-track-viewport';
 // 头像素材仅在展示库列表时加载，避免进入创作首屏主包。
 const SeededAvatar = lazy(() => import('../../shared/ui/seeded-avatar').then(module => ({ default: module.SeededAvatar })));
 
-// reveal=false 时由调用方在自己的菜单里提供“打开音频位置”，工具栏不再单独放文件夹按钮。
+// reveal=false 时由调用方在自己的工具栏或菜单里提供“打开位置”，工具栏不再单独放文件夹按钮。
 export function Player({ track, onError, suspended, compact = false, actions, avatar, inline, onProgress, seekRequest, reveal = true }: { reveal?: boolean; onProgress?: (time: number, playing: boolean) => void; seekRequest?: { time: number; nonce: number }; inline?: { label: string; select: () => void }; avatar?: { seed: string; label: string; disabled?: boolean; select: () => void }; actions?: ReactNode; compact?: boolean; suspended: boolean; track: Track | null; onError: (message: string) => void }) {
   const t = useTranslator();
   const audio = useRef<HTMLAudioElement>(null);
@@ -36,35 +37,32 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   const markFailed = (message: string) => setSource(current => current.key === key ? { ...current, failure: message } : current);
   // 用户请求了播放（试听、选择版本），音频还没准备好时先记下，地址就绪后再开始。
   const pending = useRef(false);
+  // 已画出波形的音频地址。
+  const drawn = useRef('');
 
   // 1. 加载只跟随音频本身变化：再次请求播放或切换页面都不会重新读取。
   useEffect(() => {
-    setTime(0); setDuration(0); setPeaks([]); setPlaying(false); setZoom(1);
+    setTime(0); setDuration(0); setPeaks([]); setPlaying(false); setZoom(1); drawn.current = '';
     if (lane.current) lane.current.scrollLeft = 0;
     if (!key || !kind || !fileName) return;
     let disposed = false; let resource = '';
     mediaUrl(kind, fileName).then(value => {
       resource = value;
-      if (disposed) revoke(value); else setSource({ key, url: value, failure: '' });
+      if (disposed) releaseMediaUrl(value); else setSource({ key, url: value, failure: '' });
     }, (error: Error) => { if (!disposed) setSource({ key, url: '', failure: error.message }); });
     const element = audio.current;
     // 地址可能是随即释放的 blob，结果随清理一并作废，避免同一音频再次出现时用到已失效的地址。
-    return () => { disposed = true; element?.pause(); revoke(resource); setSource(current => current.key === key ? { key: '', url: '', failure: '' } : current); };
+    return () => { disposed = true; element?.pause(); releaseMediaUrl(resource); setSource(current => current.key === key ? { key: '', url: '', failure: '' } : current); };
   }, [key, kind, fileName]);
-  // 2. 正文播放器读取整份文件绘制波形。波形只是辅助显示，读取失败时不画；能否播放以 <audio> 为准。
+  // 2. 正文播放器边读取边取峰值绘制波形，不整段解码，超长音频也不会拖住界面。波形只是辅助显示，读取失败时不画；能否播放以 <audio> 为准。
+  // 各页面常驻挂载，播放器不可见（suspended）时不读取，等真正显示时再画；同一音频只读一次。
+  const drawWaveform = !!url && waveform && !suspended;
   useEffect(() => {
-    if (!url || !waveform) return;
-    let disposed = false;
-    void (async () => {
-      const context = new AudioContext();
-      try {
-        const response = await fetch(url); if (!response.ok) return;
-        const buffer = await context.decodeAudioData(await response.arrayBuffer());
-        if (!disposed) { setPeaks(waveformPeaks(buffer)); setDuration(buffer.duration); }
-      } catch { /* 见上，不画波形即可 */ } finally { await context.close(); }
-    })();
-    return () => { disposed = true; };
-  }, [url, waveform]);
+    if (!drawWaveform || drawn.current === url) return;
+    const controller = new AbortController();
+    readWaveform(url, 3200, controller.signal).then(value => { drawn.current = url; setPeaks(value.peaks); setDuration(value.duration); }, () => { /* 见上，不画波形即可 */ });
+    return () => controller.abort();
+  }, [drawWaveform, url]);
   // 播放失败时：音频读不到则记为不可用并说明；浏览器拦截自动播放时请用户点击播放；被暂停打断等情况忽略。
   const play = async (element: HTMLAudioElement) => {
     try { await element.play(); } catch (error) {
@@ -185,15 +183,3 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   </VStack>;
 }
 
-function revoke(url: string) {
-  if (url.startsWith('blob:')) URL.revokeObjectURL(url);
-}
-
-// 取第一声道每段的峰值，供正文播放器绘制 3200 个采样点的波形。
-function waveformPeaks(buffer: AudioBuffer): number[] {
-  const data = buffer.getChannelData(0); const stride = Math.ceil(data.length / 3200);
-  return Array.from({ length: 3200 }, (_, i) => {
-    let peak = 0; for (let j = i * stride; j < Math.min(data.length, (i + 1) * stride); j += 8) peak = Math.max(peak, Math.abs(data[j]));
-    return peak;
-  });
-}

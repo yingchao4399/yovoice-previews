@@ -86,7 +86,11 @@ func RunFakeEngine() {
 		os.Exit(2)
 	}
 	var config struct {
-		Port int `json:"port"`
+		Port   int `json:"port"`
+		Models []struct {
+			Task    string         `json:"task"`
+			Session map[string]any `json:"session_options"`
+		} `json:"models"`
 	}
 	if json.Unmarshal(b, &config) != nil {
 		os.Exit(2)
@@ -95,9 +99,10 @@ func RunFakeEngine() {
 	http.HandleFunc("/v1/tasks/run", func(w http.ResponseWriter, r *http.Request) {
 		var p struct {
 			Request struct {
-				Text    string         `json:"text"`
-				Audio   string         `json:"audio"`
-				Options map[string]any `json:"options"`
+				Text     string         `json:"text"`
+				Audio    string         `json:"audio"`
+				Language string         `json:"language"`
+				Options  map[string]any `json:"options"`
 			} `json:"request"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&p)
@@ -107,6 +112,24 @@ func RunFakeEngine() {
 		}
 		if strings.HasSuffix(p.Request.Text, "模拟生成失败") || strings.Contains(p.Request.Text, "模拟编曲失败") {
 			http.Error(w, "模拟生成失败", http.StatusInternalServerError)
+			return
+		}
+		// 歌词对齐：分离任务返回人声分轨；对齐任务把每个非空白字符记作一个字，每字 0.25 秒（16 kHz 样本数）。
+		switch config.Models[0].Task {
+		case "sep":
+			if config.Models[0].Session["bs_roformer.num_overlap"] != "1" {
+				http.Error(w, "分离应单遍推理", http.StatusBadRequest)
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"named_audio_outputs": []any{map[string]any{"id": "vocals", "audio": base64.StdEncoding.EncodeToString(VocalWAV())}}})
+			return
+		case "align":
+			words := []any{}
+			for _, r := range strings.Join(strings.Fields(p.Request.Text), "") {
+				n := len(words)
+				words = append(words, map[string]any{"word": string(r), "start_sample": n * 4000, "end_sample": n*4000 + 3000, "confidence": 1})
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{"text": p.Request.Text, "language": p.Request.Language, "words": words})
 			return
 		}
 		result := map[string]any{}
@@ -146,3 +169,18 @@ V: Vocal
 V: Ins
 Z2|
 `
+
+// VocalWAV 生成对齐测试需要的带静音间隔的人声信号。
+func VocalWAV() []byte {
+	const rate = 16000
+	b := make([]byte, 44+4*rate*2)
+	copy(b, WAV()[:44])
+	binary.LittleEndian.PutUint32(b[4:], uint32(len(b)-8))
+	binary.LittleEndian.PutUint32(b[40:], uint32(len(b)-44))
+	for i := 0; i < 4*rate; i++ {
+		if t := float64(i) / rate; (t >= .5 && t < 1) || (t >= 2.5 && t < 3) {
+			binary.LittleEndian.PutUint16(b[44+i*2:], uint16(int16(8000*math.Sin(2*math.Pi*220*t))))
+		}
+	}
+	return b
+}

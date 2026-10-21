@@ -17,7 +17,8 @@ async function setup(page: Page, rejectRetry = false) {
     const calls: { method: string; data: unknown }[] = [];
     Object.assign(window, { __reviewQueueCalls: calls });
     window.__workbenchMediaBase = '/media/';
-    const push = () => listeners.forEach(listener => listener({ data: { event: 'state', state } } as MessageEvent));
+    // 原生消息经过序列化传输，每次收到独立快照，不能让测试与 React 共用可变对象。
+    const push = () => listeners.forEach(listener => listener({ data: { event: 'state', state: structuredClone(state) } } as MessageEvent));
     window.addEventListener('test-state', event => { Object.assign(state, (event as CustomEvent).detail); push(); });
     window.chrome = { ...window.chrome, webview: {
       addEventListener: (_name, listener) => listeners.push(listener),
@@ -39,7 +40,7 @@ const { id, method, data } = request as { id: string; method: string; data: { id
           if (q) { q.state = data.action === 'later' ? 'deferred' : 'answered'; q.selected = data.selected; q.custom = data.custom; push(); }
         }
         const result = method === 'state.get' ? { state, catalog: [] } : method === 'arrangement.inspect' ? { ready: false, issues: [], parts: [] } : true;
-        queueMicrotask(() => listeners.forEach(listener => listener({ data: { id, result, error } } as MessageEvent)));
+        queueMicrotask(() => listeners.forEach(listener => listener({ data: structuredClone({ id, result, error }) } as MessageEvent)));
       },
     } };
   }, { state, rejectRetry });

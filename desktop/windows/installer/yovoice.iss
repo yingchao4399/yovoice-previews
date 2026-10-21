@@ -14,7 +14,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-MinVersion=10.0.19041
+MinVersion=10.0.17763
 AppMutex=Local\VoiceWorkbench.Desktop
 CloseApplications=yes
 RestartApplications=no
@@ -34,6 +34,10 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
 ; 不同内核的完整安装包可互相覆盖安装，先移除旧内核，避免混入其他构建的 DLL。
 Type: filesandordirs; Name: "{app}\engine"
 #endif
+
+[InstallDelete]
+; Kokoro 发音库改为随模型下载到数据目录，清除旧版本安装目录中的内置副本。
+Type: filesandordirs; Name: "{app}\tools\kokoro"
 
 [Files]
 Source: "{#AppDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

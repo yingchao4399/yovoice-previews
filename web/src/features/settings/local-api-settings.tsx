@@ -3,6 +3,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { CodeBlock } from '@astryxdesign/core/CodeBlock';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
 import { Switch } from '@astryxdesign/core/Switch';
+import { Text } from '@astryxdesign/core/Text';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { useClipboard } from '@astryxdesign/core/hooks';
 import { useTranslator } from '@astryxdesign/core/i18n';
@@ -42,7 +43,7 @@ export function LocalAPISettings({ run }: { run: (task: () => Promise<unknown>) 
   const hint = status.error ? formatCallError(t, parseCallError(status.error))
     : status.running ? t('@yovoice.settings.localApiRunning', { url: status.url ?? address }) : t('@yovoice.settings.localApiOff');
   return <SettingsGroup title={t('@yovoice.settings.localApi')} description={t('@yovoice.settings.localApiIntro')}>
-    <SettingsRow label={t('@yovoice.settings.localApiEnabled')} hint={<span data-testid="local-api-status" data-running={status.running}>{hint}</span>}>
+    <SettingsRow label={t('@yovoice.settings.localApiEnabled')} hint={<Text type="inherit" color="inherit" data-testid="local-api-status" data-running={String(status.running)}>{hint}</Text>}>
       {status.running ? <StatusDot variant="success" label={t('@yovoice.settings.localApiRunningShort')} /> : status.error ? <StatusDot variant="error" label={t('@yovoice.settings.localApiFailed')} /> : null}
       <Switch label={t('@yovoice.settings.localApiEnabled')} isLabelHidden value={status.enabled} isLoading={saving} isDisabled={saving} onChange={enabled => save('localApi.save', { enabled, port: status.port })} />
     </SettingsRow>

@@ -36,6 +36,11 @@ func (w *Workbench) savePreferences(p schema.Preferences) error {
 	if p.AITimeout != 0 && (p.AITimeout < schema.AITimeoutMin || p.AITimeout > schema.AITimeoutMax) {
 		return msg.Err(msg.ErrRequestInvalid, nil)
 	}
+	for i, feature := range p.HiddenFeatures {
+		if !slices.Contains(schema.OptionalFeatures, feature) || slices.Contains(p.HiddenFeatures[:i], feature) {
+			return msg.Err(msg.ErrRequestInvalid, nil)
+		}
+	}
 	if p.ModelDirectory != nil && !filepath.IsAbs(*p.ModelDirectory) {
 		return msg.Err(msg.ErrModelDirAbsolute, nil)
 	}

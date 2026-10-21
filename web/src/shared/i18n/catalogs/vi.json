@@ -1,736 +1,4 @@
 {
-  "@yovoice.instruments.generatedMaterials": {"defaultMessage": "Âm thanh AI đã tạo"},
-  "@yovoice.score.resizeDock": {"defaultMessage": "Điều chỉnh chiều cao bản nhạc"},
-  "@yovoice.score.collapseDock": {"defaultMessage": "Thu gọn các bè nhạc"},
-  "@yovoice.score.expandDock": {"defaultMessage": "Mở rộng các bè nhạc"},
-  "@yovoice.instruments.materialPlayFailed": {"defaultMessage": "Không thể phát âm thanh. Hãy thử lại hoặc kiểm tra nhật ký."},
-  "@yovoice.instruments.storageLocation": {"defaultMessage": "Vị trí lưu trữ"},
-  "@yovoice.arrangement.title": {
-    "defaultMessage": "Smart Arrangement"
-  },
-  "@yovoice.arrangement.intro": {
-    "defaultMessage": "Plan phrase sources, prepare real and AI audio separately, then assemble them on an editable timeline."
-  },
-  "@yovoice.arrangement.new": {
-    "defaultMessage": "New smart arrangement"
-  },
-  "@yovoice.arrangement.project": {
-    "defaultMessage": "Arrangement project"
-  },
-  "@yovoice.arrangement.current": {
-    "defaultMessage": "Current project"
-  },
-  "@yovoice.arrangement.projectHint": {
-    "defaultMessage": "The plan and score are saved in an arrangement project."
-  },
-  "@yovoice.arrangement.chooseProject": {
-    "defaultMessage": "Choose an arrangement"
-  },
-  "@yovoice.arrangement.selectHint": {
-    "defaultMessage": "Choose an existing arrangement or create one to start planning."
-  },
-  "@yovoice.arrangement.planStage": {
-    "defaultMessage": "Whole-piece plan"
-  },
-  "@yovoice.arrangement.planHint": {
-    "defaultMessage": "An online model plans the instrumentation and real or AI source of each phrase for your review."
-  },
-  "@yovoice.arrangement.duration": {
-    "defaultMessage": "Target length"
-  },
-  "@yovoice.arrangement.sourceMode": {
-    "defaultMessage": "Source policy"
-  },
-  "@yovoice.arrangement.sourceHint": {
-    "defaultMessage": "Auto lets AI choose real or generated sound for each phrase."
-  },
-  "@yovoice.arrangement.mode.auto": {
-    "defaultMessage": "AI chooses"
-  },
-  "@yovoice.arrangement.mode.real": {
-    "defaultMessage": "Real only"
-  },
-  "@yovoice.arrangement.mode.ai": {
-    "defaultMessage": "AI only"
-  },
-  "@yovoice.arrangement.mode.hybrid": {
-    "defaultMessage": "Mix real and AI"
-  },
-  "@yovoice.arrangement.briefPlaceholder": {
-    "defaultMessage": "Describe any arrangement: purpose, style, instruments, solo placement, techniques, rhythm, and other details."
-  },
-  "@yovoice.arrangement.planAction": {
-    "defaultMessage": "Plan the whole piece"
-  },
-  "@yovoice.arrangement.aiSettings": {
-    "defaultMessage": "AI service"
-  },
-  "@yovoice.arrangement.bars": {
-    "defaultMessage": "Bars {start}–{end}"
-  },
-  "@yovoice.arrangement.instrument": {
-    "defaultMessage": "Instrument"
-  },
-  "@yovoice.arrangement.technique": {
-    "defaultMessage": "Technique"
-  },
-  "@yovoice.arrangement.source": {
-    "defaultMessage": "Source"
-  },
-  "@yovoice.arrangement.specificSource": {
-    "defaultMessage": "Replace with downloaded source"
-  },
-  "@yovoice.arrangement.fixedSourceUnavailable": {
-    "defaultMessage": "The selected source for {instrument} lacks the required articulation. Choose another downloaded source or clear the selection to search automatically."
-  },
-  "@yovoice.arrangement.autoMatch": {
-    "defaultMessage": "Match notes automatically"
-  },
-  "@yovoice.arrangement.sourceUndecided": {
-    "defaultMessage": "Choose real or AI for every part before approving the plan."
-  },
-  "@yovoice.arrangement.lock": {
-    "defaultMessage": "Lock part"
-  },
-  "@yovoice.arrangement.unlock": {
-    "defaultMessage": "Unlock part"
-  },
-  "@yovoice.arrangement.previewLimit": {
-    "defaultMessage": "The score can use SF2 for preview. Final assembly uses only prepared real samples or AI phrase audio and reports missing sources."
-  },
-  "@yovoice.arrangement.materialStage": {
-    "defaultMessage": "Prepare audio sources"
-  },
-  "@yovoice.arrangement.materialHint": {
-    "defaultMessage": "Find real recordings in the reviewed catalog or online; generate AI audio for individual phrases. Prepare all at once or one part at a time above."
-  },
-  "@yovoice.arrangement.prepareReal": {
-    "defaultMessage": "Prepare all real sources"
-  },
-  "@yovoice.arrangement.prepareAI": {
-    "defaultMessage": "Generate all AI sources"
-  },
-  "@yovoice.arrangement.prepareBoth": {
-    "defaultMessage": "Download and generate all"
-  },
-  "@yovoice.arrangement.prepareOneReal": {
-    "defaultMessage": "Download this source"
-  },
-  "@yovoice.arrangement.prepareOneAI": {
-    "defaultMessage": "Generate this phrase"
-  },
-  "@yovoice.arrangement.materialReady": {
-    "defaultMessage": "AI phrase in library"
-  },
-  "@yovoice.arrangement.realReady": {
-    "defaultMessage": "Downloaded · ready to use"
-  },
-  "@yovoice.arrangement.aiModel": {
-    "defaultMessage": "AI audio model"
-  },
-  "@yovoice.arrangement.aiModelHint": {
-    "defaultMessage": "DeepSeek plans and scores. ACE-Step supports target duration; YuE2 can generate instrumentals but duration is approximate and use is non-commercial only."
-  },
-  "@yovoice.arrangement.aiModelRequired": {
-    "defaultMessage": "Select an AI music model"
-  },
-  "@yovoice.arrangement.aiModelInstall": {
-    "defaultMessage": "Install the selected model in Settings"
-  },
-  "@yovoice.arrangement.prepareTimeout": {
-    "defaultMessage": "Source preparation timed out. Check its task status and retry."
-  },
-  "@yovoice.arrangement.assemblyStage": {
-    "defaultMessage": "Assemble phrases"
-  },
-  "@yovoice.arrangement.assemblyHint": {
-    "defaultMessage": "Place real parts and AI phrases at their planned bars on a multitrack timeline for preview, editing, and export."
-  },
-  "@yovoice.arrangement.assemble": {
-    "defaultMessage": "Build editable timeline"
-  },
-  "@yovoice.arrangement.assembling": {
-    "defaultMessage": "Rendering real parts and assembling…"
-  },
-  "@yovoice.arrangement.assemblyFailed": {
-    "defaultMessage": "The assembly produced no timeline. Check the task error."
-  },
-  "@yovoice.arrangement.saveBand": {
-    "defaultMessage": "Save as band preset"
-  },
-  "@yovoice.arrangement.bandSaved": {
-    "defaultMessage": "Band preset saved to the source library"
-  },
-  "@yovoice.arrangement.reuseBand": {
-    "defaultMessage": "Reuse band preset"
-  },
-  "@yovoice.arrangement.chooseBand": {
-    "defaultMessage": "Choose a band preset"
-  },
-  "@yovoice.arrangement.applyBand": {
-    "defaultMessage": "Apply to this plan"
-  },
-  "@yovoice.arrangement.bandApplied": {
-    "defaultMessage": "Band preferences applied; review and approve the plan again"
-  },
-  "@yovoice.arrangement.sourcesMissing": {
-    "defaultMessage": "These parts are not ready. Resolve them before assembly: {names}"
-  },
-  "@yovoice.arrangement.preparing": {
-    "defaultMessage": "Preparing instruments…"
-  },
-  "@yovoice.arrangement.downloadFailed": {
-    "defaultMessage": "The instrument download did not finish. Check the connection or retry in the instrument library."
-  },
-  "@yovoice.arrangement.onlineSearchFailed": {
-    "defaultMessage": "No verified single-note recording found for {name}; search the source library or import your own."
-  },
-  "@yovoice.arrangement.approve": {
-    "defaultMessage": "Approve plan and write score"
-  },
-  "@yovoice.arrangement.openScore": {
-    "defaultMessage": "Open score editor"
-  },
-  "@yovoice.arrangement.scoreStage": {
-    "defaultMessage": "Review score"
-  },
-  "@yovoice.arrangement.scoreHint": {
-    "defaultMessage": "Review the AI score before applying it. Existing notes are never overwritten automatically."
-  },
-  "@yovoice.instruments.title": {
-    "defaultMessage": "Sources & Instruments"
-  },
-  "@yovoice.instruments.intro": {
-    "defaultMessage": "Manage note-mapped sample instruments and sound fonts. AI model downloads remain in Settings."
-  },
-  "@yovoice.instruments.tabMine": {
-    "defaultMessage": "My sources"
-  },
-  "@yovoice.instruments.tabCatalog": {
-    "defaultMessage": "CC0 catalog"
-  },
-  "@yovoice.instruments.tabOnline": {
-    "defaultMessage": "Find online"
-  },
-  "@yovoice.instruments.tabSites": {
-    "defaultMessage": "More source sites"
-  },
-  "@yovoice.instruments.sitesHint": {
-    "defaultMessage": "Sign in on the provider's site or plugin; yovoice does not collect credentials. Check each library's license. Import individual notes here, or load complete libraries in their plugin."
-  },
-  "@yovoice.instruments.site": {
-    "defaultMessage": "Source site"
-  },
-  "@yovoice.instruments.managePlugins": {
-    "defaultMessage": "View plugins"
-  },
-  "@yovoice.instruments.importAfterDownload": {
-    "defaultMessage": "Import note recording"
-  },
-  "@yovoice.instruments.sitePianobook": {
-    "defaultMessage": "Community sample libraries in Kontakt, Decent Sampler and SFZ formats. Registration and per-library terms apply."
-  },
-  "@yovoice.instruments.sitePianobookLicense": {
-    "defaultMessage": "Free composition use · site terms"
-  },
-  "@yovoice.instruments.siteDecent": {
-    "defaultMessage": "Free Decent Sampler VST3 and its libraries. The plugin downloads directly; some packs require an email address or login and are loaded inside the plugin."
-  },
-  "@yovoice.instruments.siteDecentLicense": {
-    "defaultMessage": "Free plugin · check each library license"
-  },
-  "@yovoice.instruments.siteLabs": {
-    "defaultMessage": "Spitfire LABS is now available through Splice INSTRUMENT. Free content needs a Splice login; some packs require a subscription."
-  },
-  "@yovoice.instruments.siteLabsLicense": {
-    "defaultMessage": "Free and paid packs · Splice account"
-  },
-  "@yovoice.instruments.siteDSK": {
-    "defaultMessage": "Free VST3 with pipa, pipa tremolo, erhu, guzheng and flute. Keep the plugin file and its instruments folder together."
-  },
-  "@yovoice.instruments.siteDSKLicense": {
-    "defaultMessage": "Free VST3 · private and commercial use"
-  },
-  "@yovoice.instruments.siteKong": {
-    "defaultMessage": "Legacy Mini DiZi and Mini ErHu downloads. Mini DiZi is a verified 32-bit VST and cannot load directly in 64-bit yovoice. Its license permits compositions but prohibits making sample libraries."
-  },
-  "@yovoice.instruments.siteKongLicense": {
-    "defaultMessage": "Free legacy plugins · 32-bit limitation"
-  },
-  "@yovoice.instruments.siteOpenGameArt": {
-    "defaultMessage": "Game music, effects and some samples. Check each item's license; CC0 and CC BY are practical choices."
-  },
-  "@yovoice.instruments.siteOpenGameArtLicense": {
-    "defaultMessage": "CC0 / CC BY and others · per item"
-  },
-  "@yovoice.instruments.siteFreesound": {
-    "defaultMessage": "Search CC BY and non-commercial recordings manually in addition to the current automated CC0 search."
-  },
-  "@yovoice.instruments.siteFreesoundLicense": {
-    "defaultMessage": "CC0 / CC BY / CC BY-NC · per item"
-  },
-  "@yovoice.instruments.siteSFZ": {
-    "defaultMessage": "SFZ instruments and open sample projects. Some work through plugins; check each project's license."
-  },
-  "@yovoice.instruments.siteSFZLicense": {
-    "defaultMessage": "CC0 / other licenses · per project"
-  },
-  "@yovoice.instruments.tabBands": {
-    "defaultMessage": "Band presets"
-  },
-  "@yovoice.instruments.bandPreset": {
-    "defaultMessage": "Reusable instrument and source choices"
-  },
-  "@yovoice.instruments.saved": {
-    "defaultMessage": "Saved"
-  },
-  "@yovoice.instruments.instruments": {
-    "defaultMessage": "parts"
-  },
-  "@yovoice.instruments.viewDetails": {
-    "defaultMessage": "View details"
-  },
-  "@yovoice.instruments.aiMaterialDetails": {
-    "defaultMessage": "AI phrase source"
-  },
-  "@yovoice.instruments.aiPrompt": {
-    "defaultMessage": "Generation prompt"
-  },
-  "@yovoice.instruments.aiGeneratedAt": {
-    "defaultMessage": "Generated: {date}"
-  },
-  "@yovoice.instruments.importTitle": {
-    "defaultMessage": "Import source"
-  },
-  "@yovoice.instruments.backLibrary": {
-    "defaultMessage": "Back to library"
-  },
-  "@yovoice.instruments.viewSamples": {
-    "defaultMessage": "View samples"
-  },
-  "@yovoice.instruments.sourceDetails": {
-    "defaultMessage": "Source details"
-  },
-  "@yovoice.instruments.sampleAudition": {
-    "defaultMessage": "Audition each sample"
-  },
-  "@yovoice.instruments.sampleAuditionHint": {
-    "defaultMessage": "These are the installed recordings used by the arrangement renderer."
-  },
-  "@yovoice.instruments.downloadToAudition": {
-    "defaultMessage": "Download and verify the source to audition its samples here."
-  },
-  "@yovoice.instruments.sampleNumber": {
-    "defaultMessage": "Sample {number}"
-  },
-  "@yovoice.instruments.playSample": {
-    "defaultMessage": "Play"
-  },
-  "@yovoice.instruments.pauseSample": {
-    "defaultMessage": "Pause"
-  },
-  "@yovoice.instruments.samplePlayFailed": {
-    "defaultMessage": "The sample cannot be played. Download it again or check the source file."
-  },
-  "@yovoice.instruments.searchLibrary": {
-    "defaultMessage": "Search instruments, techniques, or sources"
-  },
-  "@yovoice.instruments.searchPrompt": {
-    "defaultMessage": "Enter an instrument and search for CC0 recording candidates."
-  },
-  "@yovoice.instruments.noResults": {
-    "defaultMessage": "No matching sources"
-  },
-  "@yovoice.instruments.family": {
-    "defaultMessage": "Instrument category"
-  },
-  "@yovoice.instruments.catalogSummary": {
-    "defaultMessage": "The pinned XSXB library contains 71 CC0 sources. 67 can be downloaded as note samples; four phrase collections need separate handling."
-  },
-  "@yovoice.instruments.phraseOnly": {
-    "defaultMessage": "Phrase collection"
-  },
-  "@yovoice.instruments.model": {
-    "defaultMessage": "Model"
-  },
-  "@yovoice.instruments.family.all": {
-    "defaultMessage": "All categories"
-  },
-  "@yovoice.instruments.family.bass": {
-    "defaultMessage": "Bass"
-  },
-  "@yovoice.instruments.family.brass": {
-    "defaultMessage": "Brass"
-  },
-  "@yovoice.instruments.family.chinese": {
-    "defaultMessage": "Chinese instruments"
-  },
-  "@yovoice.instruments.family.drums": {
-    "defaultMessage": "Drums"
-  },
-  "@yovoice.instruments.family.keys": {
-    "defaultMessage": "Keys"
-  },
-  "@yovoice.instruments.family.mallets": {
-    "defaultMessage": "Tuned percussion"
-  },
-  "@yovoice.instruments.family.percussion": {
-    "defaultMessage": "Percussion"
-  },
-  "@yovoice.instruments.family.samples": {
-    "defaultMessage": "Phrase recordings"
-  },
-  "@yovoice.instruments.family.strings": {
-    "defaultMessage": "Strings and guitars"
-  },
-  "@yovoice.instruments.family.synth": {
-    "defaultMessage": "Synthesizers"
-  },
-  "@yovoice.instruments.family.texture": {
-    "defaultMessage": "Texture"
-  },
-  "@yovoice.instruments.family.vocal": {
-    "defaultMessage": "Vocal sources"
-  },
-  "@yovoice.instruments.family.winds": {
-    "defaultMessage": "Woodwinds"
-  },
-  "@yovoice.instruments.tabInstruments": {
-    "defaultMessage": "Instruments & samples"
-  },
-  "@yovoice.instruments.tabAI": {
-    "defaultMessage": "AI sources & models"
-  },
-  "@yovoice.instruments.soundfonts": {
-    "defaultMessage": "Arrangement sound fonts"
-  },
-  "@yovoice.instruments.soundfontHint": {
-    "defaultMessage": "Score rendering currently supports these SF2 sound fonts. Install or remove them in Settings › Arrangement Sound Fonts."
-  },
-  "@yovoice.instruments.samples": {
-    "defaultMessage": "Sample sources"
-  },
-  "@yovoice.instruments.samplesHint": {
-    "defaultMessage": "Import recordings by instrument, pitch and articulation; scores render with the selected samples."
-  },
-  "@yovoice.instruments.sampleImport": {
-    "defaultMessage": "Sample file"
-  },
-  "@yovoice.instruments.origin": {
-    "defaultMessage": "Sound origin"
-  },
-  "@yovoice.instruments.sampleImportHint": {
-    "defaultMessage": "Each recording must be under 20 MB and 30 seconds. Add more pitches and articulations afterward."
-  },
-  "@yovoice.instruments.real": {
-    "defaultMessage": "Real recording"
-  },
-  "@yovoice.instruments.generated": {
-    "defaultMessage": "AI generated"
-  },
-  "@yovoice.instruments.sampleCount": {
-    "defaultMessage": "samples"
-  },
-  "@yovoice.instruments.licenseUnknown": {
-    "defaultMessage": "License unspecified"
-  },
-  "@yovoice.instruments.metadataReview": {
-    "defaultMessage": "Auto found · listen to confirm"
-  },
-  "@yovoice.instruments.confirmFoundSource": {
-    "defaultMessage": "Listened and confirmed"
-  },
-  "@yovoice.instruments.target": {
-    "defaultMessage": "Add to"
-  },
-  "@yovoice.instruments.newSource": {
-    "defaultMessage": "New instrument source"
-  },
-  "@yovoice.instruments.sourceName": {
-    "defaultMessage": "Source name"
-  },
-  "@yovoice.instruments.instrumentName": {
-    "defaultMessage": "Instrument"
-  },
-  "@yovoice.instruments.pitch": {
-    "defaultMessage": "Recorded pitch (MIDI)"
-  },
-  "@yovoice.instruments.pitchHint": {
-    "defaultMessage": "For example, middle C = 60"
-  },
-  "@yovoice.instruments.articulation": {
-    "defaultMessage": "Articulation"
-  },
-  "@yovoice.instruments.desktopOnly": {
-    "defaultMessage": "Import sample files in the desktop app"
-  },
-  "@yovoice.instruments.addSample": {
-    "defaultMessage": "Add sample"
-  },
-  "@yovoice.instruments.catalogTitle": {
-    "defaultMessage": "Open sources available on demand"
-  },
-  "@yovoice.instruments.catalogHint": {
-    "defaultMessage": "Download instruments from the XSXB CC0 library. Simulated instruments name their original recordings."
-  },
-  "@yovoice.instruments.searchTitle": {
-    "defaultMessage": "Find sources online"
-  },
-  "@yovoice.instruments.searchHint": {
-    "defaultMessage": "Search Openverse for CC0 recordings. Titles may refer to unrelated words; listen on the source page and confirm the instrument. License and single-note pitch are checked again on import."
-  },
-  "@yovoice.instruments.confirmInstrument": {
-    "defaultMessage": "I listened and confirmed this is {instrument}"
-  },
-  "@yovoice.instruments.searchInstrument": {
-    "defaultMessage": "Instrument name"
-  },
-  "@yovoice.instruments.searchAction": {
-    "defaultMessage": "Search"
-  },
-  "@yovoice.instruments.sourcePage": {
-    "defaultMessage": "Source page"
-  },
-  "@yovoice.instruments.verifyImport": {
-    "defaultMessage": "Verify and import"
-  },
-  "@yovoice.instruments.noteCandidate": {
-    "defaultMessage": "Unverified note"
-  },
-  "@yovoice.instruments.phraseCandidate": {
-    "defaultMessage": "Phrase clip"
-  },
-  "@yovoice.instruments.noCandidates": {
-    "defaultMessage": "No candidates found"
-  },
-  "@yovoice.instruments.catalog.guzheng": {
-    "defaultMessage": "Guzheng · real recording"
-  },
-  "@yovoice.instruments.catalog.xiao": {
-    "defaultMessage": "Xiao tone · processed recorder"
-  },
-  "@yovoice.instruments.catalog.suona-oboe": {
-    "defaultMessage": "Suona tone · processed oboe"
-  },
-  "@yovoice.instruments.catalogHint.guzheng": {
-    "defaultMessage": "34 samples · CC0 · source: Freesound Pufermufin"
-  },
-  "@yovoice.instruments.catalogHint.xiao": {
-    "defaultMessage": "56 samples · CC0 · VCSL recorder source, not a real xiao"
-  },
-  "@yovoice.instruments.catalogHint.suona-oboe": {
-    "defaultMessage": "87 samples · CC0 · VSCO oboe source, not a real suona"
-  },
-  "@yovoice.instruments.download": {
-    "defaultMessage": "Download source"
-  },
-  "@yovoice.instruments.downloading": {
-    "defaultMessage": "Verified {done}/{total} samples"
-  },
-  "@yovoice.instruments.downloadingBytes": {
-    "defaultMessage": "Source download {done}/{total} MB"
-  },
-  "@yovoice.score.expression.source": {
-    "defaultMessage": "Track source"
-  },
-  "@yovoice.score.expression.soundfontSource": {
-    "defaultMessage": "Existing sound font (SF2)"
-  },
-  "@yovoice.score.expression.sampleCoverage": {
-    "defaultMessage": "Rendering checks each note's pitch, velocity and articulation. Missing samples are reported."
-  },
-  "@yovoice.instruments.aiModels": {
-    "defaultMessage": "AI music models"
-  },
-  "@yovoice.instruments.aiHint": {
-    "defaultMessage": "Generated arrangement phrases are saved here alongside available models. Download models in Settings."
-  },
-  "@yovoice.instruments.installed": {
-    "defaultMessage": "Installed"
-  },
-  "@yovoice.instruments.available": {
-    "defaultMessage": "Available"
-  },
-  "@yovoice.instruments.manage": {
-    "defaultMessage": "Open settings"
-  },
-  "@yovoice.settings.tabPlugins": {
-    "defaultMessage": "Plugins"
-  },
-  "@yovoice.plugins.title": {
-    "defaultMessage": "VST plugins"
-  },
-  "@yovoice.plugins.intro": {
-    "defaultMessage": "Scan standard Windows VST3 directories to inspect installed plugins."
-  },
-  "@yovoice.plugins.scan": {
-    "defaultMessage": "Scan again"
-  },
-  "@yovoice.plugins.install": {
-    "defaultMessage": "Install VST3 manually"
-  },
-  "@yovoice.plugins.installFolder": {
-    "defaultMessage": "Install plugin folder"
-  },
-  "@yovoice.plugins.installHint": {
-    "defaultMessage": "Choose a downloaded .vst3 file or an extracted .vst3 folder. Run Windows installers (.exe) from the plugin vendor."
-  },
-  "@yovoice.plugins.scanning": {
-    "defaultMessage": "Scanning plugins…"
-  },
-  "@yovoice.plugins.empty": {
-    "defaultMessage": "No VST3 plugins found."
-  },
-  "@yovoice.plugins.hostHint": {
-    "defaultMessage": "Choose Open editor to show the plugin's own editor. It currently runs independently: changes are not saved with the project, and full-track rendering is not connected yet. Audition sends one MIDI test note; an empty Decent Sampler uses a temporary test sample."
-  },
-  "@yovoice.plugins.test": {
-    "defaultMessage": "Audition"
-  },
-  "@yovoice.plugins.openEditor": {
-    "defaultMessage": "Open editor"
-  },
-  "@yovoice.plugins.testPassed": {
-    "defaultMessage": "{name} produced audio; play the test note"
-  },
-  "@yovoice.ai.setup.arrangement": {
-    "defaultMessage": "Connect an online model in Settings › AI Service to plan the piece."
-  },
-  "@yovoice.ai.brief.arrangement": {
-    "defaultMessage": "Describe the whole-piece arrangement"
-  },
-  "@yovoice.ai.task.done.arrangement": {
-    "defaultMessage": "The whole-piece plan is ready"
-  },
-  "@yovoice.ai.task.replace.arrangement": {
-    "defaultMessage": "Review before replacing the existing plan."
-  },
-  "@yovoice.ai.task.failed.arrangement": {
-    "defaultMessage": "Arrangement planning failed"
-  },
-  "@yovoice.music.workspace.compose": {
-    "defaultMessage": "Create"
-  },
-  "@yovoice.music.workspace.score": {
-    "defaultMessage": "Arrange score"
-  },
-  "@yovoice.music.workspace.audio": {
-    "defaultMessage": "Audio"
-  },
-  "@yovoice.music.workspace.export": {
-    "defaultMessage": "Export"
-  },
-  "@yovoice.music.folkProfile": {
-    "defaultMessage": "Folk style"
-  },
-  "@yovoice.music.chooseProfile": {
-    "defaultMessage": "Choose a regional or opera style"
-  },
-  "@yovoice.music.applyProfile": {
-    "defaultMessage": "Apply to style"
-  },
-  "@yovoice.music.audioHint": {
-    "defaultMessage": "Import real vocals and instrument recordings, or add generated songs and rendered scores from project history to the multitrack timeline below. Then adjust clip timing and levels."
-  },
-  "@yovoice.music.historySong": {
-    "defaultMessage": "Song"
-  },
-  "@yovoice.music.historyScore": {
-    "defaultMessage": "Score"
-  },
-  "@yovoice.music.createTimeline": {
-    "defaultMessage": "Create multitrack timeline"
-  },
-  "@yovoice.music.timelineBelow": {
-    "defaultMessage": "The multitrack timeline is open below."
-  },
-  "@yovoice.music.exportHint": {
-    "defaultMessage": "Export MIDI from the score page and audio from the player below, or save the complete project."
-  },
-  "@yovoice.music.openScoreExport": {
-    "defaultMessage": "Export MIDI"
-  },
-  "@yovoice.music.exportProject": {
-    "defaultMessage": "Export project"
-  },
-  "@yovoice.music.scoreTimbreHint": {
-    "defaultMessage": "The selected folk profile guides the arrangement. SF2 playback uses General MIDI instruments; specific folk timbres depend on the sound font."
-  },
-  "@yovoice.score.keyPresets": {
-    "defaultMessage": "Common keys"
-  },
-  "@yovoice.score.keyHint": {
-    "defaultMessage": "Major often feels brighter and minor more reflective. Choose a key or type your own."
-  },
-  "@yovoice.score.expression.title": {
-    "defaultMessage": "Track expression"
-  },
-  "@yovoice.score.expression.description": {
-    "defaultMessage": "Adjust note velocity and timing, stereo position, and reverb for this score track."
-  },
-  "@yovoice.score.expression.track": {
-    "defaultMessage": "Track"
-  },
-  "@yovoice.score.expression.velocity": {
-    "defaultMessage": "Velocity variation"
-  },
-  "@yovoice.score.expression.timing": {
-    "defaultMessage": "Timing variation"
-  },
-  "@yovoice.score.expression.pan": {
-    "defaultMessage": "Pan"
-  },
-  "@yovoice.score.expression.reverb": {
-    "defaultMessage": "Reverb"
-  },
-  "@yovoice.score.expression.center": {
-    "defaultMessage": "Center"
-  },
-  "@yovoice.score.expression.left": {
-    "defaultMessage": "left"
-  },
-  "@yovoice.score.expression.right": {
-    "defaultMessage": "right"
-  },
-  "@yovoice.score.expression.natural": {
-    "defaultMessage": "Natural performance"
-  },
-  "@yovoice.score.expression.reset": {
-    "defaultMessage": "Reset expression"
-  },
-  "@yovoice.score.abcPaste": {
-    "defaultMessage": "Paste ABC score"
-  },
-  "@yovoice.score.abcHelp": {
-    "defaultMessage": "Paste a single-voice ABC melody from AI Music Composer or another tool, then edit tracks, choose instruments and export MIDI."
-  },
-  "@yovoice.score.abcField": {
-    "defaultMessage": "ABC notation"
-  },
-  "@yovoice.score.abcExample": {
-    "defaultMessage": "X:1\nT:Melody\nM:4/4\nL:1/4\nQ:1/4=100\nK:C\nC D E G | A G E D |"
-  },
-  "@yovoice.score.abcImport": {
-    "defaultMessage": "Import score"
-  },
-  "@yovoice.score.abcUnsupported": {
-    "defaultMessage": "ABC could not be imported. Check the key, meter and notes. Basic single-voice notes, rests and accidentals are supported; chords, repeats and tuplets are not."
-  },
-  "@yovoice.timeline.audioRepair": {
-    "defaultMessage": "Track softening"
-  },
-  "@yovoice.timeline.audioRepairHint": {
-    "defaultMessage": "Listen and adjust lightly. High-frequency softening reduces harshness, while compression controls level swings. Lost clipped detail cannot be restored."
-  },
-  "@yovoice.timeline.soften": {
-    "defaultMessage": "High-frequency softening (above 4 kHz)"
-  },
-  "@yovoice.timeline.compression": {
-    "defaultMessage": "Dynamic compression"
-  },
-  "@yovoice.timeline.resetRepair": {
-    "defaultMessage": "Reset softening"
-  },
   "@yovoice.settings.proxy": {
     "defaultMessage": "Proxy mạng"
   },
@@ -1452,7 +720,7 @@
     "defaultMessage": "{current} / {total}"
   },
   "@yovoice.player.reveal": {
-    "defaultMessage": "Mở vị trí tệp âm thanh"
+    "defaultMessage": "Mở vị trí"
   },
   "@yovoice.player.skipEnd": {
     "defaultMessage": "Đến cuối"
@@ -2194,6 +1462,9 @@
   },
   "@yovoice.library.noSearchResults": {
     "defaultMessage": "Không có kết quả phù hợp"
+  },
+  "@yovoice.library.showEarlier": {
+    "defaultMessage": "Hiện thêm {n} mục cũ hơn"
   },
   "@yovoice.settings.modelDesc.kokoroOfficial": {
     "defaultMessage": "8 ngôn ngữ · 49 giọng · Không có tiếng Nhật"
@@ -3470,6 +2741,120 @@
   "@yovoice.music.exportLrc": {
     "defaultMessage": "Xuất lời bài hát (LRC)"
   },
+  "@yovoice.music.lyricStyle": {
+    "defaultMessage": "Kiểu lời bài hát"
+  },
+  "@yovoice.music.lyricStyleScroll": {
+    "defaultMessage": "Cuộn"
+  },
+  "@yovoice.music.lyricStyleScrollHint": {
+    "defaultMessage": "Toàn bộ lời cuộn theo bài, dòng hiện tại sáng dần từng chữ"
+  },
+  "@yovoice.music.lyricStyleStage": {
+    "defaultMessage": "Tâm điểm"
+  },
+  "@yovoice.music.lyricStyleStageHint": {
+    "defaultMessage": "Mỗi lần một dòng, từng chữ bật lên và phát sáng. Hợp để quay màn hình"
+  },
+  "@yovoice.music.exportWordLrc": {
+    "defaultMessage": "Xuất lời theo từng chữ"
+  },
+  "@yovoice.music.exportWordLrcHint": {
+    "defaultMessage": "LRC mở rộng có thời gian cho từng chữ, dành cho trình phát hỗ trợ lời karaoke"
+  },
+  "@yovoice.music.lyricTools": {
+    "defaultMessage": "Công cụ lời bài hát"
+  },
+  "@yovoice.music.editWords": {
+    "defaultMessage": "Chỉnh thời gian lời bài hát"
+  },
+  "@yovoice.music.editWordsHint": {
+    "defaultMessage": "Khi đang phát, bấm vào một dòng để dòng đó bắt đầu tại vị trí hiện tại; dịch cả dòng hoặc chỉnh từng chữ"
+  },
+  "@yovoice.music.syncLyricsHint": {
+    "defaultMessage": "Đánh dấu điểm bắt đầu từng dòng khi nghe"
+  },
+  "@yovoice.music.editThisLine": {
+    "defaultMessage": "Bấm khi đang phát: dòng này bắt đầu tại đây"
+  },
+  "@yovoice.music.wordEditor": {
+    "defaultMessage": "Thời gian lời bài hát"
+  },
+  "@yovoice.music.wordEditorHint": {
+    "defaultMessage": "Khi đang phát, bấm vào một dòng để neo vào vị trí phát; ←/→ dịch dòng, ↑/↓ đổi dòng; kéo khối chữ hoặc hai đầu để chỉnh từng chữ"
+  },
+  "@yovoice.music.wordTap": {
+    "defaultMessage": "Gõ theo nhịp"
+  },
+  "@yovoice.music.wordTapStop": {
+    "defaultMessage": "Dừng gõ"
+  },
+  "@yovoice.music.wordTapHint": {
+    "defaultMessage": "Nhấn ↓ hoặc Enter khi mỗi chữ bắt đầu; tự chuyển sang chữ tiếp theo. Esc để dừng"
+  },
+  "@yovoice.music.wordLine": {
+    "defaultMessage": "Dòng {n}/{total}"
+  },
+  "@yovoice.music.prevLine": {
+    "defaultMessage": "Dòng trước"
+  },
+  "@yovoice.music.nextLine": {
+    "defaultMessage": "Dòng sau"
+  },
+  "@yovoice.music.playLine": {
+    "defaultMessage": "Phát dòng này"
+  },
+  "@yovoice.music.wordUndo": {
+    "defaultMessage": "Hoàn tác"
+  },
+  "@yovoice.music.wordCancel": {
+    "defaultMessage": "Hủy"
+  },
+  "@yovoice.music.wordSave": {
+    "defaultMessage": "Lưu"
+  },
+  "@yovoice.music.wordStart": {
+    "defaultMessage": "Chỉnh điểm đầu của “{word}”"
+  },
+  "@yovoice.music.wordEnd": {
+    "defaultMessage": "Chỉnh điểm cuối của “{word}”"
+  },
+  "@yovoice.music.anchorLine": {
+    "defaultMessage": "Neo vào vị trí phát"
+  },
+  "@yovoice.music.anchorLineHint": {
+    "defaultMessage": "Cho dòng này bắt đầu tại vị trí đang phát (Enter)"
+  },
+  "@yovoice.music.shiftEarlier": {
+    "defaultMessage": "Sớm {n} giây"
+  },
+  "@yovoice.music.shiftLater": {
+    "defaultMessage": "Muộn {n} giây"
+  },
+  "@yovoice.music.shiftMode": {
+    "defaultMessage": "Cách chỉnh"
+  },
+  "@yovoice.music.shiftRipple": {
+    "defaultMessage": "Dịch cả các dòng sau"
+  },
+  "@yovoice.music.shiftSingle": {
+    "defaultMessage": "Chỉ dòng này"
+  },
+  "@yovoice.music.alignLyrics": {
+    "defaultMessage": "Tự căn chỉnh"
+  },
+  "@yovoice.music.aligningLyrics": {
+    "defaultMessage": "Đang căn chỉnh"
+  },
+  "@yovoice.music.alignLyricsHint": {
+    "defaultMessage": "Tách giọng hát rồi căn từng từ của lời bài hát theo giọng hát; lưu cùng phiên bản này"
+  },
+  "@yovoice.music.alignLyricsDownload": {
+    "defaultMessage": "Hãy tải mô hình căn chỉnh lời bài hát (tùy chọn, khoảng 1,3 GB) trước"
+  },
+  "@yovoice.music.lyricsAligned": {
+    "defaultMessage": "Lời bài hát đã được căn từng từ theo giọng hát; có thể đồng bộ để tinh chỉnh"
+  },
   "@yovoice.music.lyricsAnalyzed": {
     "defaultMessage": "Thời gian lời được đặt theo giọng hát; hãy đồng bộ để tinh chỉnh"
   },
@@ -3683,6 +3068,21 @@
   "@yovoice.activity.transcribe": {
     "defaultMessage": "Đang trích xuất giai điệu từ bài hát"
   },
+  "@yovoice.activity.separateVocals": {
+    "defaultMessage": "Đang tách giọng hát"
+  },
+  "@yovoice.activity.alignLyrics": {
+    "defaultMessage": "Đang căn chỉnh lời bài hát ({done}/{total})"
+  },
+  "@yovoice.error.alignModelRequired": {
+    "defaultMessage": "Hãy tải mô hình căn chỉnh lời bài hát trong Mô hình âm nhạc ở Cài đặt trước"
+  },
+  "@yovoice.error.alignLyrics": {
+    "defaultMessage": "Phiên bản này không có lời bài hát để căn chỉnh"
+  },
+  "@yovoice.error.alignEmpty": {
+    "defaultMessage": "Không khớp được lời bài hát với giọng hát; hãy thử đồng bộ thủ công"
+  },
   "@yovoice.error.melodyInvalid": {
     "defaultMessage": "Bản nhạc giai điệu có lỗi: {issue}"
   },
@@ -3697,6 +3097,9 @@
   },
   "@yovoice.settings.modelDesc.sheetsage2": {
     "defaultMessage": "Chép giai điệu và hợp âm của bài hát thành bản nhạc, dùng để cover với YuE2."
+  },
+  "@yovoice.settings.modelDesc.lyricAlign": {
+    "defaultMessage": "Tùy chọn: tách giọng hát và căn lời bài hát theo từng từ với giọng hát, dùng cho hiệu ứng lời từng từ và xuất LRC theo từ. Hỗ trợ 11 ngôn ngữ, gồm tiếng Trung, Anh, Nhật và Hàn."
   },
   "@yovoice.music.generateFromMelody": {
     "defaultMessage": "Tạo theo bản nhạc"
@@ -4529,6 +3932,765 @@
   "@yovoice.create.precision": {
     "defaultMessage": "Độ chính xác"
   },
+  "@yovoice.settings.features": {
+    "defaultMessage": "Tính năng"
+  },
+  "@yovoice.settings.featuresHint": {
+    "defaultMessage": "Khi tắt, mục tương ứng sẽ ẩn khỏi thanh bên và menu Tạo mới. Tác phẩm hiện có và mô hình đã tải không bị ảnh hưởng."
+  },
+  "@yovoice.settings.featureStoryHint": {
+    "defaultMessage": "Nhập văn bản hoặc phụ đề và lồng tiếng từng câu theo nhân vật."
+  },
+  "@yovoice.settings.featureMusicHint": {
+    "defaultMessage": "Bài hát, nhạc không lời và bản phối, cùng cài đặt mô hình và soundfont tương ứng."
+  },
+  "@yovoice.settings.featureAssistantHint": {
+    "defaultMessage": "Trợ lý nổi, lối vào trên thanh tiêu đề và các gợi ý. Khi tắt cả tạo nhạc, cài đặt dịch vụ AI và phân vai bằng AI cho sách cũng bị ẩn."
+  },
+  "@yovoice.instruments.generatedMaterials": {
+    "defaultMessage": "Âm thanh AI đã tạo"
+  },
+  "@yovoice.score.resizeDock": {
+    "defaultMessage": "Điều chỉnh chiều cao bản nhạc"
+  },
+  "@yovoice.score.collapseDock": {
+    "defaultMessage": "Thu gọn các bè nhạc"
+  },
+  "@yovoice.score.expandDock": {
+    "defaultMessage": "Mở rộng các bè nhạc"
+  },
+  "@yovoice.instruments.materialPlayFailed": {
+    "defaultMessage": "Không thể phát âm thanh. Hãy thử lại hoặc kiểm tra nhật ký."
+  },
+  "@yovoice.instruments.storageLocation": {
+    "defaultMessage": "Vị trí lưu trữ"
+  },
+  "@yovoice.arrangement.title": {
+    "defaultMessage": "Smart Arrangement"
+  },
+  "@yovoice.arrangement.intro": {
+    "defaultMessage": "Plan phrase sources, prepare real and AI audio separately, then assemble them on an editable timeline."
+  },
+  "@yovoice.arrangement.new": {
+    "defaultMessage": "New smart arrangement"
+  },
+  "@yovoice.arrangement.project": {
+    "defaultMessage": "Arrangement project"
+  },
+  "@yovoice.arrangement.current": {
+    "defaultMessage": "Current project"
+  },
+  "@yovoice.arrangement.projectHint": {
+    "defaultMessage": "The plan and score are saved in an arrangement project."
+  },
+  "@yovoice.arrangement.chooseProject": {
+    "defaultMessage": "Choose an arrangement"
+  },
+  "@yovoice.arrangement.selectHint": {
+    "defaultMessage": "Choose an existing arrangement or create one to start planning."
+  },
+  "@yovoice.arrangement.planStage": {
+    "defaultMessage": "Whole-piece plan"
+  },
+  "@yovoice.arrangement.planHint": {
+    "defaultMessage": "An online model plans the instrumentation and real or AI source of each phrase for your review."
+  },
+  "@yovoice.arrangement.duration": {
+    "defaultMessage": "Target length"
+  },
+  "@yovoice.arrangement.sourceMode": {
+    "defaultMessage": "Source policy"
+  },
+  "@yovoice.arrangement.sourceHint": {
+    "defaultMessage": "Auto lets AI choose real or generated sound for each phrase."
+  },
+  "@yovoice.arrangement.mode.auto": {
+    "defaultMessage": "AI chooses"
+  },
+  "@yovoice.arrangement.mode.real": {
+    "defaultMessage": "Real only"
+  },
+  "@yovoice.arrangement.mode.ai": {
+    "defaultMessage": "AI only"
+  },
+  "@yovoice.arrangement.mode.hybrid": {
+    "defaultMessage": "Mix real and AI"
+  },
+  "@yovoice.arrangement.briefPlaceholder": {
+    "defaultMessage": "Describe any arrangement: purpose, style, instruments, solo placement, techniques, rhythm, and other details."
+  },
+  "@yovoice.arrangement.planAction": {
+    "defaultMessage": "Plan the whole piece"
+  },
+  "@yovoice.arrangement.aiSettings": {
+    "defaultMessage": "AI service"
+  },
+  "@yovoice.arrangement.bars": {
+    "defaultMessage": "Bars {start}–{end}"
+  },
+  "@yovoice.arrangement.instrument": {
+    "defaultMessage": "Instrument"
+  },
+  "@yovoice.arrangement.technique": {
+    "defaultMessage": "Technique"
+  },
+  "@yovoice.arrangement.source": {
+    "defaultMessage": "Source"
+  },
+  "@yovoice.arrangement.specificSource": {
+    "defaultMessage": "Replace with downloaded source"
+  },
+  "@yovoice.arrangement.fixedSourceUnavailable": {
+    "defaultMessage": "The selected source for {instrument} lacks the required articulation. Choose another downloaded source or clear the selection to search automatically."
+  },
+  "@yovoice.arrangement.autoMatch": {
+    "defaultMessage": "Match notes automatically"
+  },
+  "@yovoice.arrangement.sourceUndecided": {
+    "defaultMessage": "Choose real or AI for every part before approving the plan."
+  },
+  "@yovoice.arrangement.lock": {
+    "defaultMessage": "Lock part"
+  },
+  "@yovoice.arrangement.unlock": {
+    "defaultMessage": "Unlock part"
+  },
+  "@yovoice.arrangement.previewLimit": {
+    "defaultMessage": "The score can use SF2 for preview. Final assembly uses only prepared real samples or AI phrase audio and reports missing sources."
+  },
+  "@yovoice.arrangement.materialStage": {
+    "defaultMessage": "Prepare audio sources"
+  },
+  "@yovoice.arrangement.materialHint": {
+    "defaultMessage": "Find real recordings in the reviewed catalog or online; generate AI audio for individual phrases. Prepare all at once or one part at a time above."
+  },
+  "@yovoice.arrangement.prepareReal": {
+    "defaultMessage": "Prepare all real sources"
+  },
+  "@yovoice.arrangement.prepareAI": {
+    "defaultMessage": "Generate all AI sources"
+  },
+  "@yovoice.arrangement.prepareBoth": {
+    "defaultMessage": "Download and generate all"
+  },
+  "@yovoice.arrangement.prepareOneReal": {
+    "defaultMessage": "Download this source"
+  },
+  "@yovoice.arrangement.prepareOneAI": {
+    "defaultMessage": "Generate this phrase"
+  },
+  "@yovoice.arrangement.materialReady": {
+    "defaultMessage": "AI phrase in library"
+  },
+  "@yovoice.arrangement.realReady": {
+    "defaultMessage": "Downloaded · ready to use"
+  },
+  "@yovoice.arrangement.aiModel": {
+    "defaultMessage": "AI audio model"
+  },
+  "@yovoice.arrangement.aiModelHint": {
+    "defaultMessage": "DeepSeek plans and scores. ACE-Step supports target duration; YuE2 can generate instrumentals but duration is approximate and use is non-commercial only."
+  },
+  "@yovoice.arrangement.aiModelRequired": {
+    "defaultMessage": "Select an AI music model"
+  },
+  "@yovoice.arrangement.aiModelInstall": {
+    "defaultMessage": "Install the selected model in Settings"
+  },
+  "@yovoice.arrangement.prepareTimeout": {
+    "defaultMessage": "Source preparation timed out. Check its task status and retry."
+  },
+  "@yovoice.arrangement.assemblyStage": {
+    "defaultMessage": "Assemble phrases"
+  },
+  "@yovoice.arrangement.assemblyHint": {
+    "defaultMessage": "Place real parts and AI phrases at their planned bars on a multitrack timeline for preview, editing, and export."
+  },
+  "@yovoice.arrangement.assemble": {
+    "defaultMessage": "Build editable timeline"
+  },
+  "@yovoice.arrangement.assembling": {
+    "defaultMessage": "Rendering real parts and assembling…"
+  },
+  "@yovoice.arrangement.assemblyFailed": {
+    "defaultMessage": "The assembly produced no timeline. Check the task error."
+  },
+  "@yovoice.arrangement.saveBand": {
+    "defaultMessage": "Save as band preset"
+  },
+  "@yovoice.arrangement.bandSaved": {
+    "defaultMessage": "Band preset saved to the source library"
+  },
+  "@yovoice.arrangement.reuseBand": {
+    "defaultMessage": "Reuse band preset"
+  },
+  "@yovoice.arrangement.chooseBand": {
+    "defaultMessage": "Choose a band preset"
+  },
+  "@yovoice.arrangement.applyBand": {
+    "defaultMessage": "Apply to this plan"
+  },
+  "@yovoice.arrangement.bandApplied": {
+    "defaultMessage": "Band preferences applied; review and approve the plan again"
+  },
+  "@yovoice.arrangement.sourcesMissing": {
+    "defaultMessage": "These parts are not ready. Resolve them before assembly: {names}"
+  },
+  "@yovoice.arrangement.preparing": {
+    "defaultMessage": "Preparing instruments…"
+  },
+  "@yovoice.arrangement.downloadFailed": {
+    "defaultMessage": "The instrument download did not finish. Check the connection or retry in the instrument library."
+  },
+  "@yovoice.arrangement.onlineSearchFailed": {
+    "defaultMessage": "No verified single-note recording found for {name}; search the source library or import your own."
+  },
+  "@yovoice.arrangement.approve": {
+    "defaultMessage": "Approve plan and write score"
+  },
+  "@yovoice.arrangement.openScore": {
+    "defaultMessage": "Open score editor"
+  },
+  "@yovoice.arrangement.scoreStage": {
+    "defaultMessage": "Review score"
+  },
+  "@yovoice.arrangement.scoreHint": {
+    "defaultMessage": "Review the AI score before applying it. Existing notes are never overwritten automatically."
+  },
+  "@yovoice.instruments.title": {
+    "defaultMessage": "Sources & Instruments"
+  },
+  "@yovoice.instruments.intro": {
+    "defaultMessage": "Manage note-mapped sample instruments and sound fonts. AI model downloads remain in Settings."
+  },
+  "@yovoice.instruments.tabMine": {
+    "defaultMessage": "My sources"
+  },
+  "@yovoice.instruments.tabCatalog": {
+    "defaultMessage": "CC0 catalog"
+  },
+  "@yovoice.instruments.tabOnline": {
+    "defaultMessage": "Find online"
+  },
+  "@yovoice.instruments.tabSites": {
+    "defaultMessage": "More source sites"
+  },
+  "@yovoice.instruments.sitesHint": {
+    "defaultMessage": "Sign in on the provider's site or plugin; yovoice does not collect credentials. Check each library's license. Import individual notes here, or load complete libraries in their plugin."
+  },
+  "@yovoice.instruments.site": {
+    "defaultMessage": "Source site"
+  },
+  "@yovoice.instruments.managePlugins": {
+    "defaultMessage": "View plugins"
+  },
+  "@yovoice.instruments.importAfterDownload": {
+    "defaultMessage": "Import note recording"
+  },
+  "@yovoice.instruments.sitePianobook": {
+    "defaultMessage": "Community sample libraries in Kontakt, Decent Sampler and SFZ formats. Registration and per-library terms apply."
+  },
+  "@yovoice.instruments.sitePianobookLicense": {
+    "defaultMessage": "Free composition use · site terms"
+  },
+  "@yovoice.instruments.siteDecent": {
+    "defaultMessage": "Free Decent Sampler VST3 and its libraries. The plugin downloads directly; some packs require an email address or login and are loaded inside the plugin."
+  },
+  "@yovoice.instruments.siteDecentLicense": {
+    "defaultMessage": "Free plugin · check each library license"
+  },
+  "@yovoice.instruments.siteLabs": {
+    "defaultMessage": "Spitfire LABS is now available through Splice INSTRUMENT. Free content needs a Splice login; some packs require a subscription."
+  },
+  "@yovoice.instruments.siteLabsLicense": {
+    "defaultMessage": "Free and paid packs · Splice account"
+  },
+  "@yovoice.instruments.siteDSK": {
+    "defaultMessage": "Free VST3 with pipa, pipa tremolo, erhu, guzheng and flute. Keep the plugin file and its instruments folder together."
+  },
+  "@yovoice.instruments.siteDSKLicense": {
+    "defaultMessage": "Free VST3 · private and commercial use"
+  },
+  "@yovoice.instruments.siteKong": {
+    "defaultMessage": "Legacy Mini DiZi and Mini ErHu downloads. Mini DiZi is a verified 32-bit VST and cannot load directly in 64-bit yovoice. Its license permits compositions but prohibits making sample libraries."
+  },
+  "@yovoice.instruments.siteKongLicense": {
+    "defaultMessage": "Free legacy plugins · 32-bit limitation"
+  },
+  "@yovoice.instruments.siteOpenGameArt": {
+    "defaultMessage": "Game music, effects and some samples. Check each item's license; CC0 and CC BY are practical choices."
+  },
+  "@yovoice.instruments.siteOpenGameArtLicense": {
+    "defaultMessage": "CC0 / CC BY and others · per item"
+  },
+  "@yovoice.instruments.siteFreesound": {
+    "defaultMessage": "Search CC BY and non-commercial recordings manually in addition to the current automated CC0 search."
+  },
+  "@yovoice.instruments.siteFreesoundLicense": {
+    "defaultMessage": "CC0 / CC BY / CC BY-NC · per item"
+  },
+  "@yovoice.instruments.siteSFZ": {
+    "defaultMessage": "SFZ instruments and open sample projects. Some work through plugins; check each project's license."
+  },
+  "@yovoice.instruments.siteSFZLicense": {
+    "defaultMessage": "CC0 / other licenses · per project"
+  },
+  "@yovoice.instruments.tabBands": {
+    "defaultMessage": "Band presets"
+  },
+  "@yovoice.instruments.bandPreset": {
+    "defaultMessage": "Reusable instrument and source choices"
+  },
+  "@yovoice.instruments.saved": {
+    "defaultMessage": "Saved"
+  },
+  "@yovoice.instruments.instruments": {
+    "defaultMessage": "parts"
+  },
+  "@yovoice.instruments.viewDetails": {
+    "defaultMessage": "View details"
+  },
+  "@yovoice.instruments.aiMaterialDetails": {
+    "defaultMessage": "AI phrase source"
+  },
+  "@yovoice.instruments.aiPrompt": {
+    "defaultMessage": "Generation prompt"
+  },
+  "@yovoice.instruments.aiGeneratedAt": {
+    "defaultMessage": "Generated: {date}"
+  },
+  "@yovoice.instruments.importTitle": {
+    "defaultMessage": "Import source"
+  },
+  "@yovoice.instruments.backLibrary": {
+    "defaultMessage": "Back to library"
+  },
+  "@yovoice.instruments.viewSamples": {
+    "defaultMessage": "View samples"
+  },
+  "@yovoice.instruments.sourceDetails": {
+    "defaultMessage": "Source details"
+  },
+  "@yovoice.instruments.sampleAudition": {
+    "defaultMessage": "Audition each sample"
+  },
+  "@yovoice.instruments.sampleAuditionHint": {
+    "defaultMessage": "These are the installed recordings used by the arrangement renderer."
+  },
+  "@yovoice.instruments.downloadToAudition": {
+    "defaultMessage": "Download and verify the source to audition its samples here."
+  },
+  "@yovoice.instruments.sampleNumber": {
+    "defaultMessage": "Sample {number}"
+  },
+  "@yovoice.instruments.playSample": {
+    "defaultMessage": "Play"
+  },
+  "@yovoice.instruments.pauseSample": {
+    "defaultMessage": "Pause"
+  },
+  "@yovoice.instruments.samplePlayFailed": {
+    "defaultMessage": "The sample cannot be played. Download it again or check the source file."
+  },
+  "@yovoice.instruments.searchLibrary": {
+    "defaultMessage": "Search instruments, techniques, or sources"
+  },
+  "@yovoice.instruments.searchPrompt": {
+    "defaultMessage": "Enter an instrument and search for CC0 recording candidates."
+  },
+  "@yovoice.instruments.noResults": {
+    "defaultMessage": "No matching sources"
+  },
+  "@yovoice.instruments.family": {
+    "defaultMessage": "Instrument category"
+  },
+  "@yovoice.instruments.catalogSummary": {
+    "defaultMessage": "The pinned XSXB library contains 71 CC0 sources. 67 can be downloaded as note samples; four phrase collections need separate handling."
+  },
+  "@yovoice.instruments.phraseOnly": {
+    "defaultMessage": "Phrase collection"
+  },
+  "@yovoice.instruments.model": {
+    "defaultMessage": "Model"
+  },
+  "@yovoice.instruments.family.all": {
+    "defaultMessage": "All categories"
+  },
+  "@yovoice.instruments.family.bass": {
+    "defaultMessage": "Bass"
+  },
+  "@yovoice.instruments.family.brass": {
+    "defaultMessage": "Brass"
+  },
+  "@yovoice.instruments.family.chinese": {
+    "defaultMessage": "Chinese instruments"
+  },
+  "@yovoice.instruments.family.drums": {
+    "defaultMessage": "Drums"
+  },
+  "@yovoice.instruments.family.keys": {
+    "defaultMessage": "Keys"
+  },
+  "@yovoice.instruments.family.mallets": {
+    "defaultMessage": "Tuned percussion"
+  },
+  "@yovoice.instruments.family.percussion": {
+    "defaultMessage": "Percussion"
+  },
+  "@yovoice.instruments.family.samples": {
+    "defaultMessage": "Phrase recordings"
+  },
+  "@yovoice.instruments.family.strings": {
+    "defaultMessage": "Strings and guitars"
+  },
+  "@yovoice.instruments.family.synth": {
+    "defaultMessage": "Synthesizers"
+  },
+  "@yovoice.instruments.family.texture": {
+    "defaultMessage": "Texture"
+  },
+  "@yovoice.instruments.family.vocal": {
+    "defaultMessage": "Vocal sources"
+  },
+  "@yovoice.instruments.family.winds": {
+    "defaultMessage": "Woodwinds"
+  },
+  "@yovoice.instruments.tabInstruments": {
+    "defaultMessage": "Instruments & samples"
+  },
+  "@yovoice.instruments.tabAI": {
+    "defaultMessage": "AI sources & models"
+  },
+  "@yovoice.instruments.soundfonts": {
+    "defaultMessage": "Arrangement sound fonts"
+  },
+  "@yovoice.instruments.soundfontHint": {
+    "defaultMessage": "Score rendering currently supports these SF2 sound fonts. Install or remove them in Settings › Arrangement Sound Fonts."
+  },
+  "@yovoice.instruments.samples": {
+    "defaultMessage": "Sample sources"
+  },
+  "@yovoice.instruments.samplesHint": {
+    "defaultMessage": "Import recordings by instrument, pitch and articulation; scores render with the selected samples."
+  },
+  "@yovoice.instruments.sampleImport": {
+    "defaultMessage": "Sample file"
+  },
+  "@yovoice.instruments.origin": {
+    "defaultMessage": "Sound origin"
+  },
+  "@yovoice.instruments.sampleImportHint": {
+    "defaultMessage": "Each recording must be under 20 MB and 30 seconds. Add more pitches and articulations afterward."
+  },
+  "@yovoice.instruments.real": {
+    "defaultMessage": "Real recording"
+  },
+  "@yovoice.instruments.generated": {
+    "defaultMessage": "AI generated"
+  },
+  "@yovoice.instruments.sampleCount": {
+    "defaultMessage": "samples"
+  },
+  "@yovoice.instruments.licenseUnknown": {
+    "defaultMessage": "License unspecified"
+  },
+  "@yovoice.instruments.metadataReview": {
+    "defaultMessage": "Auto found · listen to confirm"
+  },
+  "@yovoice.instruments.confirmFoundSource": {
+    "defaultMessage": "Listened and confirmed"
+  },
+  "@yovoice.instruments.target": {
+    "defaultMessage": "Add to"
+  },
+  "@yovoice.instruments.newSource": {
+    "defaultMessage": "New instrument source"
+  },
+  "@yovoice.instruments.sourceName": {
+    "defaultMessage": "Source name"
+  },
+  "@yovoice.instruments.instrumentName": {
+    "defaultMessage": "Instrument"
+  },
+  "@yovoice.instruments.pitch": {
+    "defaultMessage": "Recorded pitch (MIDI)"
+  },
+  "@yovoice.instruments.pitchHint": {
+    "defaultMessage": "For example, middle C = 60"
+  },
+  "@yovoice.instruments.articulation": {
+    "defaultMessage": "Articulation"
+  },
+  "@yovoice.instruments.desktopOnly": {
+    "defaultMessage": "Import sample files in the desktop app"
+  },
+  "@yovoice.instruments.addSample": {
+    "defaultMessage": "Add sample"
+  },
+  "@yovoice.instruments.catalogTitle": {
+    "defaultMessage": "Open sources available on demand"
+  },
+  "@yovoice.instruments.catalogHint": {
+    "defaultMessage": "Download instruments from the XSXB CC0 library. Simulated instruments name their original recordings."
+  },
+  "@yovoice.instruments.searchTitle": {
+    "defaultMessage": "Find sources online"
+  },
+  "@yovoice.instruments.searchHint": {
+    "defaultMessage": "Search Openverse for CC0 recordings. Titles may refer to unrelated words; listen on the source page and confirm the instrument. License and single-note pitch are checked again on import."
+  },
+  "@yovoice.instruments.confirmInstrument": {
+    "defaultMessage": "I listened and confirmed this is {instrument}"
+  },
+  "@yovoice.instruments.searchInstrument": {
+    "defaultMessage": "Instrument name"
+  },
+  "@yovoice.instruments.searchAction": {
+    "defaultMessage": "Search"
+  },
+  "@yovoice.instruments.sourcePage": {
+    "defaultMessage": "Source page"
+  },
+  "@yovoice.instruments.verifyImport": {
+    "defaultMessage": "Verify and import"
+  },
+  "@yovoice.instruments.noteCandidate": {
+    "defaultMessage": "Unverified note"
+  },
+  "@yovoice.instruments.phraseCandidate": {
+    "defaultMessage": "Phrase clip"
+  },
+  "@yovoice.instruments.noCandidates": {
+    "defaultMessage": "No candidates found"
+  },
+  "@yovoice.instruments.catalog.guzheng": {
+    "defaultMessage": "Guzheng · real recording"
+  },
+  "@yovoice.instruments.catalog.xiao": {
+    "defaultMessage": "Xiao tone · processed recorder"
+  },
+  "@yovoice.instruments.catalog.suona-oboe": {
+    "defaultMessage": "Suona tone · processed oboe"
+  },
+  "@yovoice.instruments.catalogHint.guzheng": {
+    "defaultMessage": "34 samples · CC0 · source: Freesound Pufermufin"
+  },
+  "@yovoice.instruments.catalogHint.xiao": {
+    "defaultMessage": "56 samples · CC0 · VCSL recorder source, not a real xiao"
+  },
+  "@yovoice.instruments.catalogHint.suona-oboe": {
+    "defaultMessage": "87 samples · CC0 · VSCO oboe source, not a real suona"
+  },
+  "@yovoice.instruments.download": {
+    "defaultMessage": "Download source"
+  },
+  "@yovoice.instruments.downloading": {
+    "defaultMessage": "Verified {done}/{total} samples"
+  },
+  "@yovoice.instruments.downloadingBytes": {
+    "defaultMessage": "Source download {done}/{total} MB"
+  },
+  "@yovoice.score.expression.source": {
+    "defaultMessage": "Track source"
+  },
+  "@yovoice.score.expression.soundfontSource": {
+    "defaultMessage": "Existing sound font (SF2)"
+  },
+  "@yovoice.score.expression.sampleCoverage": {
+    "defaultMessage": "Rendering checks each note's pitch, velocity and articulation. Missing samples are reported."
+  },
+  "@yovoice.instruments.aiModels": {
+    "defaultMessage": "AI music models"
+  },
+  "@yovoice.instruments.aiHint": {
+    "defaultMessage": "Generated arrangement phrases are saved here alongside available models. Download models in Settings."
+  },
+  "@yovoice.instruments.installed": {
+    "defaultMessage": "Installed"
+  },
+  "@yovoice.instruments.available": {
+    "defaultMessage": "Available"
+  },
+  "@yovoice.instruments.manage": {
+    "defaultMessage": "Open settings"
+  },
+  "@yovoice.settings.tabPlugins": {
+    "defaultMessage": "Plugins"
+  },
+  "@yovoice.plugins.title": {
+    "defaultMessage": "VST plugins"
+  },
+  "@yovoice.plugins.intro": {
+    "defaultMessage": "Scan standard Windows VST3 directories to inspect installed plugins."
+  },
+  "@yovoice.plugins.scan": {
+    "defaultMessage": "Scan again"
+  },
+  "@yovoice.plugins.install": {
+    "defaultMessage": "Install VST3 manually"
+  },
+  "@yovoice.plugins.installFolder": {
+    "defaultMessage": "Install plugin folder"
+  },
+  "@yovoice.plugins.installHint": {
+    "defaultMessage": "Choose a downloaded .vst3 file or an extracted .vst3 folder. Run Windows installers (.exe) from the plugin vendor."
+  },
+  "@yovoice.plugins.scanning": {
+    "defaultMessage": "Scanning plugins…"
+  },
+  "@yovoice.plugins.empty": {
+    "defaultMessage": "No VST3 plugins found."
+  },
+  "@yovoice.plugins.hostHint": {
+    "defaultMessage": "Choose Open editor to show the plugin's own editor. It currently runs independently: changes are not saved with the project, and full-track rendering is not connected yet. Audition sends one MIDI test note; an empty Decent Sampler uses a temporary test sample."
+  },
+  "@yovoice.plugins.test": {
+    "defaultMessage": "Audition"
+  },
+  "@yovoice.plugins.openEditor": {
+    "defaultMessage": "Open editor"
+  },
+  "@yovoice.plugins.testPassed": {
+    "defaultMessage": "{name} produced audio; play the test note"
+  },
+  "@yovoice.ai.setup.arrangement": {
+    "defaultMessage": "Connect an online model in Settings › AI Service to plan the piece."
+  },
+  "@yovoice.ai.brief.arrangement": {
+    "defaultMessage": "Describe the whole-piece arrangement"
+  },
+  "@yovoice.ai.task.done.arrangement": {
+    "defaultMessage": "The whole-piece plan is ready"
+  },
+  "@yovoice.ai.task.replace.arrangement": {
+    "defaultMessage": "Review before replacing the existing plan."
+  },
+  "@yovoice.ai.task.failed.arrangement": {
+    "defaultMessage": "Arrangement planning failed"
+  },
+  "@yovoice.music.workspace.compose": {
+    "defaultMessage": "Create"
+  },
+  "@yovoice.music.workspace.score": {
+    "defaultMessage": "Arrange score"
+  },
+  "@yovoice.music.workspace.audio": {
+    "defaultMessage": "Audio"
+  },
+  "@yovoice.music.workspace.export": {
+    "defaultMessage": "Export"
+  },
+  "@yovoice.music.folkProfile": {
+    "defaultMessage": "Folk style"
+  },
+  "@yovoice.music.chooseProfile": {
+    "defaultMessage": "Choose a regional or opera style"
+  },
+  "@yovoice.music.applyProfile": {
+    "defaultMessage": "Apply to style"
+  },
+  "@yovoice.music.audioHint": {
+    "defaultMessage": "Import real vocals and instrument recordings, or add generated songs and rendered scores from project history to the multitrack timeline below. Then adjust clip timing and levels."
+  },
+  "@yovoice.music.historySong": {
+    "defaultMessage": "Song"
+  },
+  "@yovoice.music.historyScore": {
+    "defaultMessage": "Score"
+  },
+  "@yovoice.music.createTimeline": {
+    "defaultMessage": "Create multitrack timeline"
+  },
+  "@yovoice.music.timelineBelow": {
+    "defaultMessage": "The multitrack timeline is open below."
+  },
+  "@yovoice.music.exportHint": {
+    "defaultMessage": "Export MIDI from the score page and audio from the player below, or save the complete project."
+  },
+  "@yovoice.music.openScoreExport": {
+    "defaultMessage": "Export MIDI"
+  },
+  "@yovoice.music.exportProject": {
+    "defaultMessage": "Export project"
+  },
+  "@yovoice.music.scoreTimbreHint": {
+    "defaultMessage": "The selected folk profile guides the arrangement. SF2 playback uses General MIDI instruments; specific folk timbres depend on the sound font."
+  },
+  "@yovoice.score.keyPresets": {
+    "defaultMessage": "Common keys"
+  },
+  "@yovoice.score.keyHint": {
+    "defaultMessage": "Major often feels brighter and minor more reflective. Choose a key or type your own."
+  },
+  "@yovoice.score.expression.title": {
+    "defaultMessage": "Track expression"
+  },
+  "@yovoice.score.expression.description": {
+    "defaultMessage": "Adjust note velocity and timing, stereo position, and reverb for this score track."
+  },
+  "@yovoice.score.expression.track": {
+    "defaultMessage": "Track"
+  },
+  "@yovoice.score.expression.velocity": {
+    "defaultMessage": "Velocity variation"
+  },
+  "@yovoice.score.expression.timing": {
+    "defaultMessage": "Timing variation"
+  },
+  "@yovoice.score.expression.pan": {
+    "defaultMessage": "Pan"
+  },
+  "@yovoice.score.expression.reverb": {
+    "defaultMessage": "Reverb"
+  },
+  "@yovoice.score.expression.center": {
+    "defaultMessage": "Center"
+  },
+  "@yovoice.score.expression.left": {
+    "defaultMessage": "left"
+  },
+  "@yovoice.score.expression.right": {
+    "defaultMessage": "right"
+  },
+  "@yovoice.score.expression.natural": {
+    "defaultMessage": "Natural performance"
+  },
+  "@yovoice.score.expression.reset": {
+    "defaultMessage": "Reset expression"
+  },
+  "@yovoice.score.abcPaste": {
+    "defaultMessage": "Paste ABC score"
+  },
+  "@yovoice.score.abcHelp": {
+    "defaultMessage": "Paste a single-voice ABC melody from AI Music Composer or another tool, then edit tracks, choose instruments and export MIDI."
+  },
+  "@yovoice.score.abcField": {
+    "defaultMessage": "ABC notation"
+  },
+  "@yovoice.score.abcExample": {
+    "defaultMessage": "X:1\nT:Melody\nM:4/4\nL:1/4\nQ:1/4=100\nK:C\nC D E G | A G E D |"
+  },
+  "@yovoice.score.abcImport": {
+    "defaultMessage": "Import score"
+  },
+  "@yovoice.score.abcUnsupported": {
+    "defaultMessage": "ABC could not be imported. Check the key, meter and notes. Basic single-voice notes, rests and accidentals are supported; chords, repeats and tuplets are not."
+  },
+  "@yovoice.timeline.audioRepair": {
+    "defaultMessage": "Track softening"
+  },
+  "@yovoice.timeline.audioRepairHint": {
+    "defaultMessage": "Listen and adjust lightly. High-frequency softening reduces harshness, while compression controls level swings. Lost clipped detail cannot be restored."
+  },
+  "@yovoice.timeline.soften": {
+    "defaultMessage": "High-frequency softening (above 4 kHz)"
+  },
+  "@yovoice.timeline.compression": {
+    "defaultMessage": "Dynamic compression"
+  },
+  "@yovoice.timeline.resetRepair": {
+    "defaultMessage": "Reset softening"
+  },
   "@yovoice.arrangement.replanForBinding": {
     "defaultMessage": "This legacy plan needs stable part IDs before binding."
   },
@@ -4550,47 +4712,129 @@
   "@yovoice.arrangement.resumeJob": {
     "defaultMessage": "Resume unfinished materials"
   },
-  "@yovoice.plugins.saveInstrument": {"defaultMessage": "Save arrangement instrument"},
-  "@yovoice.plugins.presetName": {"defaultMessage": "Instrument name"},
-  "@yovoice.plugins.program": {"defaultMessage": "Plugin program (e.g. 01 Pipa)"},
-  "@yovoice.plugins.provenance": {"defaultMessage": "Sound origin"},
-  "@yovoice.plugins.recorded": {"defaultMessage": "Recorded samples"},
-  "@yovoice.plugins.synthesized": {"defaultMessage": "Synthesized / simulated"},
-  "@yovoice.plugins.presetHint": {"defaultMessage": "Choose the instrument and actual origin. Load samples and adjust the sound in the native editor; close it to save. Select only an articulation this preset actually supports. Tremolo needs a suitable preset."},
-  "@yovoice.plugins.editAndSave": {"defaultMessage": "Open editor and save"},
-  "@yovoice.plugins.captureProgram": {"defaultMessage": "Save specified / default program"},
-  "@yovoice.plugins.instrumentSaved": {"defaultMessage": "Added to Instruments. Select it on an arrangement part."},
-  "@yovoice.plugins.currentPreset": {"defaultMessage": "Saved plugin instrument"},
-  "@yovoice.plugins.currentPresetHint": {"defaultMessage": "Audition plays the saved sound. Track rendering uses the full score MIDI. Keep the plugin and its sample dependencies installed."},
-  "@yovoice.plugins.auditionPreset": {"defaultMessage": "Audition current preset"},
-  "@yovoice.arrangement.scoreConditioned": {"defaultMessage": "Generated with this phrase melody as a condition. Audition to check performance and alignment."},
-  "@yovoice.arrangement.freeAudio": {"defaultMessage": "Free audio generation cannot guarantee note alignment. Audition and check timing."},
-  "@yovoice.arrangement.confirmAudition": {"defaultMessage": "Confirm audition for assembly"},
-  "@yovoice.arrangement.reviewConfirmed": {"defaultMessage": "Audition confirmed"},
-  "@yovoice.arrangement.scoreProgress": {"defaultMessage": "Kept {count} phrase scores. Retry resumes completed phrases."},
-  "@yovoice.arrangement.resetScoreProgress": {"defaultMessage": "Clear score progress for regeneration"},
-  "@yovoice.arrangement.undoBinding": {"defaultMessage": "Undo last source replacement"},
-  "@yovoice.plugins.presetPath": {"defaultMessage": "Existing .vstpreset file path"},
-  "@yovoice.arrangement.referenceTitle": {"defaultMessage": "Reference and performance audio"},
-  "@yovoice.arrangement.referenceHint": {"defaultMessage": "Analyze reference audio into melody, tempo and meter before AI planning. Imported performances use manual timeline tracks that remain editable."},
-  "@yovoice.arrangement.importReference": {"defaultMessage": "Add reference audio"},
-  "@yovoice.arrangement.importPerformance": {"defaultMessage": "Add performance audio"},
-  "@yovoice.arrangement.referenceAudio": {"defaultMessage": "Reference audio"},
-  "@yovoice.arrangement.noReference": {"defaultMessage": "No reference audio"},
-  "@yovoice.arrangement.referenceAnalyzed": {"defaultMessage": "Reference score accepted for the next planning and composition."},
-  "@yovoice.arrangement.referenceNotAnalyzed": {"defaultMessage": "Imported, not analyzed. AI cannot hear this file directly."},
-  "@yovoice.arrangement.analyzeReference": {"defaultMessage": "Analyze reference audio"},
-  "@yovoice.arrangement.referenceModelRequired": {"defaultMessage": "Install SheetSage2 in settings. Analyze opens settings if needed."},
-  "@yovoice.arrangement.useReferenceAnalysis": {"defaultMessage": "Use this reference score"},
-  "@yovoice.arrangement.sourceNeedsRepair": {"defaultMessage": "Repair missing source"},
-  "@yovoice.plugins.capturing": {"defaultMessage": "Saving the instrument. Finish editing and close the plugin window; actual sound will then be checked."},
-  "@yovoice.arrangement.job.queued": {"defaultMessage": "Queued"},
-  "@yovoice.arrangement.job.running": {"defaultMessage": "Preparing"},
-  "@yovoice.arrangement.job.ready": {"defaultMessage": "Ready"},
-  "@yovoice.arrangement.job.failed": {"defaultMessage": "Failed"},
-  "@yovoice.arrangement.job.interrupted": {"defaultMessage": "Interrupted"},
-  "@yovoice.arrangement.blocked": {"defaultMessage": "{detail}"},
-  "@yovoice.arrangement.returnToAssembly": {"defaultMessage": "Assemble in Smart Arrangement"},
+  "@yovoice.plugins.saveInstrument": {
+    "defaultMessage": "Save arrangement instrument"
+  },
+  "@yovoice.plugins.presetName": {
+    "defaultMessage": "Instrument name"
+  },
+  "@yovoice.plugins.program": {
+    "defaultMessage": "Plugin program (e.g. 01 Pipa)"
+  },
+  "@yovoice.plugins.provenance": {
+    "defaultMessage": "Sound origin"
+  },
+  "@yovoice.plugins.recorded": {
+    "defaultMessage": "Recorded samples"
+  },
+  "@yovoice.plugins.synthesized": {
+    "defaultMessage": "Synthesized / simulated"
+  },
+  "@yovoice.plugins.presetHint": {
+    "defaultMessage": "Choose the instrument and actual origin. Load samples and adjust the sound in the native editor; close it to save. Select only an articulation this preset actually supports. Tremolo needs a suitable preset."
+  },
+  "@yovoice.plugins.editAndSave": {
+    "defaultMessage": "Open editor and save"
+  },
+  "@yovoice.plugins.captureProgram": {
+    "defaultMessage": "Save specified / default program"
+  },
+  "@yovoice.plugins.instrumentSaved": {
+    "defaultMessage": "Added to Instruments. Select it on an arrangement part."
+  },
+  "@yovoice.plugins.currentPreset": {
+    "defaultMessage": "Saved plugin instrument"
+  },
+  "@yovoice.plugins.currentPresetHint": {
+    "defaultMessage": "Audition plays the saved sound. Track rendering uses the full score MIDI. Keep the plugin and its sample dependencies installed."
+  },
+  "@yovoice.plugins.auditionPreset": {
+    "defaultMessage": "Audition current preset"
+  },
+  "@yovoice.arrangement.scoreConditioned": {
+    "defaultMessage": "Generated with this phrase melody as a condition. Audition to check performance and alignment."
+  },
+  "@yovoice.arrangement.freeAudio": {
+    "defaultMessage": "Free audio generation cannot guarantee note alignment. Audition and check timing."
+  },
+  "@yovoice.arrangement.confirmAudition": {
+    "defaultMessage": "Confirm audition for assembly"
+  },
+  "@yovoice.arrangement.reviewConfirmed": {
+    "defaultMessage": "Audition confirmed"
+  },
+  "@yovoice.arrangement.scoreProgress": {
+    "defaultMessage": "Kept {count} phrase scores. Retry resumes completed phrases."
+  },
+  "@yovoice.arrangement.resetScoreProgress": {
+    "defaultMessage": "Clear score progress for regeneration"
+  },
+  "@yovoice.arrangement.undoBinding": {
+    "defaultMessage": "Undo last source replacement"
+  },
+  "@yovoice.plugins.presetPath": {
+    "defaultMessage": "Existing .vstpreset file path"
+  },
+  "@yovoice.arrangement.referenceTitle": {
+    "defaultMessage": "Reference and performance audio"
+  },
+  "@yovoice.arrangement.referenceHint": {
+    "defaultMessage": "Analyze reference audio into melody, tempo and meter before AI planning. Imported performances use manual timeline tracks that remain editable."
+  },
+  "@yovoice.arrangement.importReference": {
+    "defaultMessage": "Add reference audio"
+  },
+  "@yovoice.arrangement.importPerformance": {
+    "defaultMessage": "Add performance audio"
+  },
+  "@yovoice.arrangement.referenceAudio": {
+    "defaultMessage": "Reference audio"
+  },
+  "@yovoice.arrangement.noReference": {
+    "defaultMessage": "No reference audio"
+  },
+  "@yovoice.arrangement.referenceAnalyzed": {
+    "defaultMessage": "Reference score accepted for the next planning and composition."
+  },
+  "@yovoice.arrangement.referenceNotAnalyzed": {
+    "defaultMessage": "Imported, not analyzed. AI cannot hear this file directly."
+  },
+  "@yovoice.arrangement.analyzeReference": {
+    "defaultMessage": "Analyze reference audio"
+  },
+  "@yovoice.arrangement.referenceModelRequired": {
+    "defaultMessage": "Install SheetSage2 in settings. Analyze opens settings if needed."
+  },
+  "@yovoice.arrangement.useReferenceAnalysis": {
+    "defaultMessage": "Use this reference score"
+  },
+  "@yovoice.arrangement.sourceNeedsRepair": {
+    "defaultMessage": "Repair missing source"
+  },
+  "@yovoice.plugins.capturing": {
+    "defaultMessage": "Saving the instrument. Finish editing and close the plugin window; actual sound will then be checked."
+  },
+  "@yovoice.arrangement.job.queued": {
+    "defaultMessage": "Queued"
+  },
+  "@yovoice.arrangement.job.running": {
+    "defaultMessage": "Preparing"
+  },
+  "@yovoice.arrangement.job.ready": {
+    "defaultMessage": "Ready"
+  },
+  "@yovoice.arrangement.job.failed": {
+    "defaultMessage": "Failed"
+  },
+  "@yovoice.arrangement.job.interrupted": {
+    "defaultMessage": "Interrupted"
+  },
+  "@yovoice.arrangement.blocked": {
+    "defaultMessage": "{detail}"
+  },
+  "@yovoice.arrangement.returnToAssembly": {
+    "defaultMessage": "Assemble in Smart Arrangement"
+  },
   "@yovoice.history.quickSwitch": {
     "defaultMessage": "Quick switch version"
   },

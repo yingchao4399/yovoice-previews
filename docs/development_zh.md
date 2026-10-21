@@ -37,12 +37,14 @@ make app-run
 
 | 命令 | 产物 |
 | --- | --- |
-| `make app-build` | `artifacts/macos-arm64/` 或 `artifacts/windows-x64/` 中的 App |
-| `make app-package` | `artifacts/` 中的 macOS DMG/ZIP 或 Windows Setup EXE |
+| `make app-build` | `artifacts/macos-arm64/`、`artifacts/windows-x64/` 或 `artifacts/linux-x64/` 中的 App |
+| `make app-package` | `artifacts/` 中的 macOS DMG/ZIP、Windows Setup EXE 或 Linux `.tar.gz` 与 `.deb` |
 | `make cli-build` | CLI 可执行文件和 `artifacts/tools/` |
 | `python3 scripts/package-cli.py` | `artifacts/` 中的独立 CLI ZIP |
 
 CLI 需保留同级的 `tools/` 目录。完整安装包应在目标平台构建。macOS DMG 打包需要已登录的桌面会话和 Finder 自动化权限。
+
+Linux 版在 Linux x64 上构建，运行时需要 WebKitGTK 4.1（`sudo apt install libwebkit2gtk-4.1-0`）；`desktop/linux/` 的宿主经 purego 加载 GTK 与 WebKitGTK，构建不需要 GTK 头文件。`scripts/desktop/smoke-linux.sh` 在 Xvfb（`xvfb-run`）中启动打包好的应用，检查桥接、音频、保存与退出。
 
 Windows 未安装 GNU Make 时，可在 PowerShell 中运行：
 
@@ -72,7 +74,7 @@ make check
 | --- | --- |
 | `cmd/` | CLI 和本地服务入口 |
 | `internal/` | Go 服务实现，按职责分包（见下） |
-| `desktop/macos/`、`desktop/windows/` | 原生 App 宿主 |
+| `desktop/macos/`、`desktop/windows/`、`desktop/linux/` | 原生 App 宿主 |
 | `web/src/` | 前端应用 |
 | `web/browser-tests/` | 浏览器测试 |
 | `scripts/` | 构建与打包工具 |

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"yovoice/internal/msg"
 )
@@ -69,9 +70,13 @@ func (d Draft) SubtitleDrafts() ([]Draft, error) {
 	return drafts, nil
 }
 
-// ensureCueIDs 为旧作品补充可重复的身份，后续插入或删除台词不会错配生成结果。
-func (d *Draft) EnsureCueIDs() {
-	if d.Subtitles == nil {
+// Normalize 补齐旧数据与外部输入缺少的部分：台词补上可重复的 ID，后续插入或删除台词不会错配生成结果；
+// 编曲作品缺少乐谱时补一份空乐谱。保存作品、导入作品包与状态库升级都经过这里，界面只按补齐后的格式读取。
+func (d *Draft) Normalize() {
+	if d.Kind == "score" && d.Score == nil {
+		d.Score = &Score{Tempo: 100, TimeSignature: []int{4, 4}}
+	}
+	if d.Subtitles == nil || !slices.ContainsFunc(d.Subtitles.Cues, func(c SubtitleCue) bool { return c.ID == "" }) {
 		return
 	}
 	document := *d.Subtitles

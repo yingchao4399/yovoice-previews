@@ -6,6 +6,7 @@ import { Kbd } from '@astryxdesign/core/Kbd';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import type { AssistantContext, State } from '../../shared/workbench';
 import { usePanelFrame } from './assistant-frame';
+import { useAssistantLive } from '../../shared/lib/assistant-live';
 import { turnActivity, turnPhase } from './assistant-model';
 import { AssistantAvatar, AssistantOrb } from './assistant-avatar';
 import { AssistantPanel, type AssistantPanelActions, type QuickAction } from './assistant-panel';
@@ -21,13 +22,14 @@ export function AssistantDock({ state, open, setOpen, context, expanded, quickAc
 }) {
   const t = useTranslator();
   const frame = usePanelFrame();
+  const live = useAssistantLive();
   const hideLauncher = () => showLauncher(false);
   if (open) {
     return <AssistantPanel state={state} context={context} expanded={expanded} quickActions={quickActions} frame={frame}
       style={{ '--assistant-right': `${frame.rect.right}px`, '--assistant-bottom': `${frame.rect.bottom}px`, '--assistant-width': `${frame.rect.width}px`, '--assistant-height': `${frame.rect.height}px` } as CSSProperties}
       onToggleExpand={onToggleExpand} onClose={() => { setOpen(false); showLauncher(true); }} actions={actions} />;
   }
-  const turn = state.assistantLive?.turn;
+  const turn = live?.turn;
   const phase = turn ? turnPhase(turnActivity(turn.blocks ?? [])) : null;
   const label = phase ? t(`@yovoice.assistant.phase.${phase}`) : t('@yovoice.assistant.launch');
   // 主动提示停在入口上方；入口被移走时气泡单独停在右下角。
@@ -45,8 +47,9 @@ export function AssistantDock({ state, open, setOpen, context, expanded, quickAc
 }
 
 /** 浏览器预览标题栏右上角的入口：会动的 Ocho，助手运行时蹦跳。桌面版由原生标题栏提供同样的入口。 */
-export function AssistantTitleButton({ state, open, toggle }: { state: State; open: boolean; toggle: () => void }) {
+export function AssistantTitleButton({ open, toggle }: { open: boolean; toggle: () => void }) {
   const t = useTranslator();
+  const live = useAssistantLive();
   return <Button data-testid="titlebar-assistant" className="assistant-title-button" label={t('@yovoice.assistant.title')} tooltip={t('@yovoice.assistant.toggleHint')} isIconOnly variant="ghost" size="sm"
-    icon={<AssistantAvatar working={!!state.assistantLive?.turn} size={22} />} aria-expanded={open} aria-keyshortcuts="Control+J" onClick={toggle} />;
+    icon={<AssistantAvatar working={!!live?.turn} size={22} />} aria-expanded={open} aria-keyshortcuts="Control+J" onClick={toggle} />;
 }

@@ -327,9 +327,14 @@ final class AppUpdater {
             throw UpdateRelease.failure(HostL10n.t("err.updateIdentity"))
         }
         try verifyArchitecture(app.appendingPathComponent("Contents/MacOS/VoiceWorkbenchMac"))
-        _ = try run("/usr/bin/codesign", ["--verify", "--deep", "--strict", "-R", "anchor apple generic and certificate leaf[subject.OU] = \"\(team)\"", app.path])
+        try verifySignature(app, team: team)
         _ = try run("/usr/sbin/spctl", ["--assess", "--type", "execute", app.path])
         return app
+    }
+
+    nonisolated static func verifySignature(_ app: URL, team: String) throws {
+        // -R 的参数以“=”开头才按要求文本解析，否则 codesign 会把它当成要求文件的路径。
+        _ = try run("/usr/bin/codesign", ["--verify", "--deep", "--strict", "-R=anchor apple generic and certificate leaf[subject.OU] = \"\(team)\"", app.path])
     }
 
     nonisolated static func verifyArchitecture(_ executable: URL) throws {

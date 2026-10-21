@@ -162,6 +162,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
     }
 
     // 右侧面板按钮贴最右；不在工作区时隐藏，助手按钮补到最右，避免留空位。
+    // 播放页打开时网页铺到标题栏下面，标题栏与播放页背景融为一体，只留红绿灯；
+    // chrome 为假（播放中静置、控件隐藏）时红绿灯也隐藏，录屏画面里没有窗口按钮。关闭播放页后恢复原样。
+    private func setImmersive(_ active: Bool, chrome: Bool) {
+        if active { window.styleMask.insert(.fullSizeContentView) } else { window.styleMask.remove(.fullSizeContentView) }
+        window.titleVisibility = active ? .hidden : .visible
+        window.titlebarAccessoryViewControllers.forEach { $0.isHidden = active }
+        for kind in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] { window.standardWindowButton(kind)?.isHidden = active && !chrome }
+    }
     private func layoutTitleButtons() {
         inspectorButton?.isHidden = !inspectorVisible
         assistantButton?.isHidden = !assistantEntryVisible
@@ -419,6 +427,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             layoutTitleButtons()
             return ["id": message["id"]!, "result": true]
         }
+        if method == "window.immersive" {
+            setImmersive(data["active"] as? Bool == true, chrome: data["chrome"] as? Bool != false)
+            return ["id": message["id"]!, "result": true]
+        }
         if method == "assistant.entry" {
             assistantEntryVisible = data["visible"] as? Bool == true
             layoutTitleButtons()
@@ -481,16 +493,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, WKSc
             message["data"] = data
         }
         if method == "audio.export" {
-            guard let encoded = data["base64"] as? String, encoded.utf8.count <= 240_000_000,
-                  let audio = Data(base64Encoded: encoded), audio.count >= 44,
-                  String(data: audio.prefix(4), encoding: .ascii) == "RIFF",
-                  String(data: audio.subdata(in: 8..<12), encoding: .ascii) == "WAVE" else { throw failure(HostL10n.t("err.exportInvalid")) }
+            // 时间线合成的音频已由网页上传到本地服务的临时文件，这里只选位置并复制，用完即删。
+            let response = try await request("api/call", body: ["id": "export-path", "method": "export.path", "data": ["id": data["id"] ?? ""]])
+            guard let source = response["result"] as? String else { throw failure(Self.hostErrorMessage(response["error"]) ?? HostL10n.t("err.audioPath")) }
+            defer { try? FileManager.default.removeItem(atPath: source) }
             let panel = NSSavePanel()
             panel.allowedContentTypes = [UTType(filenameExtension: "wav") ?? .audio]
             panel.nameFieldStringValue = (data["name"] as? String ?? "yovoice.wav")
-            let response = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
-            guard response == .OK, let url = panel.url else { return ["id": message["id"]!, "result": false] }
-            try audio.write(to: url, options: .atomic)
+            let choice = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
+            guard choice == .OK, let url = panel.url else { return ["id": message["id"]!, "result": false] }
+            try Data(contentsOf: URL(fileURLWithPath: source)).write(to: url, options: .atomic)
+            return ["id": message["id"]!, "result": true]
+        }
+        if method == "output.export" {
+            // 已生成的版本直接复制 outputs 中的文件，不经网页传音频字节，长歌也不受消息大小限制。
+            let response = try await request("api/call", body: ["id": "media-path", "method": "media.path", "data": ["kind": "outputs", "id": data["id"] ?? ""]])
+            guard let source = response["result"] as? String else { throw failure(Self.hostErrorMessage(response["error"]) ?? HostL10n.t("err.audioPath")) }
+            guard FileManager.default.fileExists(atPath: source) else { throw failure(HostL10n.t("err.audioMissing")) }
+            let panel = NSSavePanel()
+            panel.allowedContentTypes = [UTType(filenameExtension: "wav") ?? .audio]
+            panel.nameFieldStringValue = (data["name"] as? String ?? "yovoice.wav")
+            let choice = await withCheckedContinuation { continuation in panel.beginSheetModal(for: window) { continuation.resume(returning: $0) } }
+            guard choice == .OK, let url = panel.url else { return ["id": message["id"]!, "result": false] }
+            try Data(contentsOf: URL(fileURLWithPath: source)).write(to: url, options: .atomic)
             return ["id": message["id"]!, "result": true]
         }
         if method == "text.export" {

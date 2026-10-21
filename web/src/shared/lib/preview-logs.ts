@@ -10,7 +10,7 @@ const rank: Record<string, number> = { INFO: 1, WARN: 2, ERROR: 3 };
 export const auditedMethods = new Set([
   'draft.delete', 'project.export', 'project.import', 'score.import', 'score.export', 'character.save', 'character.delete',
   'voice.fromGeneration', 'voice.update', 'voice.import', 'voice.record', 'timeline.import', 'media.rename', 'media.delete',
-  'generation.lyricTimes', 'preferences.save', 'storage.relocate', 'storage.cleanup', 'model.directory', 'model.download',
+  'generation.lyricTimes', 'generation.lyricWords', 'generation.alignLyrics', 'preferences.save', 'storage.relocate', 'storage.cleanup', 'model.directory', 'model.download',
   'model.forget', 'runtime.install', 'ai.provider.save', 'ai.provider.delete', 'ai.provider.use', 'ai.test', 'ai.connect', 'ai.codex.login',
   'melody.plan', 'melody.cover', 'melody.dismiss', 'ai.dismiss', 'operation.cancel', 'model.cancel', 'ai.cancel', 'logs.export', 'assets.delete',
   'assistant.proposal', 'assistant.forget',

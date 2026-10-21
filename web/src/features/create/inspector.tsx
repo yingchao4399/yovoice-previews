@@ -1,7 +1,7 @@
 import { AdvancedSettings, SeedInput, ReferenceVoice } from './shared-controls';
 import { KokoroControls } from './kokoro-controls';
 import { ModelOptions } from './model-options';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
@@ -18,6 +18,7 @@ import { BreezeControls } from './breeze-controls';
 import { isVoiceModel, isReferenceModel, isVoxModel, isBreezeModel, formatTime, type Draft, type Mode, type State, type ModelPackage } from '../../shared/workbench';
 import type { Track } from '../../shared/workbench';
 import { formatActivity } from '../../shared/i18n/format';
+import { useElapsed } from '../../shared/lib/use-elapsed';
 
 const modes: Mode[] = ['speaker', 'reference', 'vector', 'text'];
 const emotionKeys = ['happy', 'angry', 'sad', 'afraid', 'disgusted', 'melancholy', 'surprised', 'calm'] as const;
@@ -59,15 +60,7 @@ export function Inspector({ draft, state, catalog, change, chooseVoice, chooseEm
   const generating = busy && state.activity?.kind === 'generate' && (!state.activity.projectId || state.activity.projectId === draft.id) && !state.activity.characterId;
   const [tuneEmotions, setTuneEmotions] = useState(false);
   const [moreEmotions, setMoreEmotions] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  useEffect(() => {
-    if (!generating) { setElapsed(0); return; }
-    const started = state.activity?.startedAt ? Date.parse(state.activity.startedAt) : Date.now();
-    const update = () => setElapsed(Math.max(0, Math.floor((Date.now() - started) / 1000)));
-    update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
-  }, [generating, state.activity?.startedAt]);
+  const elapsed = useElapsed(generating, state.activity?.startedAt);
   const languageOptions = (draft.modelId.startsWith('index-2.5')
     ? (['zh', 'en', 'ja', 'es', 'ar'] as const)
     : (['zh', 'en'] as const)).map(value => ({ value, label: t(`@yovoice.language.${value}`) }));

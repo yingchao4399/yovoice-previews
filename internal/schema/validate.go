@@ -27,8 +27,8 @@ func Validate(d Draft) error {
 	if e != nil {
 		return e
 	}
-	// SheetSage2 只用于从歌曲扒旋律谱，不能作为作品的生成模型。
-	if m.Family == "sheetsage2" {
+	// SheetSage2 只用于从歌曲扒旋律谱、歌词对齐模型只用于播放页对齐歌词，都不能作为作品的生成模型。
+	if m.Family == "sheetsage2" || m.Family == "lyric_align" {
 		return msg.Err(msg.ErrModelUnsupported, nil)
 	}
 	if _, e := d.GenerationOptions(m.Family); e != nil {

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { SegmentedControl, SegmentedControlItem } from '@astryxdesign/core/SegmentedControl';
@@ -14,6 +14,7 @@ import { ModelSelector } from '../create/model-selector';
 import { ModelOptions } from '../create/model-options';
 import { MusicReference } from './music-reference';
 import { applyPresetTags, isPresetActive, musicLanguages, splitTags, stylePresets, styleTags, tagHintKey } from './music-draft';
+import { useElapsed } from '../../shared/lib/use-elapsed';
 
 const optionValues = (key: string) => definitions.ace_step.find(spec => spec.key === key)?.values ?? [];
 
@@ -25,17 +26,9 @@ export function MusicInspector({ draft, state, catalog, change, generate, cancel
   const t = useTranslator();
   const busy = state.activity?.status === 'running';
   const generating = busy && state.activity?.kind === 'generate' && state.activity.projectId === draft.id;
-  const [elapsed, setElapsed] = useState(0);
+  const elapsed = useElapsed(generating, state.activity?.startedAt);
   const [moreStyles, setMoreStyles] = useState(false);
   const [tuneStyles, setTuneStyles] = useState(false);
-  useEffect(() => {
-    if (!generating) { setElapsed(0); return; }
-    const started = state.activity?.startedAt ? Date.parse(state.activity.startedAt) : Date.now();
-    const update = () => setElapsed(Math.max(0, Math.floor((Date.now() - started) / 1000)));
-    update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
-  }, [generating, state.activity?.startedAt]);
   const options = draft.modelOptions?.ace_step ?? {};
   const option = (key: string, fallback: string | number) => options[key] ?? fallback;
   const update = (key: string, value: string | number) => change({ modelOptions: { ...draft.modelOptions, ace_step: { ...options, [key]: value } } });

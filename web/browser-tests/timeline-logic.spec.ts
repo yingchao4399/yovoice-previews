@@ -86,17 +86,6 @@ test('分段接收幂等、删除不复活、重生成只替换指定片段并�
   expect(late.timeline!.tracks[0].clips).toHaveLength(0);
 });
 
-test('旧字幕故事保留最后一版整篇音频为片段，删除后不复活', () => {
-  const draft = { ...emptyState().drafts[0], kind: 'subtitle' as const };
-  const audio = { id: 'legacy', title: draft.title, fileName: 'legacy.wav', duration: 3, createdAt: '2026-09-27T10:00:00Z', settings: draft };
-  const migrated = Timeline.accept(draft, [audio]);
-  expect(migrated.timeline!.tracks[0].clips[0]).toMatchObject({ generationId: audio.id, duration: 3 });
-  expect(migrated.timeline!.tracks[0].id).not.toBe(migrated.timeline!.tracks[0].clips[0].id);
-  expect(Timeline.accept(migrated, [audio])).toBe(migrated);
-  migrated.timeline!.tracks = [];
-  expect(Timeline.accept(migrated, [audio])).toBe(migrated);
-});
-
 test('多选保持相对位置，锁轨保护，波纹删除不影响其他轨', () => {
   const value: AudioTimeline = { tracks: [
     { id: 'a', name: '对白', muted: false, clips: [{ id: 'a', start: 1, offset: 0, duration: 2, generationId: 'g' }, { id: 'b', start: 2, offset: 0, duration: 2, generationId: 'g' }, { id: 'c', start: 5, offset: 0, duration: 1, generationId: 'g' }] },

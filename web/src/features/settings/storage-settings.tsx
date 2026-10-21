@@ -3,6 +3,7 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { ProgressBar } from '@astryxdesign/core/ProgressBar';
 import { StatusDot } from '@astryxdesign/core/StatusDot';
+import { Text } from '@astryxdesign/core/Text';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { FolderCog, FolderOpen, RefreshCw, Trash2 } from 'lucide-react';
 import { call, parseCallError } from '../../shared/lib/client';
@@ -89,11 +90,11 @@ export function StorageSettings({ state, run, busy }: { state: State; run: (task
       className="settings-directory"
       label={t('@yovoice.settings.storageDirectory')}
       hint={<VStack gap={1}>
-        <span className="model-path" onPointerEnter={overflowTitle}>{info.root}</span>
-        <span>{breakdown}</span>
+        <Text type="inherit" color="inherit" className="model-path" onPointerEnter={overflowTitle}>{info.root}</Text>
+        <Text type="inherit" color="inherit">{breakdown}</Text>
         {info.pendingPath ? <HStack gap={1} vAlign="center">
           <StatusDot variant="warning" label={t('@yovoice.settings.storageRelocatePending')} />
-          <span>{t('@yovoice.settings.storageRelocatePending')}</span>
+          <Text type="inherit" color="inherit">{t('@yovoice.settings.storageRelocatePending')}</Text>
         </HStack> : null}
       </VStack>}
     >
@@ -115,8 +116,8 @@ export function StorageSettings({ state, run, busy }: { state: State; run: (task
     <SettingsRow
       label={t('@yovoice.settings.cleanupResiduals')}
       hint={cleanupMessage ? <VStack gap={1}>
-        <span>{t('@yovoice.settings.cleanupResidualsHint')}</span>
-        <span>{cleanupMessage}</span>
+        <Text type="inherit" color="inherit">{t('@yovoice.settings.cleanupResidualsHint')}</Text>
+        <Text type="inherit" color="inherit">{cleanupMessage}</Text>
       </VStack> : t('@yovoice.settings.cleanupResidualsHint')}
     >
       <Button

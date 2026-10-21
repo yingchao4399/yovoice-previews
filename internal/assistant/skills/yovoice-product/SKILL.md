@@ -18,7 +18,7 @@ yovoice runs every model locally through its inference engine. Models and the en
 | characters | 声音库 Voice library | Saved characters: designed or cloned voices with a preview, reusable across works. |
 | voices | 参考音色 References | Uploaded reference recordings (1–60 s, ≤ 20 MB, one clean speaker). |
 | history | 历史 History | Every generated take; play, reuse settings, save as a voice. |
-| settings | 设置 Settings | Tabs: 常规 General (language, proxy, download source, storage location), 语音模型 Voice models and 音乐模型 Music models (ACE-Step, YuE2, SheetSage2; download/remove), 推理引擎 Engine (install, compute device), 编曲音色库 SoundFonts, AI 服务 AI provider (also the model Ocho uses), 资源 Assets (files and cleanup), 日志 Logs (filter, export diagnostics), 本机接口 Local API (HTTP/MCP for other apps). |
+| settings | 设置 Settings | Tabs: 常规 General (language, proxy, download source, storage location), 语音模型 Voice models and 音乐模型 Music models (ACE-Step, YuE2, SheetSage2, optional Lyric Aligner; download/remove), 推理引擎 Engine (install, compute device), 编曲音色库 SoundFonts, AI 服务 AI provider (also the model Ocho uses), 资源 Assets (files and cleanup), 日志 Logs (filter, export diagnostics), 本机接口 Local API (HTTP/MCP for other apps). |
 
 The assistant opens with ⌘J / Ctrl+J, the launcher in the corner, or the title bar button.
 
@@ -44,6 +44,7 @@ Recommend in this order: what the user already has installed (list_models), then
 - ACE-Step 1.5 Turbo / XL Turbo: songs or instrumentals from style (≤ 512 chars) + lyrics (≤ 4000 chars, [verse] [chorus] tags). Duration auto or 10–300 s. XL is higher quality and much larger.
 - YuE2 3B: vocal songs (length follows the lyrics) or instrumentals (writes a score, then instruments play the vocal melody; lyrics optional), non-commercial licence. Can plan an ABC melody score first or cover a song via SheetSage2 (yovoice-music skill).
 - SheetSage2: extracts melody and chords from a song for YuE2 covers.
+- Lyric Aligner (optional): on the playback page, Auto-align separates the vocals and aligns the lyrics word by word to a generated song; saved with the version.
 - SoundFonts (MuseScore General, GeneralUser GS, SGM-V2.01) render arrangements on the score page.
 - All music models need inference engine v0.9.1 or later.
 
@@ -150,6 +151,9 @@ Errors reach you as stable codes (in <ui_context>, get_generation_status, get_re
 - `error.melodyEmpty` 模型没有写出旋律谱，请重试或调整歌词。
 - `error.coverModelRequired` 从歌曲提取旋律需要 SheetSage2 模型，请在“设置 › 音乐模型”中下载。
 - `error.melodySoundFontRequired` 试听旋律谱需要一个音色库，请在“设置 › 编曲音色库”中下载。
+- `error.alignModelRequired` 请先在设置的音乐模型里下载歌词对齐模型
+- `error.alignLyrics` 这个版本没有可对齐的歌词
+- `error.alignEmpty` 没能从人声里对上歌词，可以手动校准
 - `error.engineUpgradeRequired` 该模型需要 {version} 及以上的推理内核，请在设置中更新内核。
 - `error.aiProviderInvalid` AI 服务配置无效，请检查地址、名称和模型。
 - `error.aiNotConfigured` 还没有可用的 AI 服务，请在“设置 › AI”中添加服务并选择模型。

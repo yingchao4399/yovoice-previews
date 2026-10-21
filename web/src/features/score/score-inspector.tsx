@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { TextInput } from '@astryxdesign/core/TextInput';
@@ -11,6 +11,7 @@ import { ModelSelector } from '../create/model-selector';
 import { emptyScore, noteCount, scoreDuration } from './score-draft';
 import { scoreKeyOptions } from './score-keys';
 import { TrackExpression } from './track-expression';
+import { useElapsed } from '../../shared/lib/use-elapsed';
 
 const meters = [[4, 4], [3, 4], [2, 4], [6, 8], [12, 8]];
 
@@ -23,15 +24,7 @@ export function ScoreInspector({ draft, state, catalog, change, generate, cancel
   const score = draft.score ?? emptyScore();
   const busy = state.activity?.status === 'running';
   const generating = busy && state.activity?.kind === 'generate' && state.activity.projectId === draft.id;
-  const [elapsed, setElapsed] = useState(0);
-  useEffect(() => {
-    if (!generating) { setElapsed(0); return; }
-    const started = state.activity?.startedAt ? Date.parse(state.activity.startedAt) : Date.now();
-    const update = () => setElapsed(Math.max(0, Math.floor((Date.now() - started) / 1000)));
-    update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
-  }, [generating, state.activity?.startedAt]);
+  const elapsed = useElapsed(generating, state.activity?.startedAt);
   const fonts = catalog.filter(model => isSoundFont(model.id));
   const font = fonts.find(model => model.id === draft.modelId);
   const installed = state.models.some(model => model.id === draft.modelId);

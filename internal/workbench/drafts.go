@@ -26,7 +26,7 @@ func (w *Workbench) saveDraft(d schema.Draft) (err error) {
 	defer func() {
 		diag.Log(w.Store.Root, "draft.save", "project_id", d.ID, "model_id", d.ModelID, "text_length", schema.TextLen(d.Text), "stage", stage, "elapsed_ms", time.Since(started).Milliseconds(), "error", diag.Error(err))
 	}()
-	d.EnsureCueIDs()
+	d.Normalize()
 	if !slices.Contains([]string{"", "text", "story", "subtitle", "music", "score"}, d.Kind) {
 		return msg.Err(msg.ErrDraftLimits, nil)
 	}

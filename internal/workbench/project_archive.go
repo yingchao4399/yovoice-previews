@@ -289,6 +289,8 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 	if err != nil || pack.Version != 1 || len(pack.History) > 5000 || len(pack.Voices) > 2000 || len(pack.Characters) > 1000 || len(pack.Instruments) > 100 {
 		return schema.Draft{}, bad
 	}
+	// 旧版导出的作品包里台词可能没有 ID，按原作品 ID 补上，包内生成结果仍能对上台词。
+	pack.Draft.Normalize()
 	files := pack.projectMedia()
 	if len(files)+1 != len(entries) {
 		return schema.Draft{}, bad

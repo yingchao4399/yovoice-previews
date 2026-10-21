@@ -4,6 +4,60 @@
 
 ## [Unreleased]
 
+## [0.4.1-preview.1] - 2026-10-22
+
+### English
+
+- Merge official v0.4.0–v0.4.1, retaining word-level lyrics and alignment, playback and export improvements, feature visibility settings, model-download fixes and the custom Smart Arrangement, instrument library, plugin and audition workflows.
+- Reduce Ocho and button-response overhead: send changed state fields, isolate live assistant updates, mount pages on first visit and stream long WAV waveforms. Replace whole-state JSON round-trip copying with isolated container copies while preserving model-option number semantics.
+- Upgrade custom databases without reusing official migration numbers, keep existing arrangement bindings and plugin presets, and back up before the one-time official data normalization. Preserve the separate handling of score-rendered and generated-song versions.
+
+### 简体中文
+
+- 整合官方 v0.4.0–v0.4.1，保留逐字歌词、智能对齐、播放与长音频导出改进、功能显示开关和模型下载修复，同时保留智能编曲、音源库、插件及当前页试听工作流。
+- 减少 Ocho 和按钮操作的开销：状态增量推送、助手实时更新独立订阅、页面首次访问才挂载，长 WAV 流式计算波形。状态快照不再反复编码、解码整库文本，保持可变数据隔离及模型自由参数的数值语义。
+- 兼容升级定制数据库，保留原编曲绑定及插件预设，官方旧数据规范化前自动备份；避免与官方迁移序号冲突。保留编曲渲染版本与歌曲版本的不同播放入口。
+
+## [0.4.1] - 2026-10-21
+
+### English
+
+- Fix macOS auto-update always failing after download with "Update verification failed (codesign) … invalid requirement specification". The bug is in the updater of 0.3.0–0.4.0 itself, so on macOS please download and install 0.4.1 manually once; later updates will install automatically.
+
+### 简体中文
+
+- 修复 macOS 自动更新下载完成后总是提示“更新校验失败（codesign）……invalid requirement specification”、无法安装的问题。问题出在 0.3.0–0.4.0 自带的更新程序里，macOS 用户请手动下载安装一次 0.4.1，之后即可正常自动更新。
+
+## [0.4.0] - 2026-10-21
+
+### English
+
+- New Linux x64 desktop app: `.deb` (Debian/Ubuntu) and `.tar.gz` with `install.sh`. It runs on the bundled CPU engine, can download a Vulkan GPU engine in Settings, and needs WebKitGTK 4.1; auto-update is not available on Linux yet.
+- Word-by-word lyrics on the music playback page: each word lights up as it is sung, timed from the vocals. A new one-line-per-screen "Glow" style flies words in and lights them up, good for screen recording. Export word-level LRC.
+- Optional lyric alignment model (BS-RoFormer vocal separation + Qwen3 Forced Aligner, about 1.3 GB): "Smart align" separates the vocals, skips interludes and long pauses, and aligns the lyrics word by word, line by line; results are saved with the version.
+- Refreshed playback page: an immersive title bar on macOS, a "Lyric tools" menu for calibration, alignment and export, reworked "Glow" motion and backdrop, and smoother lyric scrolling. "Adjust lyric timing" anchors a line to the playhead or nudges it by 0.1/0.5 s (←/→), with or without shifting later lines; drag single words on a timeline or tap along while listening.
+- Smaller installers: the Kokoro pronunciation data (about 10 MB) now downloads together with the Kokoro model.
+- Settings › General › "Features" lets you hide story narration, music generation and the Ocho assistant; AI service settings hide when both Ocho and music are off.
+- Faster launch and a smoother interface: fixes launch stalling on the splash screen when recent work includes 20–30 minute audio; pages load on first open; generation, downloads and Ocho replies no longer redraw the whole interface.
+- Fix exporting longer music (about two minutes or more) doing nothing on Windows and Linux; long timeline exports are no longer limited either. The player toolbar now has "Show in folder", with export under "More".
+- Fix model downloads from ModelScope failing size checks after the mirror was refreshed.
+- The Windows installer now supports Windows 10 1809 (17763) and later.
+- On upgrade, saved projects, assistant chats and engine records are converted to the new format once, with a database backup made first.
+
+### 简体中文
+
+- 新增 Linux x64 桌面版：提供 `.deb`（Debian/Ubuntu）和附 `install.sh` 的 `.tar.gz`，开箱使用内置 CPU 内核，可在设置中下载 Vulkan GPU 内核；需要系统提供 WebKitGTK 4.1，暂不支持自动更新。
+- 音乐播放页逐字点亮歌词：按音频里的人声分出每个字的时间；新增一句一屏的“浮光”样式，字随演唱逐个飞入亮起，适合录屏；可导出逐字 LRC。
+- 新增可选下载的歌词对齐模型（BS-RoFormer 人声分离 + Qwen3 Forced Aligner，约 1.3 GB）：“智能对齐”先分离人声，去掉间奏和长停顿，再按句把歌词逐字对到演唱上，结果随版本保存。
+- 音乐播放页焕新：macOS 上标题栏与背景融为一体；校准、对齐、导出收进“歌词工具”菜单；“浮光”动效和背景重做，歌词滚动更顺滑。新增“调整歌词时间”：把一句锚定到当前播放位置，或整句提前、推后 0.1/0.5 秒（←/→），可选后面跟着移或只改这一句；单字可在时间轴上拖动，也可边听边跟唱打点。
+- 安装包变小：Kokoro 发音库（约 10 MB）改为第一次下载 Kokoro 模型时一并下载。
+- 设置 › 通用新增“功能显示”，可分别隐藏故事配音、音乐生成和 Ocho 助手；Ocho 与音乐生成都关闭时一并隐藏 AI 服务设置。
+- 启动更快、界面更流畅：修复最近作品里有二三十分钟长音频时启动停在启动画面的问题；各页面第一次打开时才加载；生成、下载和 Ocho 回复过程中不再重绘整个界面。
+- 修复 Windows 和 Linux 上导出约两分钟以上的音乐时点击没有反应的问题，时间线导出长音频也不再受限；播放器工具栏改为“打开位置”，导出移到“更多”菜单。
+- 修复 ModelScope 镜像刷新后，从该来源下载模型时大小校验失败的问题。
+- Windows 安装包最低系统要求放宽到 Windows 10 1809（17763）。
+- 升级时一次性把旧版本保存的作品、助手对话和内核记录转换为新格式，转换前自动备份数据库。
+
 ## [0.3.1-preview.6] - 2026-10-21
 
 ### English

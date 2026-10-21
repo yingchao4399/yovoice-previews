@@ -15,6 +15,8 @@ export default tseslint.config(
       // 未启用 React Compiler，只检查 Hook 调用规则与依赖完整性。
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'error',
+      // 产品里不用“闪光星星”一类的 AI 装饰图标，按功能选具体的图标。
+      'no-restricted-imports': ['error', { paths: [{ name: 'lucide-react', importNames: ['Sparkle', 'Sparkles', 'WandSparkles', 'MessageSquareSparkle', 'MessageCircleSparkle', 'BookOpenSparkle', 'FileSparkle', 'SparklesIcon', 'SparkleIcon', 'LucideSparkles', 'LucideSparkle'], message: '不使用闪光星星图标，请按功能换成具体的图标。' }] }],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_' }],
     },
   },

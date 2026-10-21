@@ -103,14 +103,12 @@ try {
     $env:PATH = $audioPath
     & $audioPython scripts/build-ffmpeg.py "$destination/tools"
     if ($LASTEXITCODE -ne 0) { throw "音频转换器构建失败" }
-    & $audioPython scripts/package-kokoro-runtime.py "$destination/tools/kokoro"
-    if ($LASTEXITCODE -ne 0) { throw "Kokoro 发音库打包失败" }
     & $audioPython scripts/package-ocho.py "$destination/tools/ocho"
     if ($LASTEXITCODE -ne 0) { throw "ocho 运行时打包失败" }
 } finally { $env:PATH = $originalPath }
 & "$PSScriptRoot/build-vst-host.ps1" -Destination "$destination/tools"
 Copy-Item LICENSE,README.md,THIRD_PARTY_NOTICES.md $destination
-[IO.File]::WriteAllText((Join-Path $destination 'yovoice-custom-build.json'), (@{ distribution='intelligent-arrangement'; version=$version; database=6 } | ConvertTo-Json -Compress))
+[IO.File]::WriteAllText((Join-Path $destination 'yovoice-custom-build.json'), (@{ distribution='intelligent-arrangement'; version=$version; database=7 } | ConvertTo-Json -Compress))
 # 配置证书时签名应用与本地服务，自动更新据此校验更新包的发行者。
 $signTargets = @("$destination/yovoice.exe", "$destination/service/yovoice-service.exe")
 # ocho 通过 YOVOICE_OCHO_SKIP 跳过时不存在，签名脚本会把缺失文件视为错误。

@@ -251,6 +251,15 @@ type Generation struct {
 	Segment   *GenerationSegment `json:"segment,omitempty"`
 	// LyricTimes 是播放页校准的歌词时间：按顺序记录每一行（含器乐段落）的开始秒数。
 	LyricTimes []float64 `json:"lyricTimes,omitempty"`
+	// LyricWords 是强制对齐得到的逐字时间，按歌词顺序排列；与 LyricTimes 只保留较新的一份。
+	LyricWords []LyricWord `json:"lyricWords,omitempty"`
+}
+
+// LyricWord 是对齐到音频上的一个字（拉丁文为一个词），时间以秒计。
+type LyricWord struct {
+	Word  string  `json:"word"`
+	Start float64 `json:"start"`
+	End   float64 `json:"end"`
 }
 
 // GenerationSegment 保留单句来源；剪辑与原音频通过生成版本关联。
@@ -269,7 +278,7 @@ type Activity struct {
 	CharacterID string `json:"characterId,omitempty"`
 	RequestID   string `json:"requestId,omitempty"`
 	Kind        string `json:"kind"`
-	// Task 区分同一类操作里的具体任务：melody 为出谱或扒谱，界面据此在旋律谱区域显示进度。
+	// Task 区分同一类操作里的具体任务：melody 为出谱或扒谱，界面据此在旋律谱区域显示进度；align 为歌词对齐，在播放页显示。
 	Task        string     `json:"task,omitempty"`
 	Code        msg.Code   `json:"code"`
 	Params      msg.Params `json:"params"`
@@ -328,7 +337,13 @@ type Preferences struct {
 	TourSeen bool `json:"tourSeen,omitempty"`
 	// AssistantQuiet 关闭助手的主动提示（生成完成、失败等时刻在角落出现的气泡）。
 	AssistantQuiet bool `json:"assistantQuiet,omitempty"`
+	// HiddenFeatures 是在设置中隐藏的功能入口（见 OptionalFeatures），为空时全部显示。
+	HiddenFeatures []string `json:"hiddenFeatures,omitempty"`
 }
+
+// OptionalFeatures 是可在设置中隐藏的功能：故事配音、音乐生成（含编曲）与 Ocho 助手。
+var OptionalFeatures = []string{"story", "music", "assistant"}
+
 type State struct {
 	Characters           []Character              `json:"characters"`
 	Previews             []CharacterPreview       `json:"previews"`

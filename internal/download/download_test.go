@@ -51,3 +51,31 @@ func TestExtractExplicitDirectories(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractFilesPicksAndRenames(t *testing.T) {
+	root := t.TempDir()
+	archive := filepath.Join(root, "package.whl")
+	file, err := os.Create(archive)
+	must(t, err)
+	writer := zip.NewWriter(file)
+	for _, name := range []string{"pkg/lib-1234.so.2", "pkg/skip.py"} {
+		entry, err := writer.Create(name)
+		must(t, err)
+		_, err = entry.Write([]byte(name))
+		must(t, err)
+	}
+	must(t, writer.Close())
+	must(t, file.Close())
+	destination := filepath.Join(root, "out")
+	must(t, ExtractFiles(context.Background(), archive, destination, func(name string) string {
+		if name == "pkg/lib-1234.so.2" {
+			return "lib.so.2"
+		}
+		return ""
+	}))
+	entries, err := os.ReadDir(destination)
+	must(t, err)
+	if len(entries) != 1 || entries[0].Name() != "lib.so.2" {
+		t.Fatal("只应解出选中的条目并改名", entries)
+	}
+}

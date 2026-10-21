@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@astryxdesign/core/Button';
-import { HStack, VStack } from '@astryxdesign/core/Layout';
+import { HStack, StackItem, VStack } from '@astryxdesign/core/Layout';
+import { Text } from '@astryxdesign/core/Text';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { ArrowRight, FileMusic, Mic, Music, Pencil } from 'lucide-react';
 import { playParticles } from './intro-particles';
@@ -34,16 +35,16 @@ export function IntroScreen({ onStart }: { onStart: () => void }) {
   };
   return <VStack ref={root} as="section" className="intro-screen" data-leaving={leaving || undefined} role="dialog" aria-modal="true" aria-label="yovoice" gap={0}>
     <canvas ref={canvas} className="intro-canvas" aria-hidden />
-    <span className="intro-glow" aria-hidden />
+    <StackItem as="span" className="intro-glow" aria-hidden />
     <VStack className="intro-copy" hAlign="center" gap={0}>
       <h1 className="intro-word" data-text="yovoice">yovoice</h1>
       <p className="intro-tagline">{t('@yovoice.intro.tagline')}</p>
       <HStack className="intro-kinds" gap={2} hAlign="center" wrap="wrap">
-        {kinds.map(([kind, Icon]) => <HStack key={kind} as="span" className="intro-kind" gap={2} vAlign="center"><span className="intro-kind-icon" aria-hidden><Icon size={14} /></span>{t(`@yovoice.project.${kind}`)}</HStack>)}
+        {kinds.map(([kind, Icon]) => <HStack key={kind} as="span" className="intro-kind" gap={2} vAlign="center"><StackItem as="span" className="intro-kind-icon" aria-hidden><Icon size={14} /></StackItem>{t(`@yovoice.project.${kind}`)}</HStack>)}
       </HStack>
       <Button className="intro-cta" size="lg" label={t('@yovoice.intro.start')} onClick={start}>
-        <span className="intro-cta-sheen" aria-hidden />
-        <span className="intro-cta-label">{t('@yovoice.intro.start')}</span>
+        <StackItem as="span" className="intro-cta-sheen" aria-hidden />
+        <Text type="inherit" color="inherit" className="intro-cta-label">{t('@yovoice.intro.start')}</Text>
         <ArrowRight className="intro-cta-arrow" size={18} strokeWidth={2.25} aria-hidden />
       </Button>
     </VStack>

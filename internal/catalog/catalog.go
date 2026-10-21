@@ -13,6 +13,11 @@ import (
 
 const Revision = "6d5436fc85f7a20c2e9f4e472b7f3a532f686444"
 
+// ModelScopeRevision 固定 ModelScope 上 audio.cpp 模型镜像的提交。镜像会随上游整体刷新，
+// 跟随 master 时文件大小与 SHA256 都会和目录清单对不上，导致下载失败；
+// 该提交下目录清单中的全部文件与清单一致，升级模型时与 Revision 一起更新。
+const ModelScopeRevision = "63d135e95ebee8d3ac36a0dd69540518b65c8f64"
+
 type ModelPackage struct {
 	Revision string `json:"revision,omitempty"`
 	// Repo 为空时来自 audio.cpp 的模型仓库；音色库等其他资源写明 Hugging Face 仓库路径，
@@ -74,6 +79,23 @@ var archives = map[string]string{}
 var OchoVersion string
 var ochoArchives = map[string]string{}
 
+// kokoro.json 是 Kokoro 发音库（eSpeak NG 与 MeCab 原生库）的唯一来源：安装包不再内置，
+// 下载 Kokoro 模型时从 PyPI 取固定版本的 wheel 解出原生库。
+//
+//go:embed kokoro.json
+var kokoroJSON []byte
+
+// KokoroWheel 是发音库所需的一个 PyPI wheel；Path 为 PyPI 文件地址中 packages/ 之后的部分。
+type KokoroWheel struct {
+	Platform string `json:"platform"`
+	Project  string `json:"project"`
+	Path     string `json:"path"`
+	Size     int64  `json:"size"`
+	SHA256   string `json:"sha256"`
+}
+
+var kokoroWheels []KokoroWheel
+
 func init() {
 	if e := json.Unmarshal(catalogJSON, &Models); e != nil {
 		panic(e)
@@ -101,6 +123,40 @@ func init() {
 	if parseVersion(OchoVersion) == nil {
 		panic("ocho.json 版本无效")
 	}
+	var kokoro struct {
+		Wheels []KokoroWheel `json:"wheels"`
+	}
+	if e := json.Unmarshal(kokoroJSON, &kokoro); e != nil {
+		panic(e)
+	}
+	kokoroWheels = kokoro.Wheels
+}
+
+// KokoroWheels 返回当前平台发音库所需的 wheel。
+func KokoroWheels() ([]KokoroWheel, error) {
+	platform := runtime.GOOS + "/" + runtime.GOARCH
+	result := []KokoroWheel{}
+	for _, w := range kokoroWheels {
+		if w.Platform == platform {
+			result = append(result, w)
+		}
+	}
+	if len(result) == 0 {
+		return nil, msg.Err(msg.ErrPlatformArch, nil)
+	}
+	return result, nil
+}
+
+// URL 返回 wheel 的下载地址：Hugging Face 源直连 PyPI；ModelScope 与镜像源改用阿里云 PyPI 镜像，
+// 两者的文件路径一致，下载后都按 SHA256 校验。
+func (w KokoroWheel) URL(source string) (string, error) {
+	switch source {
+	case "huggingface":
+		return "https://files.pythonhosted.org/packages/" + w.Path, nil
+	case "modelscope", "mirror":
+		return "https://mirrors.aliyun.com/pypi/packages/" + w.Path, nil
+	}
+	return "", msg.Err(msg.ErrDownloadSource, nil)
 }
 
 // parseVersion 解析 vX.Y.Z，格式无效时返回 nil。
@@ -189,7 +245,7 @@ func (m ModelPackage) FileURL(source, path string) (string, error) {
 	case "mirror":
 		return "https://hf-mirror.com/audio-cpp/audio.cpp-gguf/resolve/" + revision + "/" + path, nil
 	case "modelscope":
-		return "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/master/" + path, nil
+		return "https://modelscope.cn/models/HereIsMark/audio.cpp-gguf/resolve/" + ModelScopeRevision + "/" + path, nil
 	}
 	return "", msg.Err(msg.ErrDownloadSource, nil)
 }

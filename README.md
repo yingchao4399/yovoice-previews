@@ -14,10 +14,11 @@
 <p align="center">Give your words a voice. Compose your ideas into songs.</p>
 <p align="center">
   <a href="https://yovoice.leemysw.com"><img src="https://img.shields.io/badge/website-yovoice.leemysw.com-10b981?style=flat-square" alt="Website" /></a>
-  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.3.1-blue?style=flat-square" alt="Version 0.3.1" /></a>
+  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.4.1-blue?style=flat-square" alt="Version 0.4.1" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-orange?style=flat-square" alt="License: Apache-2.0" /></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-black?style=flat-square" alt="macOS 14+ (Apple Silicon)" />
   <img src="https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square" alt="Windows 10/11 (x64)" />
+  <img src="https://img.shields.io/badge/Linux-x64-FCC624?style=flat-square" alt="Linux (x64)" />
 </p>
 <p align="center">
   <a href="https://www.star-history.com/leemysw/yovoice">
@@ -37,7 +38,7 @@
 
 ---
 
-yovoice is an open-source, local-first audio and music creation studio for macOS and Windows. 
+yovoice is an open-source, local-first audio and music creation studio for macOS, Windows and Linux. 
 
 Turn text into expressive speech, natural cloned voices, complete vocal songs, and multi-track scores right on your machine. Featuring zero-shot voice cloning, emotional performance controls, AI music generation with lyrics, and General MIDI score arranging—**all running 100% locally with zero cloud API calls, zero per-character fees, and zero Python environment headaches.**
 
@@ -89,8 +90,12 @@ Choose the package for your platform from the repository’s [Releases](../../re
 | Windows 10/11 · x64 | `-setup.exe` | Run the installer, then open yovoice from the Start menu |
 | Windows 10/11 · x64 · NVIDIA GPU | `-cuda12.4-setup.exe` | Bundles the CUDA 12.4 runtime; works with older GPUs and drivers and uses the GPU from first launch |
 | Windows 10/11 · x64 · NVIDIA GPU | `-cuda13.3-setup.exe` | Bundles the CUDA 13.3 runtime; needs a newer driver, smaller download |
+| Linux · x64 (Debian/Ubuntu) | `-linux-x64.deb` | `sudo apt install ./yovoice-<version>-linux-x64.deb`, then open yovoice from the application menu |
+| Linux · x64 (other distributions) | `-linux-x64.tar.gz` | Extract and run `./install.sh` to add yovoice to the application menu for the current user |
 
 The Windows installer downloads and installs [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/) if needed. Models are downloaded inside the app; uninstalling preserves user data in `~/.yovoice`.
+
+On Linux the app needs WebKitGTK 4.1 (`libwebkit2gtk-4.1-0` on Debian/Ubuntu, `webkit2gtk4.1` on Fedora, `webkit2gtk-4.1` on Arch); the `.deb` installs it automatically. Linux runs on the CPU out of the box, and a Vulkan GPU runtime can be downloaded in Settings → Inference engine. The Linux app doesn't update itself yet; download new versions from Releases.
 
 Check for updates from the app menu on macOS or Windows. Updates are also checked and downloaded in the background; restart to install when ready. Windows updates download only the app (`-update.exe`) and keep the installed runtime; when a release recommends a newer runtime you can upgrade it in Settings → Inference engine.
 

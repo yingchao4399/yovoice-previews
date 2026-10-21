@@ -274,24 +274,76 @@ jobs:
           cache: false
       - name: Check Go format and vet
         run: |
-          unformatted="$(gofmt -l cmd internal)"
+          unformatted="$(gofmt -l cmd internal desktop/linux)"
           if [[ -n "$unformatted" ]]; then echo "未格式化：$unformatted" >&2; exit 1; fi
           go vet ./...
           GOOS=windows go vet ./...
           GOOS=darwin go vet ./...
+          go -C desktop/linux vet ./...
       - run: go test -race ./...
-  linux-cli:
-    if: ${{ inputs.release }}
+  # Linux 桌面应用：在 Xvfb 中启动真实的 WebKitGTK 窗口，验证桥接、音频、草稿保存与退出。
+  linux-desktop:
+    if: ${{ !inputs.release && github.event_name != 'schedule' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
-          ref: refs/tags/${{ inputs.tag }}
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
           cache: false
+      - name: Install WebKitGTK and Xvfb
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-0 xvfb xauth gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+      - run: pnpm --dir web install --frozen-lockfile
+      - name: Cache audio.cpp runtime
+        uses: actions/cache@v4
+        with:
+          path: artifacts/downloads/audio-*.tar.gz
+          key: audio-cpp-linux-x64-${{ hashFiles('internal/catalog/engine.json', 'scripts/desktop/build-linux.sh') }}
+      - name: Cache ocho runtime
+        uses: actions/cache@v4
+        with:
+          path: artifacts/downloads/ocho-*
+          key: ocho-linux-x64-${{ hashFiles('internal/catalog/ocho.json', 'scripts/package-ocho.py') }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            artifacts/ffmpeg/
+            artifacts/downloads/ffmpeg-*.tar.xz
+          key: ffmpeg-linux-x64-${{ hashFiles('scripts/build-ffmpeg.py') }}
+      - run: scripts/desktop/build-linux.sh
+      - run: scripts/desktop/smoke-linux.sh
+  linux:
+    if: ${{ inputs.release }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Install WebKitGTK and Xvfb
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-0 xvfb xauth gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+      - run: pnpm --dir web install --frozen-lockfile
       - uses: actions/cache@v4
         with:
           path: |
@@ -320,5 +372,19 @@ jobs:
         with:
           name: yovoice-cli-linux-x64
           path: artifacts/yovoice-cli-linux-x64.zip
+          if-no-files-found: error
+      - name: Package Linux desktop
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [[ -n "$TAG" ]]; then export YOVOICE_VERSION="${TAG#v}"; fi
+          YOVOICE_PACKAGE=1 scripts/desktop/build-linux.sh
+          scripts/desktop/smoke-linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yovoice-linux-x64
+          path: |
+            artifacts/yovoice-linux-x64.tar.gz
+            artifacts/yovoice-linux-x64.deb
           if-no-files-found: error
           retention-days: 14

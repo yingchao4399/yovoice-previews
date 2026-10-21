@@ -57,6 +57,10 @@ test('LRC 跳过段落标记，器乐间隔清屏，校准时间优先', () => {
   const estimated = lyricsToLrc(lyricTimeline('[verse]\n第一句\n第二句', 30));
   expect(estimated.split('\n').filter(Boolean)).toHaveLength(2);
   expect(estimated).toMatch(/^\[\d{2}:\d{2}\.\d{2}\]第一句\n\[\d{2}:\d{2}\.\d{2}\]第二句\n$/);
+  // 逐字 LRC：行内每个字前写开始时间，行尾写最后一个字的结束时间；没有逐字时间的行照常写整句。
+  const words = [{ text: 'Hello ', start: 1, end: 1.4 }, { text: 'world', start: 1.5, end: 2 }];
+  expect(lyricsToLrc([{ text: 'Hello world', start: 1, end: 3, words }, { text: '第二句', start: 3, end: 5 }], undefined, true))
+    .toBe('[00:01.00]<00:01.00>Hello <00:01.50>world<00:02.00>\n[00:03.00]第二句\n');
 });
 
 async function storeAudio(page: Page, name: string, seconds: number) {
@@ -117,12 +121,19 @@ test('播放页导出 LRC 歌词使用校准时间', async ({ page }, testInfo) 
   await seedState(page, state); await page.reload();
   await page.locator('.player .transport').getByRole('button', { name: '播放页', exact: true }).click();
   const playing = page.getByRole('dialog', { name: `${draft.title} · 播放页` });
-  await expect(playing.getByText('歌词时间已校准')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('now-playing.png') });
+  await playing.getByRole('button', { name: '歌词工具', exact: true }).click();
+  await expect(page.getByRole('menu')).toContainText('歌词时间已校准');
   const download = page.waitForEvent('download');
-  await playing.getByRole('button', { name: '导出歌词（LRC）', exact: true }).click();
+  await page.getByRole('menuitem', { name: /^导出歌词（LRC）/ }).click();
   const saved = await download; expect(saved.suggestedFilename()).toBe(`${draft.title}.lrc`);
   await saved.saveAs(testInfo.outputPath('song.lrc'));
   const { readFile } = await import('node:fs/promises');
   expect(await readFile(testInfo.outputPath('song.lrc'), 'utf8')).toBe(`[ti:${draft.title}]\n[00:01.25]第一句\n[00:02.50]第二句\n[00:04.00]第三句\n`);
+  // 逐字歌词：这段音频没有人声，逐字时间按音节在每行里均分。
+  const wordDownload = page.waitForEvent('download');
+  await playing.getByRole('button', { name: '歌词工具', exact: true }).click();
+  await page.getByRole('menuitem', { name: /^导出逐字歌词/ }).click();
+  await (await wordDownload).saveAs(testInfo.outputPath('song-words.lrc'));
+  expect((await readFile(testInfo.outputPath('song-words.lrc'), 'utf8')).split('\n')[1]).toBe('[00:01.25]<00:01.25>第<00:01.56>一<00:01.88>句<00:02.19>');
 });
