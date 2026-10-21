@@ -117,6 +117,16 @@ func arrangementMaterialMatches(m schema.ArrangementMaterial, d schema.Draft, re
 	if d.Arrangement == nil {
 		return false
 	}
+	if ref.SectionIndex < 0 || ref.SectionIndex >= len(d.Arrangement.Sections) {
+		return false
+	}
+	section := d.Arrangement.Sections[ref.SectionIndex]
+	if ref.PhraseIndex < 0 || ref.PhraseIndex >= len(section.Phrases) {
+		return false
+	}
+	if ref.PartIndex < 0 || ref.PartIndex >= len(section.Phrases[ref.PhraseIndex].Parts) {
+		return false
+	}
 	part := d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex].Parts[ref.PartIndex]
 	if m.PartID != "" && m.PartID != part.ID {
 		return false

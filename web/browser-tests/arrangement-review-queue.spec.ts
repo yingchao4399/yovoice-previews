@@ -22,7 +22,7 @@ async function setup(page: Page, rejectRetry = false) {
     window.chrome = { ...window.chrome, webview: {
       addEventListener: (_name, listener) => listeners.push(listener),
       postMessage: (request: unknown) => {
-        const { id, method, data } = request as { id: string; method: string; data: { id?: string; feedback?: string } };
+const { id, method, data } = request as { id: string; method: string; data: { id?: string; feedback?: string; sessionId?: string; selected?: number[]; custom?: string; action?: string } };
         calls.push({ method, data });
         let error: { code: string; params: { detail: string } } | undefined;
         if (method === 'arrangement.material.review') {
@@ -32,6 +32,11 @@ async function setup(page: Page, rejectRetry = false) {
         if (method === 'arrangement.material.retry') {
           if (rejectRetry) error = { code: '@yovoice.error.unknown', params: { detail: '需要先修复时长合同' } };
           else { state.arrangementMaterials!.find(m => m.id === data.id)!.retryRequest = { status: 'queued', round: 1, feedback: data.feedback }; push(); }
+        }
+        if (method === 'assistant.open' && state.assistantSessions) { state.assistantSessions.currentId = data.id!; push(); }
+        if (method === 'assistant.answer') {
+          const q = state.assistantSessions?.sessions.flatMap(session => session.messages.flatMap(message => message.blocks ?? []).map(block => block.question)).find(q => q?.id === data.id);
+          if (q) { q.state = data.action === 'later' ? 'deferred' : 'answered'; q.selected = data.selected; q.custom = data.custom; push(); }
         }
         const result = method === 'state.get' ? { state, catalog: [] } : method === 'arrangement.inspect' ? { ready: false, issues: [], parts: [] } : true;
         queueMicrotask(() => listeners.forEach(listener => listener({ data: { id, result, error } } as MessageEvent)));
@@ -136,4 +141,38 @@ test('代表采样确认后等待后台空闲，自动准备该声部剩余采�
   expect(await preparationCalls()).toHaveLength(0);
   await push(page, { activity: { ...state.activity!, status: 'completed' } });
   await expect.poll(preparationCalls).toEqual([{ method: 'arrangement.prepare', data: { draft: expect.objectContaining({ id: sample.projectId }), mode: 'ai', aiModelId: 'yue2-3b-q8', target: { sectionIndex: 0, phraseIndex: 0, partIndex: 0 } } }]);
+});
+
+test('生成失败后的助手问答直接显示在编曲页，明确回答后才续接原诊断会话', async ({ page }) => {
+  const { state, candidate } = await setup(page);
+  const failed = candidate('failed', 0);
+  failed.generationResult = { ...failed.generationResult!, state: 'failed', recoveryQueued: true, recoverySession: 'repair-session', repairRound: 3 };
+  await push(page, {
+    arrangementMaterials: [failed], activity: { ...state.activity!, status: 'failed' },
+    assistantSessions: { currentId: 'other-session', sessions: [{ id: 'other-session', title: '其他对话', updatedAt: new Date().toISOString(), messages: [] }, {
+      id: 'repair-session', title: '编曲自动诊断', updatedAt: new Date().toISOString(), messages: [{ id: 'question-message', role: 'assistant', status: 'completed', createdAt: new Date().toISOString(), blocks: [{ kind: 'question', question: {
+        id: 'repair-question', sessionId: 'repair-session', turnId: 'repair-turn', workId: failed.projectId, prompt: '三轮修复仍未通过，下一步怎样处理？', options: ['只处理当前声部', '重新规划整首', '暂不重新规划'], state: 'pending',
+      } }] }],
+    }] },
+  });
+  const dialog = page.getByRole('dialog', { name: 'AI 生成问题处理', exact: true });
+  await expect(dialog).toContainText('三轮修复仍未通过');
+  await expect(page.getByRole('dialog', { name: /AI 音源试听确认/ })).toHaveCount(0);
+  const calls = () => page.evaluate(() => (window as unknown as { __reviewQueueCalls: { method: string; data: unknown }[] }).__reviewQueueCalls.filter(c => ['assistant.open', 'assistant.answer'].includes(c.method)));
+  expect(await calls()).toHaveLength(0);
+  await dialog.getByRole('button', { name: '稍后回答', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole('button', { name: '重新打开待试听候选', exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: '继续回答', exact: true }).click();
+  await dialog.getByRole('button', { name: '只处理当前声部', exact: true }).click();
+  await dialog.getByRole('textbox', { name: '自定义回答' }).fill('保留其他已完成音轨');
+  await dialog.getByRole('button', { name: '提交回答', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  expect(await calls()).toEqual([
+    { method: 'assistant.open', data: { id: 'repair-session' } },
+    { method: 'assistant.answer', data: { id: 'repair-question', sessionId: 'repair-session', action: 'later', selected: [], custom: '' } },
+    { method: 'assistant.open', data: { id: 'repair-session' } },
+    { method: 'assistant.answer', data: { id: 'repair-question', sessionId: 'repair-session', action: 'submit', selected: [0], custom: '保留其他已完成音轨' } },
+  ]);
 });

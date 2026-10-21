@@ -5,6 +5,7 @@ import { useTranslator } from '@astryxdesign/core/i18n';
 import { formatCallError } from '../../shared/i18n/format';
 import { AppDialog } from '../../shared/ui/app-dialog';
 import { AIMaterialReview } from '../../shared/ui/ai-material-review';
+import { AssistantQuestionCard } from '../../shared/ui/assistant-question-card';
 import { call } from '../../shared/lib/client';
 import type { ArrangementMaterial, Draft, State, UiLocale } from '../../shared/workbench';
 
@@ -32,9 +33,18 @@ export function MaterialReviewQueue({ draft, state, locale }: { draft: Draft; st
       !['queued', 'running', 'completed'].includes(item.retryRequest?.status ?? '') && !deferred.has(item.id));
   }, [state.arrangementMaterials, draft.id, draft.arrangement, deferred]);
   const item = pending[0];
+  const recoverySessions = new Set(materials.map(material => material.generationResult?.recoverySession).filter(Boolean));
+  for (const job of state.arrangementJobs ?? []) if (job.projectId === draft.id) for (const step of job.steps) if (step.recoverySession) recoverySessions.add(step.recoverySession);
+  const question = state.assistantSessions?.sessions.filter(session => recoverySessions.has(session.id))
+    .flatMap(session => session.messages.flatMap(message => message.blocks ?? []).map(block => block.question))
+    .find(q => q?.workId === draft.id && ['pending', 'deferred'].includes(q.state) && !deferred.has(q.id));
   const activity = state.activity;
   const generating = activity?.kind === 'generate' && activity.projectId === draft.id && (activity.status === 'running' || activity.status === 'queued');
   const dismiss = (id: string) => setDeferred(previous => new Set(previous).add(id));
+  const dismissRecovery = () => {
+    if (!question) return;
+    setDeferred(previous => new Set([...previous, question.id, ...materials.filter(material => material.generationResult?.recoverySession === question.sessionId).map(material => material.id)]));
+  };
   const queueRetry = async (id: string, feedback: string) => {
     await call('arrangement.material.retry', { id, draft, feedback });
     dismiss(id); setRetryError('');
@@ -60,16 +70,22 @@ export function MaterialReviewQueue({ draft, state, locale }: { draft: Draft; st
   }, [continueQueue, generating, state.arrangementJobs, draft, t]);
   const zh = locale === 'zh-CN';
   const queued = materials.filter(material => ['queued', 'running'].includes(material.retryRequest?.status ?? ''));
+  const recoveryErrors = (state.arrangementJobs ?? []).filter(job => job.projectId === draft.id).flatMap(job => job.steps.filter(step => step.recoveryError).map(step => `${step.instrument}：${step.recoveryError}`));
   const title = !item ? '' : item.generation?.pitch === undefined ? `${item.instrument} · ${item.phrase || (zh ? 'AI 乐句' : 'AI phrase')}` : `${item.instrument} · MIDI ${item.generation.pitch} · ${item.generation.articulation}`;
   return <>
     {queued.length ? <small role="status">{zh ? `已排队/执行 ${queued.length} 项重新生成；正在生成的下一项完成后优先处理，切换页面不会丢失。` : `${queued.length} regenerations queued/running; processed after the current item, even if you leave this page.`}</small> : null}
     {!generating && queued.some(material => material.retryRequest?.status === 'queued') ? <Button size="sm" variant="secondary" label={zh ? '继续已排队的重新生成' : 'Resume queued regeneration'} onClick={() => { const next = queued.find(material => material.retryRequest?.status === 'queued'); if (next) void queueRetry(next.id, next.retryRequest?.feedback ?? '').catch(cause => setRetryError(formatCallError(t, cause))); }} /> : null}
     {retryError ? <small role="alert">{retryError}</small> : null}
+    {recoveryErrors.length ? <small role="alert">{recoveryErrors.join('；')}</small> : null}
     {deferred.size ? <Button size="sm" variant="ghost" label={zh ? '重新打开待试听候选' : 'Reopen pending reviews'} onClick={() => setDeferred(new Set())} /> : null}
-    {item ? <AppDialog title={`${zh ? 'AI 音源试听确认' : 'Review AI audio'} · ${title}`} width={620}
+    {question ? <AppDialog title={zh ? 'AI 生成问题处理' : 'Resolve AI generation issue'} width={620} closeLabel={zh ? '稍后处理' : 'Decide later'} onClose={dismissRecovery}>
+      <AssistantQuestionCard key={question.id} question={question} activateSession onDeferred={dismissRecovery} />
+    </AppDialog> : null}
+    {item && !question ? <AppDialog title={`${zh ? 'AI 音源试听确认' : 'Review AI audio'} · ${title}`} width={620}
     subtitle={zh ? `候选 ${item.generationResult?.attempt ?? 1} · ${item.modelId} · ${item.condition === 'score_conditioned' ? '谱条件乐句' : item.condition === 'sample_candidate' ? '可演奏音色采样' : '自由音频候选'}${generating ? ' · 下一项正在生成' : ''}` : `Candidate ${item.generationResult?.attempt ?? 1} · ${item.modelId} · ${generating ? 'Next item is generating' : 'Review the current result'}`}
     closeLabel={zh ? '稍后试听' : 'Review later'} onClose={() => dismiss(item.id)}>
     <VStack gap={3}>
+      {item.generationResult?.recoveryError ? <small role="alert">{item.generationResult.recoveryError}</small> : item.generationResult?.recoveryQueued ? <small role="status">{zh ? 'Ocho 已接收此项诊断；需要你选择处理范围时，会在当前编曲页弹出问答卡。' : 'Ocho has received this diagnostic task. Scope decisions appear here as a question card.'}</small> : null}
       <small>{zh ? `目标乐句：${item.phrase || '当前曲谱声部'} · 有效长度 ${item.generation?.coreSeconds.toFixed(2)} 秒 · 原片 ${item.duration.toFixed(2)} 秒 · 尾音 ${item.generation?.tailSeconds.toFixed(2)} 秒` : `Phrase: ${item.phrase || 'current score part'} · effective ${item.generation?.coreSeconds.toFixed(2)}s · original ${item.duration.toFixed(2)}s · tail ${item.generation?.tailSeconds.toFixed(2)}s`}</small>
       <small>{zh ? '请直接听候选是否像目标乐器/人声、有没有多余内容、乐句是否自然结束。确认后立即用于当前编曲；重新生成或提交自定义意见会只重做这一项，其他已完成素材保留。' : 'Listen for the intended sound, unwanted content and a natural ending. Confirmed audio is used in this arrangement. Regeneration only replaces this item; completed assets remain.'}</small>
       <AIMaterialReview key={item.id} material={item} draft={draft} locale={locale} queue onResolved={dismiss} onAdopted={continueAfterAdoption} onRetry={queueRetry} />

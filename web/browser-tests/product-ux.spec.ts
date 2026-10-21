@@ -3,6 +3,8 @@ import { seedState } from './seed';
 import { emptyState } from '../src/shared/workbench';
 
 test('新建四种作品、取消导入、卡片菜单与重命名独立保存', async ({ page }, testInfo) => {
+  // 跨作品创建、重命名、两次文件选择和重载共用复合用例总时限，保留原有断言及断言时限。
+  test.setTimeout(90_000);
   await page.goto('/');
   await page.getByTestId('nav-new').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);

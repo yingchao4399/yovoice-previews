@@ -13,7 +13,7 @@ export interface ArrangementGenerationContract {
 export interface ArrangementGenerationResult {
   state: string; actualSeconds: number; semanticFrames?: number; truncated?: boolean; truncationKnown: boolean;
   detectedPitch?: number; checks: { code: string; status: 'pass' | 'fail' | 'review'; message: string }[];
-  derivedFile?: string; sourceId?: string; attempt: number;
+  derivedFile?: string; sourceId?: string; attempt: number; repairRound?: number; recoverySession?: string; recoveryQueued?: boolean; recoveryError?: string;
 }
 export interface ArrangementGenerationPreflight {
   settings: ArrangementGenerationSettings; contract: ArrangementGenerationContract;

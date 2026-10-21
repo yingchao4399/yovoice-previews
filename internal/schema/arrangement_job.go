@@ -18,14 +18,17 @@ type ArrangementJob struct {
 }
 
 type ArrangementJobStep struct {
-	PartID       string `json:"partId,omitempty"`
-	SectionIndex int    `json:"sectionIndex"`
-	PhraseIndex  int    `json:"phraseIndex"`
-	PartIndex    int    `json:"partIndex"`
-	Instrument   string `json:"instrument"`
-	Source       string `json:"source"`
-	Status       string `json:"status"`
-	Error        string `json:"error,omitempty"`
+	PartID          string `json:"partId,omitempty"`
+	SectionIndex    int    `json:"sectionIndex"`
+	PhraseIndex     int    `json:"phraseIndex"`
+	PartIndex       int    `json:"partIndex"`
+	Instrument      string `json:"instrument"`
+	Source          string `json:"source"`
+	Status          string `json:"status"`
+	Error           string `json:"error,omitempty"`
+	RecoverySession string `json:"recoverySession,omitempty"`
+	RecoveryQueued  bool   `json:"recoveryQueued,omitempty"`
+	RecoveryError   string `json:"recoveryError,omitempty"`
 }
 
 // ArrangementScorePhrase 是已通过本句校验的写谱进度，不覆盖用户当前乐谱。

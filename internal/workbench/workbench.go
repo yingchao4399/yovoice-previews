@@ -92,6 +92,7 @@ func New(root string) (*Workbench, error) {
 		return nil, e
 	}
 	w.startResourceDownloadWorker()
+	go w.resumePendingArrangementRecoveries()
 	return w, nil
 }
 

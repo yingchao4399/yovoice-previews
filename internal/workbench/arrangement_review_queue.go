@@ -114,6 +114,7 @@ func (w *Workbench) resumeArrangementRetriesAfterOperation(projectID string, don
 			})
 		}, "", projectID)
 		if err == nil {
+			w.scheduleArrangementRecovery(projectID)
 			return
 		}
 		// 若外层备料批次抢先开始下一声部，就等该操作到达边界。

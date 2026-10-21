@@ -22,7 +22,7 @@ var assistantTools = []string{
 	"plan_melody", "cover_melody", "transform_melody",
 	"open_work", "open_page", "list_models", "list_voices", "list_characters", "save_character", "status",
 	"get_app_status", "get_recent_errors", "remember_preference", "forget_preference", "propose_action",
-	"arrangement_inventory", "inspect_arrangement", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "retry_arrangement_material", "render_arrangement",
+	"arrangement_inventory", "inspect_arrangement", "arrangement_generation_preflight", "replan_arrangement_generation", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "retry_arrangement_material", "render_arrangement",
 	"search_resources",
 	"add_resource_clip",
 	"apply_resource_band",
@@ -617,6 +617,7 @@ func (w *Workbench) getGenerationStatusTool(ctx context.Context, req *mcp.CallTo
 	}
 	if d.Arrangement != nil {
 		out["arrangementJobs"] = w.ArrangementJobs(d.ID)
+		out["arrangementMaterials"] = arrangementDiagnosticMaterials(s, d)
 		if d.Timeline != nil {
 			out["existingTimelineLanes"] = len(d.Timeline.Tracks)
 			out["existingTimelineAssets"] = len(d.Timeline.Assets)
