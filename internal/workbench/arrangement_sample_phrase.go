@@ -48,7 +48,7 @@ func (w *Workbench) renderGeneratedSamplePhrase(ctx context.Context, d schema.Dr
 	hash := sha256.Sum256(b)
 	fingerprint := hex.EncodeToString(hash[:])
 	for _, m := range state.ArrangementMaterials {
-		if arrangementMaterialMatches(m, d, t.job.ref) && m.Generation != nil && m.Generation.SourceFingerprint == fingerprint && m.Condition == "sampler_score" && m.GenerationResultState() != "rejected" {
+		if arrangementMaterialMatches(m, d, t.job.ref) && m.Generation != nil && m.Generation.SourceFingerprint == fingerprint && m.Condition == "sampler_score" && w.generationCandidateRetained(m) {
 			return nil
 		}
 	}
