@@ -195,12 +195,25 @@ func (w *Workbench) runArrangementJob(ctx context.Context, job schema.Arrangemen
 			return
 		}
 		step.Status = "ready"
+		if step.Source == "ai" {
+			ref := ArrangementPartRef{step.SectionIndex, step.PhraseIndex, step.PartIndex}
+			inspection, e := w.InspectArrangement(ArrangementInspectInput{Draft: job.Draft, AIModelID: job.ModelID, Stage: "render"})
+			if e != nil {
+				step.Status = "failed"
+				step.Error = e.Error()
+			} else if !slices.ContainsFunc(inspection.Parts, func(p ArrangementPartInspection) bool { return p.Ref == ref && p.Ready }) {
+				step.Status = "needs_review"
+			}
+		}
 		step.Error = ""
 		if w.updateArrangementJob(job) != nil {
 			return
 		}
 	}
 	job.Status = "ready"
+	if slices.ContainsFunc(job.Steps, func(s schema.ArrangementJobStep) bool { return s.Status != "ready" }) {
+		job.Status = "needs_review"
+	}
 	job.Error = ""
 	_ = w.updateArrangementJob(job)
 }

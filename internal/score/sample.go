@@ -13,11 +13,16 @@ import (
 
 // SampleFile 指向应用托管的 44.1 kHz、16 位、立体声 WAV。
 type SampleFile struct {
-	Path         string
-	RootPitch    int
-	Articulation string
-	VelocityLow  int
-	VelocityHigh int
+	ExactPitch     bool
+	Generated      bool
+	SustainSeconds float64
+	ReleaseSeconds float64
+	Duration       float64
+	Path           string
+	RootPitch      int
+	Articulation   string
+	VelocityLow    int
+	VelocityHigh   int
 }
 
 type SampleInstrument struct {
@@ -166,8 +171,9 @@ func loadSample(path string) (sampleAudio, error) {
 	return a, nil
 }
 
-func closestSample(files []SampleFile, note schema.ScoreNote, defaultArticulation string, occurrence int) (int, error) {
+func closestSample(files []SampleFile, note schema.ScoreNote, defaultArticulation string, occurrence int, requiredSeconds float64) (int, error) {
 	index, distance := -1, 128
+	durationShort := false
 	articulation := note.Articulation
 	if articulation == "" {
 		articulation = defaultArticulation
@@ -180,11 +186,25 @@ func closestSample(files []SampleFile, note schema.ScoreNote, defaultArticulatio
 			continue
 		}
 		delta := int(math.Abs(float64(file.RootPitch - note.Pitch)))
+		if file.ExactPitch && delta != 0 {
+			continue
+		}
+		if file.Generated && file.SustainSeconds > 0 && file.SustainSeconds+.001 < requiredSeconds {
+			durationShort = true
+			continue
+		}
+		if file.Generated && file.Duration > 0 && file.Duration+.001 < requiredSeconds+file.ReleaseSeconds {
+			durationShort = true
+			continue
+		}
 		if delta < distance {
 			index, distance = i, delta
 		}
 	}
 	if index < 0 {
+		if durationShort {
+			return -1, fmt.Errorf("音符 %d 的 AI 采样持续时长不足，需补生成", note.Pitch)
+		}
 		return -1, fmt.Errorf("音符 %d 缺少奏法 %s、力度 %d 的采样", note.Pitch, articulation, note.Velocity)
 	}
 	if distance > 7 {
@@ -192,7 +212,7 @@ func closestSample(files []SampleFile, note schema.ScoreNote, defaultArticulatio
 	}
 	variants := []int{}
 	for i, file := range files {
-		if file.Articulation == articulation && note.Velocity >= file.VelocityLow && note.Velocity <= file.VelocityHigh && int(math.Abs(float64(file.RootPitch-note.Pitch))) == distance {
+		if file.Articulation == articulation && note.Velocity >= file.VelocityLow && note.Velocity <= file.VelocityHigh && (!file.ExactPitch || file.RootPitch == note.Pitch) && int(math.Abs(float64(file.RootPitch-note.Pitch))) == distance && (!file.Generated || ((file.SustainSeconds <= 0 || file.SustainSeconds+.001 >= requiredSeconds) && (file.Duration <= 0 || file.Duration+.001 >= requiredSeconds+file.ReleaseSeconds))) {
 			variants = append(variants, i)
 		}
 	}
@@ -224,16 +244,20 @@ func renderSampleTrack(ctx context.Context, s schema.Score, t schema.ScoreTrack,
 		if err := ctx.Err(); err != nil {
 			return nil, nil, err
 		}
-		index, err := closestSample(instrument.Samples, note, instrument.DefaultArticulation, noteIndex)
-		if err != nil {
-			return nil, nil, fmt.Errorf("声部 %s: %w", t.Name, err)
-		}
-		file, sample := instrument.Samples[index], loaded[index]
 		start := s.Seconds(note.Bar, note.Beat)
 		position := float64(note.Bar-1)*per + note.Beat - 1 + note.Length
 		bar := int(position/per) + 1
 		end := s.Seconds(bar, position-float64(bar-1)*per+1)
+		requiredSeconds := max(0, end-start)
+		index, err := closestSample(instrument.Samples, note, instrument.DefaultArticulation, noteIndex, requiredSeconds)
+		if err != nil {
+			return nil, nil, fmt.Errorf("声部 %s: %w", t.Name, err)
+		}
+		file, sample := instrument.Samples[index], loaded[index]
 		velocity := note.Velocity
+		if file.Generated && file.SustainSeconds+.001 < end-start {
+			return nil, nil, fmt.Errorf("AI 采样 MIDI %d 的持续时长不足，需补生成", note.Pitch)
+		}
 		if t.Humanize != nil {
 			if t.Humanize.Velocity > 0 {
 				velocity += rng.IntN(2*t.Humanize.Velocity+1) - t.Humanize.Velocity
@@ -247,12 +271,30 @@ func renderSampleTrack(ctx context.Context, s schema.Score, t schema.ScoreTrack,
 		gain := float32(float64(velocity) / 127)
 		step := math.Pow(2, float64(note.Pitch-file.RootPitch)/12)
 		startFrame := int(start * SampleRate)
-		length := min(int((end-start)*SampleRate), frames-startFrame)
+		coreFrames := min(int((end-start)*SampleRate), frames-startFrame)
+		length := coreFrames
+		releaseFrames, crossfadeFrames := 0, 0
+		if file.Generated {
+			sustainFrame := int(file.SustainSeconds * SampleRate)
+			availableRelease := max(0, len(sample.left)-sustainFrame)
+			releaseFrames = min(int(file.ReleaseSeconds*SampleRate), availableRelease, frames-startFrame-coreFrames)
+			length = coreFrames + releaseFrames
+			crossfadeFrames = min(SampleRate/200, releaseFrames/2, max(0, sustainFrame-coreFrames))
+		} else if file.ExactPitch {
+			length = min(int((end-start+file.ReleaseSeconds)*SampleRate), frames-startFrame)
+		}
 		if length <= 0 {
 			continue
 		}
 		for j := 0; j < length; j++ {
 			pos := float64(j) * step
+			inRelease := file.Generated && j >= coreFrames
+			if inRelease {
+				// AI samples store the release after their declared sustain region.
+				// Jump to that region instead of replaying the sustain as a fake tail.
+				tailOffset := j - coreFrames
+				pos = file.SustainSeconds*SampleRate + float64(tailOffset)*step
+			}
 			k := int(pos)
 			if k+1 >= len(sample.left) {
 				break
@@ -263,8 +305,23 @@ func renderSampleTrack(ctx context.Context, s schema.Score, t schema.ScoreTrack,
 				envelope = float32(remaining) / float32(SampleRate/40)
 			}
 			expressionGain := float32(expression(s, t.Dynamics, float64(startFrame+j)/SampleRate))
-			left[startFrame+j] += (sample.left[k]*(1-frac) + sample.left[k+1]*frac) * gain * envelope * expressionGain * float32(panL)
-			right[startFrame+j] += (sample.right[k]*(1-frac) + sample.right[k+1]*frac) * gain * envelope * expressionGain * float32(panR)
+			leftSample := sample.left[k]*(1-frac) + sample.left[k+1]*frac
+			rightSample := sample.right[k]*(1-frac) + sample.right[k+1]*frac
+			if inRelease && crossfadeFrames > 0 && j-coreFrames < crossfadeFrames {
+				tailOffset := j - coreFrames
+				t := float32(tailOffset+1) / float32(crossfadeFrames)
+				corePos := float64(coreFrames+tailOffset) * step
+				coreIndex := int(corePos)
+				if coreIndex+1 < len(sample.left) {
+					coreFrac := float32(corePos - float64(coreIndex))
+					coreL := sample.left[coreIndex]*(1-coreFrac) + sample.left[coreIndex+1]*coreFrac
+					coreR := sample.right[coreIndex]*(1-coreFrac) + sample.right[coreIndex+1]*coreFrac
+					leftSample = coreL*(1-t) + leftSample*t
+					rightSample = coreR*(1-t) + rightSample*t
+				}
+			}
+			left[startFrame+j] += leftSample * gain * envelope * expressionGain * float32(panL)
+			right[startFrame+j] += rightSample * gain * envelope * expressionGain * float32(panR)
 		}
 	}
 	return left, right, nil

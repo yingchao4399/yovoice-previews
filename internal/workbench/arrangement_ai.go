@@ -1,20 +1,14 @@
 package workbench
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math"
-	"os"
 	"slices"
 	"strings"
-	"time"
-	"yovoice/internal/audio"
 	"yovoice/internal/catalog"
-	"yovoice/internal/engine"
-	"yovoice/internal/msg"
 	"yovoice/internal/schema"
 	"yovoice/internal/score"
 )
@@ -26,9 +20,11 @@ type ArrangementPartRef struct {
 }
 
 type ArrangementAIPrepareInput struct {
-	Draft   schema.Draft        `json:"draft"`
-	ModelID string              `json:"modelId"`
-	Target  *ArrangementPartRef `json:"target,omitempty"`
+	Draft     schema.Draft        `json:"draft"`
+	ModelID   string              `json:"modelId"`
+	Target    *ArrangementPartRef `json:"target,omitempty"`
+	Retry     bool                `json:"-"`
+	RetryCell string              `json:"-"`
 }
 
 func arrangementPlanHash(plan schema.ArrangementPlan) string {
@@ -43,7 +39,8 @@ func arrangementJobHash(plan schema.ArrangementPlan, ref ArrangementPartRef) str
 	// Fingerprint only fields used by this phrase generation. An unrelated real
 	// part may change without invalidating already generated AI audio.
 	input := struct {
-		Brief         string
+		BoundSourceID string
+		Generation    schema.ArrangementGenerationSettings
 		Tempo         float64
 		TimeSignature []int
 		Key           string
@@ -53,7 +50,7 @@ func arrangementJobHash(plan schema.ArrangementPlan, ref ArrangementPartRef) str
 		Instrument    string
 		Role          string
 		Technique     string
-	}{plan.Brief, plan.Tempo, plan.TimeSignature, plan.Key, phrase.Name, phrase.StartBar, phrase.EndBar, part.Instrument, part.Role, part.Technique}
+	}{part.SourceID, generationSettings(part), plan.Tempo, plan.TimeSignature, plan.Key, phrase.Name, phrase.StartBar, phrase.EndBar, part.Instrument, part.Role, part.Technique}
 	data, _ := json.Marshal(input)
 	hash := sha256.Sum256(data)
 	return hex.EncodeToString(hash[:])
@@ -91,7 +88,14 @@ func arrangementConditionHash(d schema.Draft, ref ArrangementPartRef) string {
 	phrase := d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex]
 	part := phrase.Parts[ref.PartIndex]
 	var notes []schema.ScoreNote
+	var timing []float64
+	var meter []int
+	key := ""
 	if d.Score != nil {
+		for bar := phrase.StartBar; bar <= phrase.EndBar; bar++ {
+			timing = append(timing, d.Score.BarTempo(bar))
+		}
+		meter, key = d.Score.TimeSignature, d.Score.Key
 		for _, track := range d.Score.Tracks {
 			if (part.ID != "" && slices.Contains(track.PartIDs, part.ID)) || (part.ID == "" && arrangementSameInstrument(track.Name, part.Instrument)) {
 				for _, n := range track.Notes {
@@ -102,13 +106,30 @@ func arrangementConditionHash(d schema.Draft, ref ArrangementPartRef) string {
 			}
 		}
 	}
-	b, _ := json.Marshal([]any{"arrangement-condition-v1", arrangementJobHash(*d.Arrangement, ref), notes})
+	b, _ := json.Marshal([]any{arrangementAdapterVersion, arrangementJobHash(*d.Arrangement, ref), notes, timing, meter, key})
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }
 
 func arrangementMaterialMatches(m schema.ArrangementMaterial, d schema.Draft, ref ArrangementPartRef) bool {
-	return d.Arrangement != nil && m.PlanHash == arrangementJobHash(*d.Arrangement, ref) && m.ScoreHash != "" && m.ScoreHash == arrangementConditionHash(d, ref) && (m.PartID == "" || m.PartID == d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex].Parts[ref.PartIndex].ID)
+	if d.Arrangement == nil {
+		return false
+	}
+	part := d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex].Parts[ref.PartIndex]
+	if m.PartID != "" && m.PartID != part.ID {
+		return false
+	}
+	if m.Generation == nil && d.Score != nil {
+		phrase := d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex]
+		seconds := d.Score.Seconds(phrase.EndBar+1, 1) - d.Score.Seconds(phrase.StartBar, 1)
+		if m.Duration < seconds-.1 || m.Duration > seconds+math.Max(.5, seconds*.15) {
+			return false
+		}
+	}
+	if m.PlanHash == arrangementJobHash(*d.Arrangement, ref) && m.ScoreHash != "" && m.ScoreHash == arrangementConditionHash(d, ref) {
+		return true
+	}
+	return legacyArrangementMaterialMatches(m, d, ref)
 }
 
 func arrangementAIJobs(plan schema.ArrangementPlan, target *ArrangementPartRef) ([]arrangementAIJob, error) {
@@ -144,11 +165,19 @@ func arrangementAIJobs(plan schema.ArrangementPlan, target *ArrangementPartRef) 
 }
 
 func arrangementMusicDraft(d schema.Draft, modelID string, job arrangementAIJob) schema.Draft {
-	brief := []rune(d.Arrangement.Brief)
-	if len(brief) > 160 {
-		brief = brief[:160]
+	settings := generationSettings(job.part)
+	prompt := fmt.Sprintf("Dry isolated %s only, %s technique. %g BPM, %s. Natural dynamics. No other instruments, no accompaniment.", aiInstrumentName(job.part.Instrument), job.part.Technique, d.Arrangement.Tempo, d.Arrangement.Key)
+	instrumental := settings.SoundType != "wordless"
+	lyrics := ""
+	if instrumental {
+		prompt += " Instrumental, no vocals, no speech."
+	} else {
+		prompt += " Wordless vocal ensemble, sustained vowel ah, no lyrics, no speech, no instruments."
+		lyrics = "[Verse]\nah"
 	}
-	prompt := fmt.Sprintf("Dry isolated solo %s, %s technique, %s role. Phrase: %s. Direction: %s. %g BPM, %s. No vocals, other instruments or drums. Natural phrasing and dynamics.", job.part.Instrument, job.part.Technique, job.part.Role, job.phrase.Name, string(brief), d.Arrangement.Tempo, d.Arrangement.Key)
+	if settings.SoundType != "percussion" {
+		prompt += " No drums."
+	}
 	if runes := []rune(prompt); len(runes) > 512 {
 		prompt = string(runes[:512])
 	}
@@ -160,7 +189,23 @@ func arrangementMusicDraft(d schema.Draft, modelID string, job arrangementAIJob)
 	if slices.Contains([]int{2, 3, 4, 6}, d.Arrangement.TimeSignature[0]) {
 		meter = fmt.Sprint(d.Arrangement.TimeSignature[0])
 	}
-	return schema.Draft{ID: d.ID, Kind: "music", Title: string(title), Text: prompt, SynthesisSettings: schema.SynthesisSettings{ModelID: modelID, Instrumental: true, ModelOptions: map[string]map[string]any{"ace_step": {"duration_seconds": math.Max(10, math.Ceil(job.seconds)), "bpm": d.Arrangement.Tempo, "keyscale": "auto", "timesignature": meter}}}}
+	keyscale := "auto"
+	if key, err := score.NormalizeKey(d.Arrangement.Key); err == nil {
+		key = strings.NewReplacer("Db", "C#", "D#", "Eb", "Gb", "F#", "G#", "Ab", "A#", "Bb", "Cb", "B", "E#", "F", "B#", "C", "Fb", "E").Replace(key)
+		keyscale = key + " major"
+		if strings.HasSuffix(key, "m") {
+			keyscale = strings.TrimSuffix(key, "m") + " minor"
+		}
+	}
+	return schema.Draft{ID: d.ID, Kind: "music", Title: string(title), Text: prompt, SynthesisSettings: schema.SynthesisSettings{ModelID: modelID, Instrumental: instrumental, Lyrics: lyrics, ModelOptions: map[string]map[string]any{"yue2": {"cot": "full"}, "ace_step": {"duration_seconds": math.Max(10, math.Ceil(job.seconds)), "bpm": d.Arrangement.Tempo, "keyscale": keyscale, "timesignature": meter}}}}
+}
+
+func aiInstrumentName(name string) string {
+	names := map[string]string{"箫": "xiao bamboo flute", "笛子": "dizi bamboo flute", "琵琶": "Chinese pipa lute", "二胡": "erhu bowed strings", "古筝": "guzheng zither", "古琴": "guqin zither", "合唱": "unison wordless choir"}
+	if english := names[arrangementInstrumentKey(name)]; english != "" {
+		return name + " (" + english + ")"
+	}
+	return name
 }
 
 func arrangementModelDraft(d schema.Draft, modelID string, job arrangementAIJob) (schema.Draft, error) {
@@ -169,7 +214,7 @@ func arrangementModelDraft(d schema.Draft, modelID string, job arrangementAIJob)
 	if err != nil {
 		return music, err
 	}
-	if model.Family == "yue2" {
+	if model.Family == "yue2" && generationSettings(job.part).Mode == "score" {
 		if d.Score == nil {
 			return music, fmt.Errorf("YuE2 跟谱生成需要先完成曲谱")
 		}
@@ -183,6 +228,16 @@ func arrangementModelDraft(d schema.Draft, modelID string, job arrangementAIJob)
 				if err != nil {
 					return music, fmt.Errorf("%s · %s：%w", job.phrase.Name, job.part.Instrument, err)
 				}
+				if generationSettings(job.part).SoundType == "wordless" {
+					music.Abc, err = score.PhraseVocalABC(music.Abc)
+				}
+				if err != nil {
+					return music, err
+				}
+				music.Abc, err = score.PhraseReleaseABC(music.Abc, generationSettings(job.part).TailSeconds)
+				if err != nil {
+					return music, err
+				}
 				return music, nil
 			}
 		}
@@ -191,176 +246,8 @@ func arrangementModelDraft(d schema.Draft, modelID string, job arrangementAIJob)
 	return music, nil
 }
 
-// PrepareArrangementAI materializes every selected AI phrase into an indexed
-// library stem. Existing stems for the identical approved plan are reused.
-func (w *Workbench) PrepareArrangementAI(in ArrangementAIPrepareInput) error {
-	w.edit.Lock()
-	defer w.edit.Unlock()
-	d := in.Draft
-	if in.ModelID == "" && d.Arrangement != nil {
-		in.ModelID = d.Arrangement.AIModelID
-	}
-	if d.Kind != "score" || d.Arrangement == nil {
-		return msg.Err(msg.ErrRequestInvalid, nil)
-	}
-	jobs, err := arrangementAIJobs(*d.Arrangement, in.Target)
-	if err != nil {
-		return err
-	}
-	state := w.Store.Read()
-	if d.Timeline == nil {
-		if existing := slices.IndexFunc(state.Drafts, func(item schema.Draft) bool { return item.ID == d.ID }); existing >= 0 {
-			d.Timeline = state.Drafts[existing].Timeline
-		}
-	}
-	hash := arrangementRevision(d)
-	inspection, inspectErr := w.InspectArrangement(ArrangementInspectInput{Draft: d, Stage: "score", AIModelID: in.ModelID})
-	if inspectErr != nil {
-		return inspectErr
-	}
-	pending := make([]arrangementAIJob, 0, len(jobs))
-	for _, job := range jobs {
-		found := false
-		for _, part := range inspection.Parts {
-			if part.Ref == job.ref && part.SourceID != "" {
-				if part.Ready {
-					found = true
-				} else if len(part.Issues) > 0 {
-					return msg.Err(msg.ErrArrangementBlocked, msg.Params{"detail": part.Issues[0].Message, "reason": part.Issues[0].Code})
-				}
-			}
-		}
-		for _, material := range state.ArrangementMaterials {
-			if material.ProjectID == d.ID && material.ModelID == in.ModelID && arrangementMaterialMatches(material, d, job.ref) && material.SectionIndex == job.ref.SectionIndex && material.PhraseIndex == job.ref.PhraseIndex && material.PartIndex == job.ref.PartIndex {
-				path, pathErr := w.Store.MediaPath("outputs", material.FileName)
-				if pathErr == nil {
-					_, pathErr = os.Stat(path)
-				}
-				if pathErr == nil {
-					found = true
-					break
-				}
-			}
-		}
-		if !found {
-			pending = append(pending, job)
-		}
-	}
-	if len(pending) == 0 {
-		return nil
-	}
-	model, lookupErr := catalog.Lookup(in.ModelID)
-	if lookupErr != nil || (model.Family != "ace_step" && model.Family != "yue2") {
-		return fmt.Errorf("请在设置中安装并选择 ACE-Step 或 YuE2 音频模型；DeepSeek 只负责规划与写谱")
-	}
-	index := slices.IndexFunc(state.Models, func(item schema.InstalledModel) bool { return item.ID == in.ModelID })
-	if index < 0 {
-		return msg.Err(msg.ErrModelRequired, nil)
-	}
-	if !RuntimeReady(state) {
-		return msg.Err(msg.ErrRuntimeRequired, nil)
-	}
-	if err = modelEngineReady(state, in.ModelID); err != nil {
-		return err
-	}
-	for _, job := range pending {
-		musicDraft, prepareErr := arrangementModelDraft(d, in.ModelID, job)
-		if prepareErr != nil {
-			return prepareErr
-		}
-		if _, err = engine.BuildRequest(musicDraft, "", ""); err != nil {
-			return err
-		}
-	}
-	if err = w.saveDraft(d); err != nil {
-		return err
-	}
-	_, err = w.start("generate", msg.ActivityGenerate, nil, nil, func(ctx context.Context) error {
-		created := make([]string, 0, len(pending))
-		keep := false
-		defer func() {
-			if !keep {
-				for _, path := range created {
-					_ = os.Remove(path)
-				}
-			}
-		}()
-		for i, job := range pending {
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-			w.progress(msg.ActivityRendering, msg.Params{"stage": "ai", "done": i, "total": len(pending)}, int64(i), int64(len(pending)))
-			id := schema.NewID()
-			file := "import-" + id + ".wav"
-			path, pathErr := w.Store.MediaPath("outputs", file)
-			if pathErr != nil {
-				return pathErr
-			}
-			created = append(created, path)
-			musicDraft, prepareErr := arrangementModelDraft(d, in.ModelID, job)
-			if prepareErr != nil {
-				return prepareErr
-			}
-			if _, generateErr := w.engine.Generate(ctx, *state.RuntimePath, state.Models[index], state.Preferences.Backend, musicDraft, "", "", path, func(code msg.Code, params msg.Params) { w.progress(code, params, int64(i), int64(len(pending))) }); generateErr != nil {
-				return generateErr
-			}
-			duration, durationErr := audio.Duration(path)
-			if durationErr != nil {
-				return durationErr
-			}
-			if duration+0.1 < job.seconds {
-				return fmt.Errorf("%s · %s 的 AI 音频不足计划时长：%.1f / %.1f 秒", job.phrase.Name, job.part.Instrument, duration, job.seconds)
-			}
-			quality, qualityErr := audio.InspectSignal(path)
-			if qualityErr != nil {
-				return qualityErr
-			}
-			warning := ""
-			if d.Score != nil {
-				units, _ := arrangementUnits(*d.Arrangement, *d.Score)
-				for _, u := range units {
-					if u.SectionIndex == job.ref.SectionIndex && u.PhraseIndex == job.ref.PhraseIndex && u.PartIndex == job.ref.PartIndex {
-						expected := job.seconds
-						for _, n := range u.Track.Notes {
-							expected = min(expected, d.Score.Seconds(n.Bar, n.Beat)-u.Start)
-						}
-						if math.Abs(quality.OnsetSeconds-expected) > .35 {
-							warning = fmt.Sprintf("起音约 %.2fs，曲谱首音 %.2fs；请试听确认或手动对齐", quality.OnsetSeconds, expected)
-						}
-					}
-				}
-			}
-			if duration-job.seconds > math.Max(.5, job.seconds*.15) {
-				warning = fmt.Sprintf("%s 生成时长 %.1fs，计划乐句 %.1fs；拼合默认取前 %.1fs，请试听并在时间线裁切、对齐。", warning, duration, job.seconds, job.seconds)
-			}
-			condition := "free_audio"
-			if musicDraft.Abc != "" {
-				condition = "score_conditioned"
-			}
-			material := schema.ArrangementMaterial{ID: id, ProjectID: d.ID, PlanHash: arrangementJobHash(*d.Arrangement, job.ref), ScoreHash: arrangementConditionHash(d, job.ref), PartID: job.part.ID, Condition: condition, ReviewStatus: "needs_review", Peak: quality.Peak, ClippedFraction: quality.ClippedFraction, OnsetSeconds: quality.OnsetSeconds, AlignmentWarning: warning, SectionIndex: job.ref.SectionIndex, PhraseIndex: job.ref.PhraseIndex, PartIndex: job.ref.PartIndex, Instrument: job.part.Instrument, Role: job.part.Role, Technique: job.part.Technique, Phrase: job.phrase.Name, Prompt: musicDraft.Text, Tempo: d.Arrangement.Tempo, Key: d.Arrangement.Key, ModelID: in.ModelID, FileName: file, Duration: duration, CreatedAt: time.Now().UTC()}
-			w.edit.Lock()
-			current := w.Store.Read()
-			draftIndex := slices.IndexFunc(current.Drafts, func(item schema.Draft) bool { return item.ID == d.ID })
-			if draftIndex < 0 || arrangementRevision(current.Drafts[draftIndex]) != hash {
-				w.edit.Unlock()
-				return fmt.Errorf("生成期间计划或曲谱已更改；已完成素材保留，请对新修订重新准备")
-			}
-			persistErr := w.Store.Update(func(state *schema.State) { state.ArrangementMaterials = append(state.ArrangementMaterials, material) }, true)
-			w.edit.Unlock()
-			if persistErr != nil {
-				return persistErr
-			}
-			// 每句成功立即提交；后续失败仅清理尚未提交的文件。
-			created = nil
-		}
-		keep = true
-		return nil
-	}, "", d.ID)
-	return err
-}
-
 // ReviewArrangementMaterial 只记录用户试听结论，不替代自动质量检查。
-func (w *Workbench) ReviewArrangementMaterial(id string, confirmed bool) error {
+func (w *Workbench) reviewArrangementMaterialLegacy(id string, confirmed bool) error {
 	found := false
 	err := w.Store.Update(func(s *schema.State) {
 		for i := range s.ArrangementMaterials {

@@ -33,6 +33,8 @@ type Workbench struct {
 	// edit 串行化“读取状态 → 校验引用 → 写入”的短事务，避免并发调用使引用检查失效；
 	// 持有期间不执行转码、下载或推理等耗时操作。锁顺序：先 edit 后 mu。
 	edit sync.Mutex
+	// 采样检查、适配和试听采用串行化；耗时检查不占用作品编辑锁。
+	generationReview sync.Mutex
 	// mu 保护后台操作的取消函数与完成通道。
 	// cancel/done 是占用推理引擎的主操作（生成、内核安装、迁移）；installCancel/installDone 是模型下载与导入，
 	// 二者互不阻塞，下载大模型时仍可用已安装的模型生成。

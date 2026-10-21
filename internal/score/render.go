@@ -69,9 +69,9 @@ func RenderWithSources(ctx context.Context, sf *meltysynth.SoundFont, s schema.S
 	if e := schema.ValidateScore(&s); e != nil {
 		return e
 	}
-	frames := int(math.Ceil((s.Duration() + tailSeconds) * SampleRate))
-	mixL, mixR := make([]float32, frames), make([]float32, frames)
 	tracks := slices.DeleteFunc(slices.Clone(s.Tracks), func(t schema.ScoreTrack) bool { return t.Mute })
+	frames := int(math.Ceil(renderDurationSeconds(s, tracks, sources) * SampleRate))
+	mixL, mixR := make([]float32, frames), make([]float32, frames)
 	for i, t := range tracks {
 		if e := ctx.Err(); e != nil {
 			return e
@@ -112,6 +112,35 @@ func RenderWithSources(ctx context.Context, sf *meltysynth.SoundFont, s schema.S
 	}
 	limit(mixL, mixR)
 	return WriteWAV(output, mixL, mixR)
+}
+
+func renderDurationSeconds(s schema.Score, tracks []schema.ScoreTrack, sources map[string]SampleInstrument) float64 {
+	duration := s.Duration() + tailSeconds
+	for _, track := range tracks {
+		instrument, ok := sources[track.SourceID]
+		if !ok || track.SourceID == "" {
+			continue
+		}
+		for noteIndex, note := range track.Notes {
+			start := s.Seconds(note.Bar, note.Beat)
+			position := float64(note.Bar-1)*s.BeatsPerBar() + note.Beat - 1 + note.Length
+			bar := int(position/s.BeatsPerBar()) + 1
+			end := s.Seconds(bar, position-float64(bar-1)*s.BeatsPerBar()+1)
+			index, err := closestSample(instrument.Samples, note, instrument.DefaultArticulation, noteIndex, max(0, end-start))
+			if err != nil {
+				continue // renderSampleTrack returns the detailed missing-sample error.
+			}
+			sample := instrument.Samples[index]
+			if sample.Generated {
+				jitter := 0.0
+				if track.Humanize != nil {
+					jitter = track.Humanize.TimingMs / 1000
+				}
+				duration = max(duration, end+jitter+sample.ReleaseSeconds)
+			}
+		}
+	}
+	return duration
 }
 
 func stemName(i int, t schema.ScoreTrack) string {

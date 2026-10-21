@@ -1,5 +1,6 @@
 import { draftCopy } from './i18n/draft-copy';
 import { seedLocale, type UiLocale } from './i18n/locale';
+import type { ArrangementGenerationSettings, ArrangementGenerationContract, ArrangementGenerationResult } from './arrangement-generation';
 
 export type Mode = 'speaker' | 'reference' | 'vector' | 'text';
 export interface DurationIntent { mode: 'auto' | 'fixed'; seconds?: number }
@@ -37,7 +38,7 @@ export interface ScoreSection { name: string; start: number; end: number; tempo?
 export interface Score { tempo: number; timeSignature: number[]; key?: string; sections?: ScoreSection[]; tracks: ScoreTrack[] }
 export type ArrangementSource = 'real' | 'ai' | 'auto';
 export interface ArrangementJob { id: string; projectId: string; mode: string; status: string; error?: string; steps: { partId?: string; instrument: string; source: string; status: string; error?: string }[] }
-export interface ArrangementPart { id?: string; instrument: string; role: string; technique?: string; source: ArrangementSource; sourceId?: string; reason?: string; locked?: boolean; allowSubstitution?: boolean }
+export interface ArrangementPart { id?: string; instrument: string; role: string; technique?: string; source: ArrangementSource; sourceId?: string; reason?: string; locked?: boolean; allowSubstitution?: boolean; generation?: ArrangementGenerationSettings }
 export interface ArrangementPhrase { id?: string; name: string; startBar: number; endBar: number; parts: ArrangementPart[] }
 export interface ArrangementSection { id?: string; name: string; startBar: number; endBar: number; phrases: ArrangementPhrase[] }
 export interface ArrangementPlan { title: string; tempo: number; timeSignature: number[]; key?: string; seconds: number; sections: ArrangementSection[]; brief?: string; sourceMode?: 'real' | 'ai' | 'hybrid' | 'auto'; approved?: boolean; aiModelId?: string; referenceAbc?: string }
@@ -72,9 +73,9 @@ export interface Voice { referenceText?: string; source?: string; sourceGenerati
 export interface ModelFile { path: string; size: number; sha256: string }
 export interface ModelPackage { voices?: string[]; variant?: string; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
 export interface InstalledModel { id: string; path: string; managed: boolean }
-export interface InstrumentSample { id: string; fileName: string; sha256: string; rootPitch: number; articulation: string; velocityLow: number; velocityHigh: number; duration: number }
+export interface InstrumentSample { generation?: ArrangementGenerationContract; generationPrompt?: string; generationId?: string; sustainSeconds?: number; exactPitch?: boolean; id: string; fileName: string; sha256: string; rootPitch: number; articulation: string; velocityLow: number; velocityHigh: number; duration: number }
 export interface InstrumentSource { id: string; catalogId?: string; name: string; instrument: string; origin: 'real' | 'ai'; verification?: 'catalog' | 'user' | 'metadata'; defaultArticulation?: string; author?: string; license?: string; licenseUrl?: string; sourceUrl?: string; samples: InstrumentSample[]; provenance?: "recorded" | "synthesized"; health?: "ready" | "missing" | "corrupt" | "unverified"; plugin?: { path: string; name: string; sha256: string; stateData?: string; articulations: string[] } }
-export interface ArrangementMaterial { id: string; projectId: string; planHash: string; scoreHash?: string; partId?: string; condition?: "score_conditioned" | "free_audio"; reviewStatus?: "needs_review" | "confirmed"; peak?: number; clippedFraction?: number; onsetSeconds?: number; alignmentWarning?: string; sectionIndex: number; phraseIndex: number; partIndex: number; instrument: string; role: string; technique?: string; phrase?: string; prompt?: string; tempo?: number; key?: string; modelId: string; fileName: string; duration: number; createdAt: string }
+export interface ArrangementMaterial { generation?: ArrangementGenerationContract; generationResult?: ArrangementGenerationResult; id: string; projectId: string; planHash: string; scoreHash?: string; partId?: string; condition?: "score_conditioned" | "free_audio" | "sample_candidate" | "sampler_score"; reviewStatus?: "needs_review" | "confirmed"; peak?: number; clippedFraction?: number; onsetSeconds?: number; alignmentWarning?: string; sectionIndex: number; phraseIndex: number; partIndex: number; instrument: string; role: string; technique?: string; phrase?: string; prompt?: string; tempo?: number; key?: string; modelId: string; fileName: string; duration: number; createdAt: string }
 export interface BandPreset { id: string; name: string; parts: { instrument: string; role: string; technique?: string; source: 'real' | 'ai'; sourceId?: string; allowSubstitution?: boolean }[]; aiModelId?: string; createdAt: string }
 export interface GenerationSegment { cueId: string; speakerId: string; speakerName: string; batchId: string; index: number; targetClipId?: string; placement?: 'ripple' | 'preserve' }
 // 本机 Codex CLI 的检测结果：path 为空表示未安装，login 为 chatgpt、apikey 或空（未登录）。

@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"math"
 	"os"
@@ -56,7 +55,12 @@ func (p *projectArchive) projectMedia() []string {
 		}
 	}
 	for _, material := range p.Materials {
-		files = append(files, "outputs/"+material.FileName)
+		if material.Duration > 0 {
+			files = append(files, "outputs/"+material.FileName)
+		}
+		if material.GenerationResult != nil && material.GenerationResult.DerivedFile != "" {
+			files = append(files, "outputs/"+material.GenerationResult.DerivedFile)
+		}
 	}
 	for _, c := range p.Characters {
 		if c.Preview != nil {
@@ -80,16 +84,19 @@ func (w *Workbench) ExportProject(id, path string) error {
 	}
 	pack := projectArchive{Version: 1, Draft: state.Drafts[index]}
 	if pack.Draft.Arrangement != nil {
-		hashes := ArrangementPartHashes(*pack.Draft.Arrangement)
 		for _, material := range state.ArrangementMaterials {
-			key := fmt.Sprintf("%d:%d:%d", material.SectionIndex, material.PhraseIndex, material.PartIndex)
-			if material.ProjectID == id && material.PlanHash == hashes[key] && arrangementMaterialMatches(material, pack.Draft, ArrangementPartRef{material.SectionIndex, material.PhraseIndex, material.PartIndex}) {
+			if material.ProjectID == id {
 				pack.Materials = append(pack.Materials, material)
 			}
 		}
 	}
 	if pack.Draft.Score != nil || pack.Draft.Arrangement != nil {
 		seen := map[string]bool{}
+		for _, m := range pack.Materials {
+			if m.GenerationResult != nil && m.GenerationResult.SourceID != "" && slices.ContainsFunc(state.InstrumentSources, func(s schema.InstrumentSource) bool { return s.ID == m.GenerationResult.SourceID }) {
+				seen[m.GenerationResult.SourceID] = true
+			}
+		}
 		if pack.Draft.Arrangement != nil {
 			for _, section := range pack.Draft.Arrangement.Sections {
 				for _, phrase := range section.Phrases {
@@ -387,14 +394,27 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 		}
 	}
 	for _, material := range pack.Materials {
-		if !register(material.ID) || material.ProjectID != pack.Draft.ID || material.PlanHash == "" || material.FileName != "import-"+material.ID+".wav" || material.SectionIndex < 0 || material.PhraseIndex < 0 || material.PartIndex < 0 || material.ModelID == "" || schema.TextLen(material.Prompt) > 512 || schema.TextLen(material.Phrase) > 120 || !schema.InRange(material.Duration, .01, 3600) {
+		if !register(material.ID) || material.ProjectID != pack.Draft.ID || material.PlanHash == "" || material.FileName != "import-"+material.ID+".wav" || material.SectionIndex < 0 || material.PhraseIndex < 0 || material.PartIndex < 0 || material.ModelID == "" || schema.TextLen(material.Prompt) > 512 || schema.TextLen(material.Phrase) > 120 || !schema.InRange(material.Duration, 0, 3600) || (material.Duration == 0 && material.GenerationResult == nil) {
 			return schema.Draft{}, bad
 		}
 		actual, _ := audio.Duration(filepath.Join(stage, "outputs", material.FileName))
-		if math.Abs(actual-material.Duration) > .001 {
+		if material.Duration > 0 && math.Abs(actual-material.Duration) > .001 {
 			return schema.Draft{}, bad
 		}
-		names["outputs/"+material.FileName] = "import-" + ids[material.ID] + ".wav"
+		if material.Duration > 0 {
+			names["outputs/"+material.FileName] = "import-" + ids[material.ID] + ".wav"
+		}
+		if material.GenerationResult != nil && material.GenerationResult.DerivedFile != "" {
+			file := material.GenerationResult.DerivedFile
+			derivedID := strings.TrimSuffix(strings.TrimPrefix(file, "import-"), ".wav")
+			if file != "import-"+derivedID+".wav" || !schema.ValidID(derivedID) || !register(derivedID) {
+				return schema.Draft{}, bad
+			}
+			if _, e := audio.Duration(filepath.Join(stage, "outputs", file)); e != nil {
+				return schema.Draft{}, bad
+			}
+			names["outputs/"+file] = "import-" + ids[derivedID] + ".wav"
+		}
 	}
 	if pack.Draft.Timeline != nil {
 		for _, a := range pack.Draft.Timeline.Assets {
@@ -473,7 +493,12 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 		}
 	}
 	for _, material := range pack.Materials {
-		keep["outputs/"+material.FileName] = true
+		if material.Duration > 0 {
+			keep["outputs/"+material.FileName] = true
+		}
+		if material.GenerationResult != nil && material.GenerationResult.DerivedFile != "" {
+			keep["outputs/"+material.GenerationResult.DerivedFile] = true
+		}
 	}
 	if pack.Draft.Timeline != nil {
 		for _, a := range pack.Draft.Timeline.Assets {
@@ -556,6 +581,14 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 			sample := &source.Samples[j]
 			sample.ID = ids[sample.ID]
 			sample.FileName = "sample-" + sample.ID + ".wav"
+			if sample.Generation != nil {
+				g := *sample.Generation
+				g.TargetSourceID = ids[g.TargetSourceID]
+				sample.Generation = &g
+			}
+			if id := ids[sample.GenerationID]; id != "" {
+				sample.GenerationID = id
+			}
 		}
 	}
 	for i := range pack.Materials {
@@ -563,6 +596,14 @@ func (w *Workbench) ImportProject(path string) (schema.Draft, error) {
 		material.ID = ids[material.ID]
 		material.ProjectID = pack.Draft.ID
 		material.FileName = "import-" + material.ID + ".wav"
+		if material.Generation != nil {
+			material.Generation.TargetSourceID = ids[material.Generation.TargetSourceID]
+		}
+		if material.GenerationResult != nil {
+			material.GenerationResult.DerivedFile = names["outputs/"+material.GenerationResult.DerivedFile]
+			material.GenerationResult.SourceID = ids[material.GenerationResult.SourceID]
+			// 请求审计中的原始路径不参与执行；重开后仍需通过相同检查与试听门槛。
+		}
 	}
 	for i := range pack.Voices {
 		v := &pack.Voices[i]

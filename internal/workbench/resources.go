@@ -170,6 +170,25 @@ func (w *Workbench) SearchResources(in ResourceQuery) (ResourcePage, error) {
 		add(item)
 	}
 	for _, material := range s.ArrangementMaterials {
+		if material.Generation != nil {
+			preferredFile := material.FileName
+			if material.GenerationResult != nil && material.GenerationResult.DerivedFile != "" {
+				preferredFile = material.GenerationResult.DerivedFile
+			}
+			if _, integrityErr := w.verifyGenerationMaterialIntegrity(material); integrityErr != nil {
+				add(ResourceItem{ID: "material:" + material.ID, Kind: "audio", Name: material.Instrument + " · " + material.Phrase, Instrument: material.Instrument, Origin: "ai", Status: "repair", Issue: integrityErr.Error(), Usage: "audition", MediaKind: "outputs", FileName: preferredFile, Duration: material.Duration})
+				continue
+			}
+		}
+		if material.Generation != nil && (!generationMaterialUsable(material) || material.Generation.Pitch != nil) {
+			status := material.GenerationResultState()
+			add(ResourceItem{ID: "material:" + material.ID, Kind: "audio", Name: material.Instrument + " · " + material.Phrase, Instrument: material.Instrument, Origin: "ai", Status: status, Issue: material.AlignmentWarning, Usage: "audition", MediaKind: "outputs", FileName: material.FileName, Duration: material.Duration})
+			continue
+		}
+		if material.GenerationResult != nil && material.GenerationResult.DerivedFile != "" {
+			addAudio("material:"+material.ID, material.Instrument+" · "+material.Phrase, material.GenerationResult.DerivedFile, "ai", material.Generation.EffectiveSeconds+material.Generation.TailSeconds, nil)
+			continue
+		}
 		addAudio("material:"+material.ID, material.Instrument+" · "+material.Phrase, material.FileName, "ai", material.Duration, nil)
 	}
 	for _, g := range s.History {

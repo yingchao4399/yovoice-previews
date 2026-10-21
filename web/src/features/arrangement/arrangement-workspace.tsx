@@ -16,6 +16,7 @@ import { isUntitled, type ArrangementInput, type ArrangementPlan, type Arrangeme
 import { composedScorePatch, noteCount } from '../score/score-draft';
 import { ArrangementReference } from './arrangement-reference';
 import { DurationControl } from '../../shared/ui/duration-control';
+import { ArrangementGenerationSettingsButton } from './arrangement-generation-settings';
 import { bindArrangementSources, matchedRealSource, realPartReady, sameInstrument } from './arrangement-sources';
 
 const sourceModes = ['auto', 'real', 'ai', 'hybrid'] as const;
@@ -204,6 +205,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
             {phrase.parts.map((part, ai) => <HStack key={`${ai}-${part.role}`} gap={2} vAlign="center" wrap="wrap">
               <TextInput size="sm" label={t('@yovoice.arrangement.instrument')} value={part.instrument} onChange={instrument => replacePart(si, pi, ai, { instrument, sourceId: undefined })} width="calc(var(--spacing-10) * 4)" />
               <TextInput size="sm" label={t('@yovoice.arrangement.technique')} value={part.technique ?? ''} onChange={technique => replacePart(si, pi, ai, { technique })} width="calc(var(--spacing-10) * 4)" />
+              {part.source === 'ai' ? <ArrangementGenerationSettingsButton draft={draft} state={state} part={part} refIndex={{ sectionIndex: si, phraseIndex: pi, partIndex: ai }} modelId={aiModelID} locale={locale} change={change} /> : null}
               <Selector size="sm" label={t('@yovoice.arrangement.source')} value={part.source} options={sourceOptions.filter(item => item.value === 'real' || item.value === 'ai' || item.value === 'auto')} onChange={value => replacePart(si, pi, ai, { source: value as ArrangementSource, sourceId: undefined })} />
               <Selector size="sm" label={t('@yovoice.arrangement.specificSource')} value={part.sourceId ?? ''} hasSearch={(state.instrumentSources ?? []).length > 8}
                 isDisabled={part.locked}

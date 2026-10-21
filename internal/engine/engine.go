@@ -4,7 +4,9 @@ package engine
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -241,6 +243,21 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 
 // Generate 生成音频写入 output；YuE2 自己规划旋律时一并返回这次所用的旋律谱，其余模型返回空串。
 func (e *Engine) Generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, output string, progress func(msg.Code, msg.Params)) (score string, err error) {
+	return e.generate(ctx, executable, m, backend, d, voice, emotion, output, progress, nil, nil)
+}
+
+// GenerateArrangement 仅编曲任务使用专用合同，并返回实际请求和语义产物信息。
+func (e *Engine) GenerateArrangement(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, c schema.ArrangementGenerationContract, output string, progress func(msg.Code, msg.Params)) (schema.ArrangementGenerationResult, error) {
+	r := schema.ArrangementGenerationResult{State: "generating"}
+	started := time.Now()
+	_, err := e.generate(ctx, executable, m, backend, d, "", "", output, progress, &c, &r)
+	if err != nil {
+		err = arrangementEngineFailure(e.root, started, err)
+	}
+	return r, err
+}
+
+func (e *Engine) generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, output string, progress func(msg.Code, msg.Params), contract *schema.ArrangementGenerationContract, report *schema.ArrangementGenerationResult) (score string, err error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	defer func() {
@@ -250,8 +267,14 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 		_ = os.Remove(output + ".part")
 	}()
 	payload, err := BuildRequest(d, voice, emotion)
+	if contract != nil {
+		payload, err = BuildArrangementRequest(d, *contract)
+	}
 	if err != nil {
 		return "", err
+	}
+	if report != nil {
+		report.Request = payload
 	}
 	definition, err := catalog.Lookup(m.ID)
 	if err != nil {
@@ -278,7 +301,7 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 	// YuE2 纯音乐：没谱时先在同一个会话里出谱，再把人声旋律移到器乐声部后生成；
 	// 返回实际演奏的谱，存进这一版，之后可以载入编辑。
 	played := ""
-	if definition.Family == "yue2" && d.Instrumental {
+	if definition.Family == "yue2" && d.Instrumental && (contract == nil || contract.Settings.Mode != "free") {
 		if strings.TrimSpace(d.Abc) == "" {
 			plan, _ := payload["request"].(map[string]any)["options"].(map[string]any)
 			plan["stop_after"] = "abc"
@@ -297,6 +320,14 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 		if payload, err = BuildRequest(d, voice, emotion); err != nil {
 			return "", err
 		}
+		if contract != nil {
+			if payload, err = BuildArrangementRequest(d, *contract); err != nil {
+				return "", err
+			}
+		}
+	}
+	if report != nil {
+		report.Request = payload
 	}
 	progress(msg.ActivitySynthesizing, nil)
 	result, err := e.run(ctx, payload)
@@ -306,16 +337,27 @@ func (e *Engine) Generate(ctx context.Context, executable string, m schema.Insta
 	if result.Audio == "" {
 		return "", msg.Err(msg.ErrEngineNoAudio, nil)
 	}
+	if report != nil {
+		report.SemanticFrames, report.Truncated, report.TruncationKnown = result.semanticResult()
+	}
 	progress(msg.ActivitySavingAudio, nil)
 	wav, err := base64.StdEncoding.DecodeString(result.Audio)
 	if err != nil {
 		return "", err
 	}
+	if report != nil {
+		sum := sha256.Sum256(wav)
+		report.RawSHA256 = hex.EncodeToString(sum[:])
+	}
 	if err = os.WriteFile(output+".part", wav, 0600); err != nil {
 		return "", err
 	}
-	if _, err = audio.Duration(output + ".part"); err != nil {
+	actualDuration, err := audio.Duration(output + ".part")
+	if err != nil {
 		return "", err
+	}
+	if report != nil {
+		report.ActualSeconds, report.State = actualDuration, "raw_saved"
 	}
 	if err = ctx.Err(); err != nil {
 		return "", err

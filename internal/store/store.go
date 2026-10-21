@@ -75,6 +75,13 @@ func New(root string) (store *Store, err error) {
 			}
 		}
 	}
+	for i := range s.state.ArrangementMaterials {
+		r := s.state.ArrangementMaterials[i].GenerationResult
+		if r != nil && (r.State == "queued" || r.State == "generating" || r.State == "raw_saved" || r.State == "checking") {
+			r.State = "interrupted"
+			r.Checks = append(r.Checks, schema.GenerationCheck{Code: "INTERRUPTED", Status: "review", Message: "生成或检查曾中断；有原片时重新检查，没有原片时仅重试本项"})
+		}
+	}
 	// 未保存的试听不跨会话保留，角色已保存的试听使用独立文件。
 	s.state.Previews = []schema.CharacterPreview{}
 	files, _ := filepath.Glob(filepath.Join(root, "outputs", "audition-*.wav"))

@@ -6,7 +6,19 @@
 
 ### English
 
+- Add per-part AI generation settings and an arrangement-only duration contract, keeping ordinary song generation unchanged.
+- Separate instrumental and wordless-vocal requests; preserve key aliases and reject unsupported modes instead of silently using C major.
+- Retain original candidates and measured checks, require audition and explicit region fitting before adoption, and prepare exact-pitch AI sample mappings for score playback.
+- Align single-note ABC duration with the requested sustain, preserve tempo and dynamics in sampler phrases, and invalidate relevant caches when timing changes.
+- Write release rests into score conditions, detect still-active choir endings, preserve confirmed phrases while new candidates await review, and keep checking failures recoverable.
+
 ### 简体中文
+
+- 新增声部二级生成设置和编曲专用长度合同，普通歌曲生成继续使用原路径。
+- 分开器乐与无词人声条件，正确归一调性别名；无法表示的调式明确提示，不再静默改为 C 大调。
+- 保留原始候选及本地测量结果，经区段适配和试听确认后采用；为采样器建立精确音高的 AI 音色映射。
+- 单音 ABC 与所需持续时长一致；采样演奏保留段落速度与力度变化，相关时间条件变化后旧候选正确失效。
+- 谱条件明确写入收尾休止，检查合唱末尾是否仍在发声；新候选不遮蔽已确认版本，检查异常可恢复并保留原片。
 
 ## [0.3.1-preview.4] - 2026-10-21
 
