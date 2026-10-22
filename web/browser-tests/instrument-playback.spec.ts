@@ -99,25 +99,21 @@ test('AI 生成素材与模型在独立分类内搜索和显示', async ({ page 
 });
 
 for (const status of ['needs_review', 'needs_fit'] as const) {
-  test(`AI 候选 ${status}：原片与适配试听可拖动，采用遵守技术检查状态`, async ({ page }) => {
+  test(`AI 候选 ${status}：原片与适配试听可拖动，采用由用户决定`, async ({ page }) => {
     await openLibrary(page, status);
     await page.getByRole('tab', { name: 'AI 音源与模型' }).click();
     await page.getByRole('button', { name: '查看详情' }).click();
-    const adopt = page.getByRole('button', { name: '试听正确并采用', exact: true });
-    await expect(adopt).toBeDisabled();
+    const adopt = page.getByRole('button', { name: /确认采用|试听正确并采用/ }).first();
+    // 未播放或自动检查未通过都不能替用户锁死采用决定。
+    await expect(adopt).toBeEnabled();
     await page.getByRole('button', { name: '试听原片', exact: true }).click();
     await expect.poll(() => page.locator('audio').evaluateAll(elements => elements.some(e => (e as HTMLAudioElement).currentSrc.endsWith('/choir.wav') && !(e as HTMLAudioElement).paused))).toBe(true);
     await page.getByRole('slider', { name: '试听原片 · progress' }).fill('5');
     await page.getByRole('button', { name: '试听适配后', exact: true }).click();
     await expect.poll(() => page.locator('audio').evaluateAll(elements => elements.filter(e => !(e as HTMLAudioElement).paused).length)).toBe(1);
     await page.getByRole('slider', { name: '试听适配后 · progress' }).fill('8');
-    if (status === 'needs_fit') {
-      await expect(adopt).toBeDisabled();
-      await expect(page.getByText('结尾仍在发声，请增加尾音')).toBeVisible();
-    } else {
-      await expect(adopt).toBeEnabled();
-      await adopt.click();
-      await expect.poll(() => page.evaluate(() => (window as unknown as { __reviewRequests: { data: unknown }[] }).__reviewRequests.map(r => r.data))).toEqual([{ id: 'choir', confirmed: true }]);
-    }
+    if (status === 'needs_fit') await expect(page.getByText('结尾仍在发声，请增加尾音')).toBeVisible();
+    await adopt.click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __reviewRequests: { data: unknown }[] }).__reviewRequests.map(r => r.data))).toEqual([{ id: 'choir', confirmed: true }]);
   });
 }

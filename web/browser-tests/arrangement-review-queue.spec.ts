@@ -78,7 +78,8 @@ test('编曲页逐项弹出试听卡，真实播放拖动后确认，后台下�
   await expect(dialog).toContainText('第一句');
   await expect(dialog).toContainText('下一项正在生成');
   const adopt = dialog.getByRole('button', { name: '确认采用，继续下一项', exact: true });
-  await expect(adopt).toBeDisabled();
+  // 用户决定优先于试听播放状态；播放是建议，不是确认按钮的前置条件。
+  await expect(adopt).toBeEnabled();
   await dialog.getByRole('button', { name: '试听原片', exact: true }).click();
   await expect.poll(() => dialog.locator('audio').evaluateAll(nodes => nodes.some(n => (n as HTMLAudioElement).currentTime > 0))).toBe(true);
   await dialog.getByRole('slider').fill('0.8');

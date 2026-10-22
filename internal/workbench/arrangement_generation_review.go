@@ -268,20 +268,21 @@ func (w *Workbench) ReviewArrangementMaterial(id string, confirmed bool) error {
 	if m.ReviewStatus == "confirmed" && m.GenerationResult != nil && m.GenerationResult.State == "confirmed" {
 		return nil
 	}
-	if m.GenerationResult == nil || m.GenerationResult.State != "needs_review" {
-		return fmt.Errorf("候选尚未通过技术检查或区段适配，不能确认可用")
+	if m.GenerationResult == nil {
+		return fmt.Errorf("候选缺少检查结果，不能确认")
 	}
 	if _, err := w.verifyGenerationMaterialIntegrity(m); err != nil {
 		return err
 	}
-	for _, c := range m.GenerationResult.Checks {
-		if c.Status == "fail" || generationCheckNeedsFit(c) {
-			return fmt.Errorf("请先处理检查项：%s", c.Message)
-		}
-	}
+	// 技术检查结果只作为风险提示；最终是否采用由用户明确决定。
+	// 即使系统没有稳定识别音高、检测到截断或用户没有在本机播放，也不能替用户锁死确认按钮。
+	m.GenerationResult.Checks = append(m.GenerationResult.Checks, schema.GenerationCheck{Code: "USER_CONFIRMED", Status: "review", Message: "用户已明确确认采用；自动检查中的风险仍保留供追溯"})
 	if m.Generation.Pitch != nil {
-		if m.GenerationResult.DerivedFile == "" || m.GenerationResult.DetectedPitch == nil || *m.GenerationResult.DetectedPitch != *m.Generation.Pitch {
-			return fmt.Errorf("单音采样尚未核验实际根音")
+		// 根音、稳定性和身份检查用于提示风险，不替用户否决采用。
+		// 只要原片或适配片通过完整性校验，就允许用户明确采用；未知根音
+		// 仍会随检查记录保存，后续演奏时由音源映射和试听结果承担风险。
+		if m.GenerationResult.DerivedFile == "" {
+			return fmt.Errorf("单音候选缺少可采用的适配音频")
 		}
 		path, err := w.Store.MediaPath("outputs", m.GenerationResult.DerivedFile)
 		if err != nil {

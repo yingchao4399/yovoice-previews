@@ -54,7 +54,6 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
   const audioRef = useRef<{ element: HTMLAudioElement; id: string } | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   useEffect(() => () => { audioRef.current?.element.pause(); audioRef.current = null; }, []);
-  useEffect(() => { if (running) setHistoryOpen(false); }, [running]);
 
   const send = (text: string) => {
     const trimmed = text.trim();
@@ -67,7 +66,6 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
   const selection = useAssistantSelection();
   const resolveProposal = (id: string, confirm: boolean) => call('assistant.proposal', { id, confirm }).then(() => undefined);
   const newSession = () => {
-    if (running) return;
     setHistoryOpen(false);
     void call('assistant.new').catch(() => undefined);
   };
@@ -104,6 +102,12 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
     .map(p => ({ type: 'section' as const, title: p.name, options: [...new Set([p.model, ...(p.models ?? [])].filter(Boolean))].map(model => ({ value: choice(p.id, model), label: model })) }));
   const pickModel = (value: string) => { const [id, model] = value.split('\n'); void call('ai.provider.use', { id, model }).catch(() => undefined); };
   const empty = messages.length === 0 && !running;
+  // Ocho 与编曲任务是两个可独立中断的后台回合。用户可以在 Ocho 生成时
+  // 新建会话、打开历史或继续输入；编曲任务也必须有明确的停止入口。
+  const arrangementRunning = (state.arrangementJobs ?? []).some(job =>
+    (job.status === 'running' || job.status === 'queued') &&
+    (!context.workId || job.projectId === context.workId),
+  );
   const title = current?.title || t('@yovoice.assistant.title');
   const banner = emptyArt[context.workKind || context.page || ''] ?? emptyArt.text;
 
@@ -136,7 +140,7 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
       {/* Text 的属性类型不含 title，拖动提示用展开写法原样传给 DOM。 */}
       <Text type="inherit" color="inherit" className="assistant-title grow" {...{ title: t('@yovoice.assistant.move') }}>{title}</Text>
       {live?.queued ? <small className="assistant-queued">{t('@yovoice.assistant.queued', { count: live.queued })}</small> : null}
-      <Button size="sm" variant="ghost" isIconOnly icon={<SquarePen size={15} />} label={t('@yovoice.assistant.newChat')} isDisabled={running} onClick={newSession} />
+      <Button size="sm" variant="ghost" isIconOnly icon={<SquarePen size={15} />} label={t('@yovoice.assistant.newChat')} onClick={newSession} />
       <Button size="sm" variant="ghost" isIconOnly icon={expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />} label={expanded ? t('@yovoice.assistant.collapse') : t('@yovoice.assistant.expand')} onClick={onToggleExpand} />
       <Button data-testid="assistant-minimize" size="sm" variant="ghost" isIconOnly icon={<ChevronDown size={16} />} label={t('@yovoice.assistant.close')} onClick={onClose} />
     </HStack>
@@ -161,6 +165,10 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
         </ChatMessage> : null}
       </ChatMessageList>}
     </VStack>
+    {arrangementRunning ? <HStack className="assistant-notice" role="status" gap={2} vAlign="center">
+      <Text type="inherit" color="inherit" className="grow">{context.locale === 'zh-CN' ? '编曲任务正在后台运行；你可以随时打断、切换任务或继续输入。' : 'The arrangement is running in the background. You can interrupt it, switch tasks, or keep typing.'}</Text>
+      <Button size="sm" variant="secondary" label={t('@yovoice.action.cancel')} onClick={() => void call('arrangement.cancel').catch(() => undefined)} />
+    </HStack> : null}
     {runtimeMissing ? <HStack className="assistant-notice" role="alert" gap={2} vAlign="center">
       <Text type="inherit" color="inherit" className="grow">{t('@yovoice.ai.assistantMissing')}</Text>
     </HStack> : !configured ? <HStack className="assistant-notice" gap={2} vAlign="center">
@@ -186,7 +194,7 @@ export function AssistantPanel({ state, context, expanded, quickActions, frame, 
         <HStack className="assistant-history-header" vAlign="center" gap={1}>
           <Button size="sm" variant="ghost" isIconOnly icon={<ChevronLeft size={16} />} label={t('@yovoice.assistant.back')} onClick={() => setHistoryOpen(false)} />
           <Text type="inherit" color="inherit" className="assistant-title grow">{t('@yovoice.assistant.history')}</Text>
-          <Button size="sm" variant="ghost" isIconOnly icon={<SquarePen size={15} />} label={t('@yovoice.assistant.newChat')} tooltip={t('@yovoice.assistant.newChat')} isDisabled={running} onClick={newSession} />
+          <Button size="sm" variant="ghost" isIconOnly icon={<SquarePen size={15} />} label={t('@yovoice.assistant.newChat')} tooltip={t('@yovoice.assistant.newChat')} onClick={newSession} />
         </HStack>
         <VStack className="assistant-history-list" gap={0}>
           {sessions.length === 0 ? <small className="assistant-history-empty">{t('@yovoice.assistant.historyEmpty')}</small> : <List density="compact">

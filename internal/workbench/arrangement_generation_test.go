@@ -230,8 +230,9 @@ func TestWordlessPhraseMustRetainAudibleRelease(t *testing.T) {
 		if released && fitted.GenerationResult.State != "needs_review" || !released && fitted.GenerationResult.State != "needs_fit" {
 			t.Fatalf("释音检测错误 released=%v: %+v", released, fitted.GenerationResult)
 		}
-		if !released && w.ReviewArrangementMaterial(id, true) == nil {
-			t.Fatal("仍在明显发声的合唱结尾不能直接采用")
+		must(t, w.ReviewArrangementMaterial(id, true))
+		if !released && w.Store.Read().ArrangementMaterials[0].ReviewStatus != "confirmed" {
+			t.Fatal("用户明确确认后仍被自动收尾检查锁死")
 		}
 		w.Close()
 	}

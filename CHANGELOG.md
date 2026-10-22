@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### English
+
+- Let the user adopt an AI arrangement candidate without having to play it first or pass automatic pitch, identity, ending and fit checks. Keep every check and warning in the material record for traceability, and still reject missing or changed audio files.
+- Release stale arrangement-recovery locks after an answered “keep current result” or “wait” question, including locks left by earlier builds, so Ocho can continue or end the diagnosis instead of repeating protected-tool errors.
+- Let users interrupt arrangement work, start or switch Ocho sessions, open history and send follow-up instructions while a turn is running; keep the three-round repair limit and ask before a fourth-round local or full replan.
+
+### 简体中文
+
+- AI 编曲候选不再要求先播放，也不再因为自动音高、身份、结尾或适配检查未通过而锁死“确认采用”；所有检查和风险仍保留在素材记录中追溯，缺失或被篡改的音频文件仍会被拒绝。
+- 用户回答“保留现状”或“暂不重规划”后，释放包括旧版本遗留在内的编曲诊断锁，避免 Ocho 反复遇到受保护工具错误，能够继续处理或结束诊断。
+- 编曲后台运行时可直接中断；Ocho 运行中可新建或切换会话、打开历史并继续输入。保留最多三轮自动修复，第四轮局部或整曲重规划仍先征求用户同意。
+
 ## [0.4.1-preview.1] - 2026-10-22
 
 ### English
