@@ -185,6 +185,9 @@ func TestRelocateCopiesWithoutTouchingSourceAndFreezes(t *testing.T) {
 	model := filepath.Join(root, "models", "m", "weights.gguf")
 	must(t, os.MkdirAll(filepath.Dir(model), 0700))
 	must(t, os.WriteFile(model, []byte("weights"), 0600))
+	webCache := filepath.Join(root, store.WebCacheDir, "EBWebView", "Default", "Cache", "data_0")
+	must(t, os.MkdirAll(filepath.Dir(webCache), 0700))
+	must(t, os.WriteFile(webCache, []byte("cache"), 0600))
 	runtimePath := filepath.Join(root, "runtime", "cpu", "engine")
 	must(t, w.Store.Update(func(s *schema.State) {
 		s.Models = append(s.Models, schema.InstalledModel{ID: "m", Path: model, Managed: true})
@@ -212,6 +215,10 @@ func TestRelocateCopiesWithoutTouchingSourceAndFreezes(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(target, "service.lock")); !os.IsNotExist(err) {
 		t.Fatal("不应复制服务锁文件")
+	}
+	// WebView2 缓存被宿主占用，迁移时跳过，由新目录重建。
+	if _, err := os.Stat(filepath.Join(target, store.WebCacheDir)); !os.IsNotExist(err) {
+		t.Fatal("不应复制 WebView2 缓存")
 	}
 
 	moved, err := store.New(target)
@@ -260,6 +267,7 @@ func TestCleanupPreviousRemovesOldRootOnlyAfterSwitch(t *testing.T) {
 	previous := t.TempDir()
 	must(t, os.WriteFile(filepath.Join(previous, "state.json"), []byte("{}"), 0600))
 	must(t, os.MkdirAll(filepath.Join(previous, "models"), 0700))
+	must(t, os.MkdirAll(filepath.Join(previous, store.WebCacheDir, "EBWebView"), 0700))
 	target := t.TempDir()
 	// 旧版配置只有 previousPath 字段，读取时并入列表。
 	must(t, store.WriteConfig(store.StorageConfig{DataPath: target, PreviousPath: previous}))

@@ -14,6 +14,7 @@ import { call, importInstrumentFile, isDesktop, logEvent, mediaUrl } from '../..
 import { Selector } from '../../shared/selector';
 import { SettingsGroup } from '../../shared/ui/settings-group';
 import { InstrumentDownloadProgress } from '../../shared/ui/instrument-download-progress';
+import { AIMaterialReview } from '../../shared/ui/ai-material-review';
 import type { ModelPackage, State } from '../../shared/workbench';
 import { LibraryEmpty, LibraryPage, Ticket, TicketStamp } from '../library/library-layout';
 import xsxbCatalog from './xsxb-catalog.json';
@@ -196,7 +197,7 @@ export function InstrumentLibrary({ state, catalog, openSettings }: { state: Sta
       <VStack className="settings-row" gap={2}>
         <small>{t(materialDetail.condition === 'score_conditioned' ? '@yovoice.arrangement.scoreConditioned' : '@yovoice.arrangement.freeAudio')}</small>
         {materialDetail.alignmentWarning ? <small>{materialDetail.alignmentWarning}</small> : null}
-        <Button size="sm" variant="secondary" label={t(materialDetail.reviewStatus === 'confirmed' ? '@yovoice.arrangement.reviewConfirmed' : '@yovoice.arrangement.confirmAudition')} isDisabled={!isDesktop || materialDetail.reviewStatus === 'confirmed'} onClick={() => void call('arrangement.material.review', { id: materialDetail.id, confirmed: true }).catch(cause => setError(formatCallError(t, cause)))} />
+        {materialDetail.generation ? <AIMaterialReview key={materialDetail.id} material={materialDetail} draft={state.drafts.find(d => d.id === materialDetail.projectId)} locale={state.preferences.uiLocale} /> : <Button size="sm" variant="secondary" label={t(materialDetail.reviewStatus === 'confirmed' ? '@yovoice.arrangement.reviewConfirmed' : '@yovoice.arrangement.confirmAudition')} isDisabled={!isDesktop || materialDetail.reviewStatus === 'confirmed'} onClick={() => void call('arrangement.material.review', { id: materialDetail.id, confirmed: true }).catch(cause => setError(formatCallError(t, cause)))} />}
       </VStack>
       <small>{t('@yovoice.instruments.aiGeneratedAt', { date: new Date(materialDetail.createdAt).toLocaleString() })}</small>
     </SettingsGroup>{error ? <p role="alert">{error}</p> : null}</VStack>
@@ -218,13 +219,15 @@ export function InstrumentLibrary({ state, catalog, openSettings }: { state: Sta
     {tab === 'ai' ? <small>{t('@yovoice.instruments.aiHint')}</small> : null}
     {tab === 'ai' ? <SegmentedControl size="sm" label={t('@yovoice.instruments.tabAI')} value={aiCategory} onChange={value => { pauseMaterial(); setAICategory(value); setQuery(''); setError(''); }}>
       <SegmentedControlItem value="materials" label={t('@yovoice.instruments.generatedMaterials')} />
+      <SegmentedControlItem value="instruments" label={state.preferences.uiLocale === 'zh-CN' ? '可演奏 AI 音色' : 'Playable AI instruments'} />
       <SegmentedControlItem value="models" label={t('@yovoice.instruments.aiModels')} />
     </SegmentedControl> : null}
     {downloading ? <InstrumentDownloadProgress received={state.modelActivity?.received ?? 0} total={state.modelActivity?.total ?? 0} unit={state.modelActivity?.params?.unit} /> : null}
     {tab === 'ai' && aiCategory === 'materials' && selectedMaterial ? <AudioSeek time={audioTime} duration={audioDuration || (state.arrangementMaterials ?? []).find(item => item.id === selectedMaterial)?.duration || 0}
       onSeek={seconds => { if (audio.current) audio.current.currentTime = seconds; setAudioTime(seconds); }} /> : null}
   </VStack>;
-  const hasResults = tab === 'mine' ? filteredSources.length > 0 : tab === 'catalog' ? filteredCatalog.length > 0 : tab === 'online' ? filteredCandidates.length > 0 : tab === 'sites' ? filteredSites.length > 0 : tab === 'bands' ? filteredBands.length > 0 : aiCategory === 'models' ? filteredModels.length > 0 : filteredMaterials.length > 0;
+  const shownSources = tab === 'ai' ? filteredSources.filter(source => source.origin === 'ai') : filteredSources;
+  const hasResults = tab === 'mine' || tab === 'ai' && aiCategory === 'instruments' ? shownSources.length > 0 : tab === 'catalog' ? filteredCatalog.length > 0 : tab === 'online' ? filteredCandidates.length > 0 : tab === 'sites' ? filteredSites.length > 0 : tab === 'bands' ? filteredBands.length > 0 : aiCategory === 'models' ? filteredModels.length > 0 : filteredMaterials.length > 0;
   return withPlayer(<LibraryPage title={t('@yovoice.instruments.title')} actions={<HStack gap={2} vAlign="center">
       {tab === 'online' ? <Button size="sm" variant="secondary" icon={<Search />} label={t('@yovoice.instruments.searchAction')} isLoading={searching} isDisabled={!isDesktop || !query.trim()} onClick={() => void searchOnline()} /> : null}
       <Button size="sm" variant="secondary" icon={<Plus />} label={t('@yovoice.instruments.importTitle')} onClick={() => { pauseMaterial(); setImporting(true); setError(''); }} />
@@ -233,7 +236,7 @@ export function InstrumentLibrary({ state, catalog, openSettings }: { state: Sta
     hasItems hasResults={hasResults} noResults={error || t(tab === 'online' && !searchedName ? '@yovoice.instruments.searchPrompt' : '@yovoice.instruments.noResults')}
     empty={<LibraryEmpty icon={<Music2 />} title={t('@yovoice.instruments.noResults')} action={null} />} layout="tickets">
     {error ? <p role="alert">{error}</p> : null}
-    {tab === 'mine' ? filteredSources.map((source, index) => <Ticket key={source.id} index={index} className="instrument-entry" cover={<Music2 />}
+    {tab === 'mine' || tab === 'ai' && aiCategory === 'instruments' ? shownSources.map((source, index) => <Ticket key={source.id} index={index} className="instrument-entry" cover={<Music2 />}
       eyebrow={`${source.provenance === 'synthesized' ? t('@yovoice.plugins.synthesized') : source.origin === 'ai' ? t('@yovoice.instruments.generated') : t('@yovoice.instruments.real')} · ${source.verification === 'metadata' ? t('@yovoice.instruments.metadataReview') : source.license || t('@yovoice.instruments.licenseUnknown')}`}
       title={<h3>{source.name}</h3>} excerpt={source.instrument}
       actions={<HStack gap={2} vAlign="center" wrap="wrap"><Button size="sm" variant="ghost" icon={<ListMusic size={15} />} label={t('@yovoice.instruments.viewSamples')} onClick={() => { pauseMaterial(); setDetail({ sourceID: source.id }); }} />{source.sourceUrl?.startsWith('https://') ? <Button size="sm" variant="ghost" icon={<ArrowUpRight size={15} />} label={t('@yovoice.instruments.sourcePage')} onClick={() => window.open(source.sourceUrl, '_blank', 'noopener')} /> : null}{source.verification === 'metadata' ? <Button size="sm" variant="secondary" label={t('@yovoice.instruments.confirmFoundSource')} onClick={() => void confirmSource(source.id)} /> : <StatusDot variant={source.health === 'missing' || source.health === 'corrupt' ? 'warning' : 'success'} label={t(source.health === 'missing' || source.health === 'corrupt' ? '@yovoice.arrangement.sourceNeedsRepair' : '@yovoice.instruments.installed')} />}</HStack>}
@@ -269,7 +272,7 @@ export function InstrumentLibrary({ state, catalog, openSettings }: { state: Sta
       actions={<HStack gap={2} wrap="wrap"><Button size="sm" variant="ghost" icon={<ListMusic size={15} />} label={t('@yovoice.instruments.viewDetails')} onClick={() => setMaterialDetailID(material.id)} />
         <Button size="sm" variant="secondary" icon={playingMaterial === material.id ? <Pause size={15} /> : <Play size={15} />}
           label={t(playingMaterial === material.id ? '@yovoice.instruments.pauseSample' : '@yovoice.instruments.playSample')}
-          isDisabled={!isDesktop} onClick={() => void playMaterial(material.id, material.fileName)} /></HStack>}
+          isDisabled={!isDesktop || material.duration <= 0} onClick={() => void playMaterial(material.id, material.fileName)} /></HStack>}
       stub={<TicketStamp value={material.duration.toFixed(0)} unit="s" />} />) : null}
     {tab === 'ai' && aiCategory === 'models' ? filteredModels.map((model, index) => <Ticket key={model.id} index={index + filteredMaterials.length} className="instrument-entry" cover={<Music2 />}
       eyebrow={model.family === 'soundfont' ? t('@yovoice.instruments.soundfonts') : t('@yovoice.instruments.aiModels')}

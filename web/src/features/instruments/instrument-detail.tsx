@@ -98,6 +98,7 @@ export function InstrumentDetail({ source, catalog, downloading, downloadReceive
         {source?.samples.map((sample, index) => <VStack key={sample.id} className="settings-row" gap={2}><HStack hAlign="between" vAlign="center" wrap="wrap" gap={3}>
           <VStack className="grow" gap={1}><b>{pitchName(sample.rootPitch)} · MIDI {sample.rootPitch}</b>
             <small>{sample.articulation} · {sample.duration.toFixed(1)}s · {t('@yovoice.instruments.sampleNumber', { number: index + 1 })}</small>
+            {sample.generation ? <small>AI · {sample.generation.modelId} · {sample.generation.engineVersion} · {sample.generation.version}</small> : null}
             <small className="instrument-file-path">{localMediaPath(storage.root, 'instruments', sample.fileName) || sample.fileName}</small></VStack>
           <Button size="sm" variant="secondary" icon={playingID === sample.id ? <Pause size={15} /> : <Play size={15} />}
             label={t(playingID === sample.id ? '@yovoice.instruments.pauseSample' : '@yovoice.instruments.playSample')}

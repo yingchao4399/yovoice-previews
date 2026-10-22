@@ -6,7 +6,109 @@
 
 ### English
 
+- Let the user adopt an AI arrangement candidate without having to play it first or pass automatic pitch, identity, ending and fit checks. Keep every check and warning in the material record for traceability, and still reject missing or changed audio files.
+- Release stale arrangement-recovery locks after an answered “keep current result” or “wait” question, including locks left by earlier builds, so Ocho can continue or end the diagnosis instead of repeating protected-tool errors.
+- Let users interrupt arrangement work, start or switch Ocho sessions, open history and send follow-up instructions while a turn is running; keep the three-round repair limit and ask before a fourth-round local or full replan.
+
 ### 简体中文
+
+- AI 编曲候选不再要求先播放，也不再因为自动音高、身份、结尾或适配检查未通过而锁死“确认采用”；所有检查和风险仍保留在素材记录中追溯，缺失或被篡改的音频文件仍会被拒绝。
+- 用户回答“保留现状”或“暂不重规划”后，释放包括旧版本遗留在内的编曲诊断锁，避免 Ocho 反复遇到受保护工具错误，能够继续处理或结束诊断。
+- 编曲后台运行时可直接中断；Ocho 运行中可新建或切换会话、打开历史并继续输入。保留最多三轮自动修复，第四轮局部或整曲重规划仍先征求用户同意。
+
+## [0.4.1-preview.1] - 2026-10-22
+
+### English
+
+- Merge official v0.4.0–v0.4.1, retaining word-level lyrics and alignment, playback and export improvements, feature visibility settings, model-download fixes and the custom Smart Arrangement, instrument library, plugin and audition workflows.
+- Reduce Ocho and button-response overhead: send changed state fields, isolate live assistant updates, mount pages on first visit and stream long WAV waveforms. Replace whole-state JSON round-trip copying with isolated container copies while preserving model-option number semantics.
+- Upgrade custom databases without reusing official migration numbers, keep existing arrangement bindings and plugin presets, and back up before the one-time official data normalization. Preserve the separate handling of score-rendered and generated-song versions.
+
+### 简体中文
+
+- 整合官方 v0.4.0–v0.4.1，保留逐字歌词、智能对齐、播放与长音频导出改进、功能显示开关和模型下载修复，同时保留智能编曲、音源库、插件及当前页试听工作流。
+- 减少 Ocho 和按钮操作的开销：状态增量推送、助手实时更新独立订阅、页面首次访问才挂载，长 WAV 流式计算波形。状态快照不再反复编码、解码整库文本，保持可变数据隔离及模型自由参数的数值语义。
+- 兼容升级定制数据库，保留原编曲绑定及插件预设，官方旧数据规范化前自动备份；避免与官方迁移序号冲突。保留编曲渲染版本与歌曲版本的不同播放入口。
+
+## [0.4.1] - 2026-10-21
+
+### English
+
+- Fix macOS auto-update always failing after download with "Update verification failed (codesign) … invalid requirement specification". The bug is in the updater of 0.3.0–0.4.0 itself, so on macOS please download and install 0.4.1 manually once; later updates will install automatically.
+
+### 简体中文
+
+- 修复 macOS 自动更新下载完成后总是提示“更新校验失败（codesign）……invalid requirement specification”、无法安装的问题。问题出在 0.3.0–0.4.0 自带的更新程序里，macOS 用户请手动下载安装一次 0.4.1，之后即可正常自动更新。
+
+## [0.4.0] - 2026-10-21
+
+### English
+
+- New Linux x64 desktop app: `.deb` (Debian/Ubuntu) and `.tar.gz` with `install.sh`. It runs on the bundled CPU engine, can download a Vulkan GPU engine in Settings, and needs WebKitGTK 4.1; auto-update is not available on Linux yet.
+- Word-by-word lyrics on the music playback page: each word lights up as it is sung, timed from the vocals. A new one-line-per-screen "Glow" style flies words in and lights them up, good for screen recording. Export word-level LRC.
+- Optional lyric alignment model (BS-RoFormer vocal separation + Qwen3 Forced Aligner, about 1.3 GB): "Smart align" separates the vocals, skips interludes and long pauses, and aligns the lyrics word by word, line by line; results are saved with the version.
+- Refreshed playback page: an immersive title bar on macOS, a "Lyric tools" menu for calibration, alignment and export, reworked "Glow" motion and backdrop, and smoother lyric scrolling. "Adjust lyric timing" anchors a line to the playhead or nudges it by 0.1/0.5 s (←/→), with or without shifting later lines; drag single words on a timeline or tap along while listening.
+- Smaller installers: the Kokoro pronunciation data (about 10 MB) now downloads together with the Kokoro model.
+- Settings › General › "Features" lets you hide story narration, music generation and the Ocho assistant; AI service settings hide when both Ocho and music are off.
+- Faster launch and a smoother interface: fixes launch stalling on the splash screen when recent work includes 20–30 minute audio; pages load on first open; generation, downloads and Ocho replies no longer redraw the whole interface.
+- Fix exporting longer music (about two minutes or more) doing nothing on Windows and Linux; long timeline exports are no longer limited either. The player toolbar now has "Show in folder", with export under "More".
+- Fix model downloads from ModelScope failing size checks after the mirror was refreshed.
+- The Windows installer now supports Windows 10 1809 (17763) and later.
+- On upgrade, saved projects, assistant chats and engine records are converted to the new format once, with a database backup made first.
+
+### 简体中文
+
+- 新增 Linux x64 桌面版：提供 `.deb`（Debian/Ubuntu）和附 `install.sh` 的 `.tar.gz`，开箱使用内置 CPU 内核，可在设置中下载 Vulkan GPU 内核；需要系统提供 WebKitGTK 4.1，暂不支持自动更新。
+- 音乐播放页逐字点亮歌词：按音频里的人声分出每个字的时间；新增一句一屏的“浮光”样式，字随演唱逐个飞入亮起，适合录屏；可导出逐字 LRC。
+- 新增可选下载的歌词对齐模型（BS-RoFormer 人声分离 + Qwen3 Forced Aligner，约 1.3 GB）：“智能对齐”先分离人声，去掉间奏和长停顿，再按句把歌词逐字对到演唱上，结果随版本保存。
+- 音乐播放页焕新：macOS 上标题栏与背景融为一体；校准、对齐、导出收进“歌词工具”菜单；“浮光”动效和背景重做，歌词滚动更顺滑。新增“调整歌词时间”：把一句锚定到当前播放位置，或整句提前、推后 0.1/0.5 秒（←/→），可选后面跟着移或只改这一句；单字可在时间轴上拖动，也可边听边跟唱打点。
+- 安装包变小：Kokoro 发音库（约 10 MB）改为第一次下载 Kokoro 模型时一并下载。
+- 设置 › 通用新增“功能显示”，可分别隐藏故事配音、音乐生成和 Ocho 助手；Ocho 与音乐生成都关闭时一并隐藏 AI 服务设置。
+- 启动更快、界面更流畅：修复最近作品里有二三十分钟长音频时启动停在启动画面的问题；各页面第一次打开时才加载；生成、下载和 Ocho 回复过程中不再重绘整个界面。
+- 修复 Windows 和 Linux 上导出约两分钟以上的音乐时点击没有反应的问题，时间线导出长音频也不再受限；播放器工具栏改为“打开位置”，导出移到“更多”菜单。
+- 修复 ModelScope 镜像刷新后，从该来源下载模型时大小校验失败的问题。
+- Windows 安装包最低系统要求放宽到 Windows 10 1809（17763）。
+- 升级时一次性把旧版本保存的作品、助手对话和内核记录转换为新格式，转换前自动备份数据库。
+
+## [0.3.1-preview.6] - 2026-10-21
+
+### English
+
+- Share verified sample pitch, velocity and sustain limits between arrangement planning, score writing and playback checks. Allow expandable AI instruments to prepare missing coverage without restricting the new melody to existing samples. Supply installed audio-model capabilities to planning; validate per-part model overrides and repair unsupported YuE2 phrase conditions before preparing audio.
+
+### 简体中文
+
+- 智能编曲规划、写谱与演奏检查统一使用已确认采样的音高、力度和持续时长，不再扩大 AI 单音的可用音域。允许同模型可扩充音色按新旋律增量补齐，不因已有少量音高而限制创作。规划读取已安装音频模型的能力与实测边界；写谱按声部模型和实现方式校验，并提前修复无法用于 YuE2 的谱条件。
+
+## [0.3.1-preview.5] - 2026-10-21
+
+### English
+
+- Continue independent arrangement parts after an item fails, retain per-item errors, and automatically queue Ocho diagnostics with actual candidate checks and model preflight. Show recovery questions in the arrangement page; require scoped consent before replanning.
+- Review each generated AI candidate directly in Smart Arrangement with a seekable player, adoption, regeneration and custom feedback; generation continues while the user listens.
+- Keep track dragging within existing lanes when edge scrolling is active, preserving grouped moves and locked tracks.
+- Persist per-item regeneration requests and process them after the current item, retain completed assets, and reject stale requests after score changes. Continue missing sample preparation after a representative sound is confirmed.
+- Add per-part AI generation settings and an arrangement-only duration contract, keeping ordinary song generation unchanged.
+- Separate instrumental and wordless-vocal requests; preserve key aliases and reject unsupported modes instead of silently using C major.
+- Retain original candidates and measured checks, require audition and explicit region fitting before adoption, and prepare exact-pitch AI sample mappings for score playback.
+- Align single-note ABC duration with the requested sustain, preserve tempo and dynamics in sampler phrases, and invalidate relevant caches when timing changes.
+- Write release rests into score conditions, detect still-active choir endings, preserve confirmed phrases while new candidates await review, and keep checking failures recoverable.
+- Prevent overlapping original/fitted audition playback and explain unsupported score-conditioned generation before starting a task.
+- Resume checks from intact saved AI originals after restart, and allow failed or damaged candidates to be prepared again instead of blocking on an existing file.
+
+### 简体中文
+
+- 单个声部失败后继续其他独立声部，保留逐项错误；自动将失败交给 Ocho 读取实际候选检查和模型预检。处理范围问答直接显示在编曲页，重新规划前必须确认范围。
+- 智能编曲页逐项弹出 AI 音源试听确认卡，支持拖动试听、确认采用、重新生成与自定义意见；试听期间后续素材继续生成。
+- 修复片段拖到音轨区边缘时自动滚动导致目标轨号越界、跨轨移动失效的问题，保留分组移动和锁轨保护。
+- 单项重做请求持久保存，在正在生成的下一项完成后优先处理，保留已有成果；曲谱变更后拒绝执行旧请求，代表采样确认后继续准备所缺音色。
+- 新增声部二级生成设置和编曲专用长度合同，普通歌曲生成继续使用原路径。
+- 分开器乐与无词人声条件，正确归一调性别名；无法表示的调式明确提示，不再静默改为 C 大调。
+- 保留原始候选及本地测量结果，经区段适配和试听确认后采用；为采样器建立精确音高的 AI 音色映射。
+- 单音 ABC 与所需持续时长一致；采样演奏保留段落速度与力度变化，相关时间条件变化后旧候选正确失效。
+- 谱条件明确写入收尾休止，检查合唱末尾是否仍在发声；新候选不遮蔽已确认版本，检查异常可恢复并保留原片。
+- 原片与适配片互斥试听；不支持的谱条件生成组合在任务开始前说明原因与可选路径。
+- 重启后从完整保存的 AI 原片继续检查；失败或损坏候选可重新备料，不再因已有文件而卡住。
 
 ## [0.3.1-preview.4] - 2026-10-21
 

@@ -26,7 +26,7 @@ func (w *Workbench) saveDraft(d schema.Draft) (err error) {
 	defer func() {
 		diag.Log(w.Store.Root, "draft.save", "project_id", d.ID, "model_id", d.ModelID, "text_length", schema.TextLen(d.Text), "stage", stage, "elapsed_ms", time.Since(started).Milliseconds(), "error", diag.Error(err))
 	}()
-	d.EnsureCueIDs()
+	d.Normalize()
 	if !slices.Contains([]string{"", "text", "story", "subtitle", "music", "score"}, d.Kind) {
 		return msg.Err(msg.ErrDraftLimits, nil)
 	}
@@ -120,6 +120,9 @@ func (w *Workbench) DeleteDraft(id string) error {
 	for _, material := range s.ArrangementMaterials {
 		if material.ProjectID == id {
 			candidates = append(candidates, material.FileName)
+			if material.GenerationResult != nil && material.GenerationResult.DerivedFile != "" {
+				candidates = append(candidates, material.GenerationResult.DerivedFile)
+			}
 		}
 	}
 	err := w.Store.Update(func(s *schema.State) {

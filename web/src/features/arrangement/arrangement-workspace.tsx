@@ -4,7 +4,7 @@ import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { TextInput } from '@astryxdesign/core/TextInput';
 import { TextArea } from '@astryxdesign/core/TextArea';
 import { useTranslator } from '@astryxdesign/core/i18n';
-import { Check, Download, FileMusic, Layers3, LockKeyhole, Plus, Settings2, Sparkles, UnlockKeyhole } from 'lucide-react';
+import { Check, Download, FileMusic, Layers3, LockKeyhole, Plus, Settings2, ListMusic, UnlockKeyhole } from 'lucide-react';
 import { call, isDesktop } from '../../shared/lib/client';
 import modelCatalog from '../../shared/lib/catalog.json';
 import { formatCallError } from '../../shared/i18n/format';
@@ -16,7 +16,9 @@ import { isUntitled, type ArrangementInput, type ArrangementPlan, type Arrangeme
 import { composedScorePatch, noteCount } from '../score/score-draft';
 import { ArrangementReference } from './arrangement-reference';
 import { DurationControl } from '../../shared/ui/duration-control';
+import { ArrangementGenerationSettingsButton } from './arrangement-generation-settings';
 import { bindArrangementSources, matchedRealSource, realPartReady, sameInstrument } from './arrangement-sources';
+import { MaterialReviewQueue } from './material-review-queue';
 
 const sourceModes = ['auto', 'real', 'ai', 'hybrid'] as const;
 const audioModels = modelCatalog.filter(model => model.family === 'ace_step' || model.family === 'yue2');
@@ -179,6 +181,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
     setBandNotice(t('@yovoice.arrangement.bandApplied'));
   }
   return <VStack className="settings-page arrangement-page" gap={6}>
+    {draft.kind === 'score' ? <MaterialReviewQueue key={draft.id} draft={draft} state={state} locale={locale} /> : null}
     <HStack as="header" hAlign="between" vAlign="center" wrap="wrap" gap={3}><VStack gap={1}><h1>{t('@yovoice.arrangement.title')}</h1><small>{t('@yovoice.arrangement.intro')}</small></VStack><Button size="sm" icon={<Plus />} label={t('@yovoice.arrangement.new')} onClick={() => create(input)} /></HStack>
     <SettingsGroup title={t('@yovoice.arrangement.project')}>
       <SettingsRow label={t('@yovoice.arrangement.current')} hint={t('@yovoice.arrangement.projectHint')}>
@@ -204,6 +207,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
             {phrase.parts.map((part, ai) => <HStack key={`${ai}-${part.role}`} gap={2} vAlign="center" wrap="wrap">
               <TextInput size="sm" label={t('@yovoice.arrangement.instrument')} value={part.instrument} onChange={instrument => replacePart(si, pi, ai, { instrument, sourceId: undefined })} width="calc(var(--spacing-10) * 4)" />
               <TextInput size="sm" label={t('@yovoice.arrangement.technique')} value={part.technique ?? ''} onChange={technique => replacePart(si, pi, ai, { technique })} width="calc(var(--spacing-10) * 4)" />
+              {part.source === 'ai' ? <ArrangementGenerationSettingsButton draft={draft} state={state} part={part} refIndex={{ sectionIndex: si, phraseIndex: pi, partIndex: ai }} modelId={aiModelID} locale={locale} change={change} /> : null}
               <Selector size="sm" label={t('@yovoice.arrangement.source')} value={part.source} options={sourceOptions.filter(item => item.value === 'real' || item.value === 'ai' || item.value === 'auto')} onChange={value => replacePart(si, pi, ai, { source: value as ArrangementSource, sourceId: undefined })} />
               <Selector size="sm" label={t('@yovoice.arrangement.specificSource')} value={part.sourceId ?? ''} hasSearch={(state.instrumentSources ?? []).length > 8}
                 isDisabled={part.locked}
@@ -217,7 +221,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
               {inspection?.parts.find(item => item.ref.sectionIndex === si && item.ref.phraseIndex === pi && item.ref.partIndex === ai)?.issues.map((issue, index) => <small key={`${issue.code}-${index}`} role="status">{issue.message}</small>)}
               {!part.locked && inspection?.parts.find(item => item.ref.sectionIndex === si && item.ref.phraseIndex === pi && item.ref.partIndex === ai)?.issues.length ? inspection.parts.find(item => item.ref.sectionIndex === si && item.ref.phraseIndex === pi && item.ref.partIndex === ai)?.candidates.filter(candidate => candidate.id !== part.sourceId).slice(0, 3).map(candidate => <Button key={candidate.id} size="sm" variant="secondary" label={`${t('@yovoice.arrangement.useLocal')} ${candidate.name}${candidate.ensemble ? ` · ${t('@yovoice.arrangement.ensembleSample')}` : ''}`} onClick={() => void bindSource(part, candidate.id, false, { sectionIndex: si, phraseIndex: pi, partIndex: ai })} />) : null}
               <Button size="sm" variant="ghost" icon={part.locked ? <LockKeyhole /> : <UnlockKeyhole />} label={part.locked ? t('@yovoice.arrangement.unlock') : t('@yovoice.arrangement.lock')} isIconOnly onClick={() => replacePart(si, pi, ai, { locked: !part.locked })} />
-              {plan.approved && (part.source === 'ai' || (part.source === 'real' && !realPartReady(part, downloadedSources.current ?? state.instrumentSources ?? []))) ? <Button size="sm" variant="secondary" icon={part.source === 'ai' ? <Sparkles size={15} /> : <Download size={15} />}
+              {plan.approved && (part.source === 'ai' || (part.source === 'real' && !realPartReady(part, downloadedSources.current ?? state.instrumentSources ?? []))) ? <Button size="sm" variant="secondary" icon={part.source === 'ai' ? <ListMusic size={15} /> : <Download size={15} />}
                 label={t(part.source === 'ai' ? '@yovoice.arrangement.prepareOneAI' : '@yovoice.arrangement.prepareOneReal')}
                 isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare(part.source === 'ai' ? 'ai' : 'real', { section: si, phrase: pi, part: ai })} /> : null}
               {plan.approved && part.source === 'ai' && readyAI.has(`${si}:${pi}:${ai}`) ? <small>{t('@yovoice.arrangement.materialReady')}</small> : null}
@@ -244,7 +248,7 @@ export function ArrangementWorkspace({ active, draft, state, change, locale, ope
           {!state.models.some(model => model.id === aiModelID) ? <Button size="sm" variant="ghost" label={t('@yovoice.arrangement.aiModelInstall')} onClick={openSettings} /> : null}
           <HStack gap={2} wrap="wrap">
             <Button size="sm" variant="secondary" icon={<Download size={15} />} label={t('@yovoice.arrangement.prepareReal')} isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare('real')} />
-            <Button size="sm" variant="secondary" icon={<Sparkles size={15} />} label={t('@yovoice.arrangement.prepareAI')} isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare('ai')} />
+            <Button size="sm" variant="secondary" icon={<ListMusic size={15} />} label={t('@yovoice.arrangement.prepareAI')} isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare('ai')} />
             <Button size="sm" variant="primary" icon={<Layers3 size={15} />} label={t('@yovoice.arrangement.prepareBoth')} isDisabled={!isDesktop || materialBusy || jobRunning} onClick={() => void prepare('both')} />
           </HStack>
           {materialBusy ? <small role="status">{materialPhase}</small> : null}

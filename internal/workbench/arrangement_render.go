@@ -61,13 +61,24 @@ func (w *Workbench) RenderArrangement(in ArrangementRenderInput) error {
 	}
 	materials := map[ArrangementPartRef]schema.ArrangementMaterial{}
 	for _, material := range state.ArrangementMaterials {
+		if !generationMaterialUsable(material) {
+			continue
+		}
 		ref := ArrangementPartRef{material.SectionIndex, material.PhraseIndex, material.PartIndex}
-		if material.ProjectID == d.ID && (in.AIModelID == "" || material.ModelID == in.AIModelID) && ref.SectionIndex >= 0 && ref.SectionIndex < len(d.Arrangement.Sections) && ref.PhraseIndex >= 0 && ref.PhraseIndex < len(d.Arrangement.Sections[ref.SectionIndex].Phrases) && ref.PartIndex >= 0 && ref.PartIndex < len(d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex].Parts) && arrangementMaterialMatches(material, d, ref) {
+		if ref.SectionIndex < 0 || ref.SectionIndex >= len(d.Arrangement.Sections) || ref.PhraseIndex < 0 || ref.PhraseIndex >= len(d.Arrangement.Sections[ref.SectionIndex].Phrases) || ref.PartIndex < 0 || ref.PartIndex >= len(d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex].Parts) {
+			continue
+		}
+		modelID := in.AIModelID
+		part := d.Arrangement.Sections[ref.SectionIndex].Phrases[ref.PhraseIndex].Parts[ref.PartIndex]
+		if part.Generation != nil && part.Generation.ModelID != "" {
+			modelID = part.Generation.ModelID
+		}
+		if material.ProjectID == d.ID && (modelID == "" || material.ModelID == modelID) && arrangementMaterialMatches(material, d, ref) {
 			materials[ref] = material
 		}
 	}
 	for _, unit := range units {
-		if unit.Part.SourceID != "" && unit.Track.SourceID != unit.Part.SourceID {
+		if unit.Part.SourceID != "" && unit.Track.SourceID != unit.Part.SourceID && !(unit.Part.Source == "ai" && generationSettings(unit.Part).AssetKind == "phrase") {
 			return fmt.Errorf("%s · %s 固定的音源不可用，请恢复该音源或解除固定", unit.Phrase, unit.Part.Instrument)
 		}
 		source, found := sources[unit.Track.SourceID]
@@ -80,6 +91,14 @@ func (w *Workbench) RenderArrangement(in ArrangementRenderInput) error {
 			material, exists := materials[ArrangementPartRef{unit.SectionIndex, unit.PhraseIndex, unit.PartIndex}]
 			if !exists {
 				return fmt.Errorf("%s · %s 缺少所选模型的 AI 乐句音源；请先点击生成 AI 音源", unit.Phrase, unit.Part.Instrument)
+			}
+			if material.Generation != nil && math.Abs(material.Generation.EffectiveSeconds-(unit.End-unit.Start)) > .04 {
+				return fmt.Errorf("%s 的素材有效长度 %.2fs 与本句 %.2fs 不符，请作为自由素材手工放置或重新生成，不能静默裁掉内容", unit.Phrase, material.Generation.EffectiveSeconds, unit.End-unit.Start)
+			}
+			if material.Generation != nil {
+				if _, integrityErr := w.verifyGenerationMaterialIntegrity(material); integrityErr != nil {
+					return fmt.Errorf("%s · %s 的 AI 音源未通过完整性检查：%w", unit.Phrase, unit.Part.Instrument, integrityErr)
+				}
 			}
 			path, pathErr := w.Store.MediaPath("outputs", material.FileName)
 			if pathErr != nil {
@@ -139,7 +158,9 @@ func (w *Workbench) RenderArrangement(in ArrangementRenderInput) error {
 				asset.License, asset.LicenseURL, asset.SourceURL, asset.Author = source.License, source.LicenseURL, source.SourceURL, source.Author
 			}
 			clipOffset := 0.0
+			clipTail := 0.0
 			if found && source.Origin == unit.Part.Source && (len(source.Samples) > 0 || source.Plugin != nil) && (source.ID == unit.Part.SourceID || arrangementSameInstrument(source.Instrument, unit.Part.Instrument)) {
+				clipTail = generatedSourceTailSeconds(source, unit.Track)
 				key := unit.Track.ID + ":" + unit.Track.SourceID
 				if cached, ok := renderedReal[key]; ok {
 					asset = cached
@@ -177,8 +198,12 @@ func (w *Workbench) RenderArrangement(in ArrangementRenderInput) error {
 				material := materials[ArrangementPartRef{unit.SectionIndex, unit.PhraseIndex, unit.PartIndex}]
 				asset.ID, asset.FileName, asset.Duration = material.ID, material.FileName, material.Duration
 				asset.SourceResourceID = "material:" + material.ID
+				if material.Generation != nil {
+					clipOffset = material.Generation.EffectiveOffset
+					clipTail = material.Generation.TailSeconds
+				}
 			}
-			clipDuration := unit.End - unit.Start
+			clipDuration := unit.End - unit.Start + clipTail
 			if asset.Duration+0.1 < clipOffset+clipDuration {
 				return fmt.Errorf("%s · %s 的音频只有 %.1f 秒，无法覆盖计划中的 %.1f 秒", unit.Phrase, unit.Part.Instrument, asset.Duration-clipOffset, clipDuration)
 			}
@@ -241,4 +266,23 @@ func (w *Workbench) RenderArrangement(in ArrangementRenderInput) error {
 		return nil
 	}, "", d.ID)
 	return err
+}
+
+func generatedSourceTailSeconds(source schema.InstrumentSource, track schema.ScoreTrack) float64 {
+	tail := 0.0
+	for _, note := range track.Notes {
+		articulation := note.Articulation
+		if articulation == "" {
+			articulation = source.DefaultArticulation
+		}
+		if articulation == "" {
+			articulation = "normal"
+		}
+		for _, sample := range source.Samples {
+			if sample.GenerationID != "" && sample.RootPitch == note.Pitch && sample.Articulation == articulation && note.Velocity >= sample.VelocityLow && note.Velocity <= sample.VelocityHigh {
+				tail = max(tail, sample.Duration-sample.SustainSeconds)
+			}
+		}
+	}
+	return max(0, tail)
 }

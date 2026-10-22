@@ -13,10 +13,11 @@
 <p align="center">把文字，变成有情绪的声音</p>
 <p align="center">
   <a href="https://yovoice.leemysw.com"><img src="https://img.shields.io/badge/website-yovoice.leemysw.com-10b981?style=flat-square" alt="官网" /></a>
-  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.3.1-blue?style=flat-square" alt="Version 0.3.1" /></a>
+  <a href="web/package.json"><img src="https://img.shields.io/badge/version-0.4.1-blue?style=flat-square" alt="Version 0.4.1" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-orange?style=flat-square" alt="License: Apache-2.0" /></a>
   <img src="https://img.shields.io/badge/macOS-14%2B-black?style=flat-square" alt="macOS 14+ (Apple Silicon)" />
   <img src="https://img.shields.io/badge/Windows-10%2F11-0078D4?style=flat-square" alt="Windows 10/11 (x64)" />
+  <img src="https://img.shields.io/badge/Linux-x64-FCC624?style=flat-square" alt="Linux (x64)" />
 </p>
 <p align="center">
   <a href="https://www.star-history.com/leemysw/yovoice">
@@ -36,7 +37,7 @@
 
 ---
 
-yovoice 是一款适用于 macOS 和 Windows 的开源、本地优先（Local-first）声音与音乐创作工作台。
+yovoice 是一款适用于 macOS、Windows 和 Linux 的开源、本地优先（Local-first）声音与音乐创作工作台。
 
 在本地将文字转化为自然逼真的语音、整首带人声歌曲或多轨乐谱。支持零样本音色克隆、情绪风格控制、带歌词人声的 AI 音乐生成、多轨 MIDI 编曲渲染与音频工程管理。**完全在本地运行，无云端 API 调用，无按字/按秒扣费开销，无需复杂的 Python 环境配置**，让旁白、配音、有声内容与音乐创作更自主、更私密、更低成本。
 
@@ -88,8 +89,12 @@ yovoice 是一款适用于 macOS 和 Windows 的开源、本地优先（Local-fi
 | Windows 10/11 · x64 | `-setup.exe` | 运行安装向导，安装后从开始菜单打开 |
 | Windows 10/11 · x64 · NVIDIA 显卡 | `-cuda12.4-setup.exe` | 内置 CUDA 12.4 内核，兼容较旧的显卡与驱动，首次启动即用 GPU |
 | Windows 10/11 · x64 · NVIDIA 显卡 | `-cuda13.3-setup.exe` | 内置 CUDA 13.3 内核，需要较新的驱动，安装包更小 |
+| Linux · x64（Debian/Ubuntu） | `-linux-x64.deb` | `sudo apt install ./yovoice-<版本>-linux-x64.deb`，安装后从应用菜单打开 |
+| Linux · x64（其他发行版） | `-linux-x64.tar.gz` | 解压后运行 `./install.sh`，为当前用户添加到应用菜单 |
 
 Windows 安装器会在缺少时联网安装 [WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。模型在应用内下载。卸载应用保留 `~/.yovoice` 中的作品和模型。
+
+Linux 版需要 WebKitGTK 4.1（Debian/Ubuntu 为 `libwebkit2gtk-4.1-0`，Fedora 为 `webkit2gtk4.1`，Arch 为 `webkit2gtk-4.1`），`.deb` 会自动安装。Linux 开箱使用 CPU，可在 设置 → 推理引擎 中下载 Vulkan GPU 内核。Linux 版暂不支持自动更新，请从 Releases 下载新版本。
 
 macOS 和 Windows 均支持在应用菜单中检查更新，也会自动检查并后台下载；下载完成后可选择重启安装。Windows 自动更新只下载应用本体（`-update.exe`），保留已安装的内核；新版本推荐更高的内核时，可在 设置 → 推理引擎 中选择升级。
 

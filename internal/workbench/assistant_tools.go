@@ -22,7 +22,7 @@ var assistantTools = []string{
 	"plan_melody", "cover_melody", "transform_melody",
 	"open_work", "open_page", "list_models", "list_voices", "list_characters", "save_character", "status",
 	"get_app_status", "get_recent_errors", "remember_preference", "forget_preference", "propose_action",
-	"arrangement_inventory", "inspect_arrangement", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "render_arrangement",
+	"arrangement_inventory", "inspect_arrangement", "arrangement_generation_preflight", "replan_arrangement_generation", "bind_arrangement_source", "plan_arrangement", "compose_arrangement", "prepare_arrangement", "arrangement_jobs", "retry_arrangement_material", "render_arrangement",
 	"search_resources",
 	"add_resource_clip",
 	"apply_resource_band",
@@ -56,7 +56,7 @@ func (w *Workbench) newAssistantServer() *mcp.Server {
 }
 
 // workKindOf 把作品的原始 Kind 归并为界面使用的四种类型。
-// modelKind 返回模型适用的作品类型：music、score 或 text（语音与故事共用）；扒谱模型不用于生成，返回空。
+// modelKind 返回模型适用的作品类型：music、score 或 text（语音与故事共用）；扒谱和歌词对齐模型不用于生成，返回空。
 func modelKind(id string) string {
 	m, err := catalog.Lookup(id)
 	if err != nil {
@@ -67,7 +67,7 @@ func modelKind(id string) string {
 		return "music"
 	case "soundfont":
 		return "score"
-	case "sheetsage2":
+	case "sheetsage2", "lyric_align":
 		return ""
 	}
 	return "text"
@@ -617,6 +617,7 @@ func (w *Workbench) getGenerationStatusTool(ctx context.Context, req *mcp.CallTo
 	}
 	if d.Arrangement != nil {
 		out["arrangementJobs"] = w.ArrangementJobs(d.ID)
+		out["arrangementMaterials"] = arrangementDiagnosticMaterials(s, d)
 		if d.Timeline != nil {
 			out["existingTimelineLanes"] = len(d.Timeline.Tracks)
 			out["existingTimelineAssets"] = len(d.Timeline.Assets)

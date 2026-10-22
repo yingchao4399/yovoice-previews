@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"yovoice/internal/msg"
+	"yovoice/internal/platform"
 	"yovoice/internal/schema"
 )
 
@@ -53,12 +54,5 @@ func Write(path string, s schema.Score) error {
 	if e != nil {
 		return e
 	}
-	temp := path + ".part"
-	if e = os.WriteFile(temp, data, 0600); e != nil {
-		return e
-	}
-	if e = os.Rename(temp, path); e != nil {
-		_ = os.Remove(temp)
-	}
-	return e
+	return platform.WriteFileAtomic(path, data, 0600)
 }

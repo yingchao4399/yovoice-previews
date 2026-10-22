@@ -740,6 +740,30 @@
     "sha256": "d858bfdf5ac7be16261ac6ee38754d6fca502149131b44a5262b4039fb72876e"
   },
   {
+    "id": "lyric-align-q8",
+    "name": "Lyric Aligner",
+    "family": "lyric_align",
+    "task": "align",
+    "engineMinimum": "v0.9.1",
+    "version": "1",
+    "precision": "Q8",
+    "directory": "Lyric-Align-GGUF",
+    "remotePath": "Qwen3-ForcedAligner-0.6B-GGUF/qwen3-forced-aligner-0.6b-q8_0.gguf",
+    "size": 1302498752,
+    "files": [
+      {
+        "path": "BS-RoFormer-ep368-GGUF/bs-roformer-ep368-q8_0.gguf",
+        "size": 172532256,
+        "sha256": "9a55a8cad369d00f6e0fb208bb0cd87e30e25430772b8491e20a4eace6423ad2"
+      },
+      {
+        "path": "Qwen3-ForcedAligner-0.6B-GGUF/qwen3-forced-aligner-0.6b-q8_0.gguf",
+        "size": 1129966496,
+        "sha256": "75209490b11cec2b0db749ca5f4ff92266f58efd30f7fd04d9eb2a3ac9cc929f"
+      }
+    ]
+  },
+  {
     "id": "musescore-general-sf2",
     "name": "MuseScore General",
     "family": "soundfont",

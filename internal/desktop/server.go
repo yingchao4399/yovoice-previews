@@ -60,8 +60,23 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Content-Security-Policy", "frame-ancestors 'none'")
-	r.Body = http.MaxBytesReader(w, r.Body, 28<<20)
+	limit := int64(28 << 20)
+	if r.URL.Path == "/api/export-audio" {
+		// 导出的长音频直接写入临时文件，按 WAV 的 4 GB 上限放宽。
+		limit = 4 << 30
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	switch {
+	case r.URL.Path == "/api/export-audio" && r.Method == "POST":
+		s.calls.RLock()
+		id, err := s.Workbench.SaveExport(r.Body)
+		s.calls.RUnlock()
+		reply := map[string]any{"id": id}
+		if err != nil {
+			reply = map[string]any{"error": msg.Encode(err)}
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(reply)
 	case r.URL.Path == "/api/call" && r.Method == "POST":
 		var message struct {
 			ID     string          `json:"id"`
@@ -96,14 +111,22 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
+		var stream stateStream
 		for {
 			select {
 			case <-r.Context().Done():
 				return
 			case <-ch:
-				b, e := json.Marshal(map[string]any{"event": "state", "state": s.Workbench.PublicState()})
+				snapshot, e := json.Marshal(s.Workbench.PublicState())
 				if e != nil {
 					return
+				}
+				b, e := stream.next(snapshot)
+				if e != nil {
+					return
+				}
+				if b == nil {
+					continue
 				}
 				if _, e = fmt.Fprintf(w, "data: %s\n\n", b); e != nil {
 					return
@@ -123,6 +146,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Header().Set("Content-Type", "audio/wav")
+		// 音频本就在本机磁盘上，禁止 WebView 再缓存一份；未压缩的 wav 会让 web-cache 不断膨胀。
+		w.Header().Set("Cache-Control", "no-store")
 		// 隐藏 io.ReaderFrom，避免 Windows sendfile 与连接后台读在 Go 1.26 中的数据竞争。
 		http.ServeFile(struct{ http.ResponseWriter }{w}, r, path)
 	case r.URL.Path == "/shutdown" && r.Method == "POST":

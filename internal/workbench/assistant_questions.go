@@ -57,12 +57,24 @@ func (w *Workbench) registerQuestionTool(server *mcp.Server) {
 				turn := w.chat.turn
 				waiting := turn != nil && turn.waiting
 				sessionID := ""
+				workID := ""
 				if turn != nil {
 					sessionID = turn.sessionID
+					workID = turn.context.WorkID
 				}
 				w.chat.mu.Unlock()
 				if waiting {
 					return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{&mcp.TextContent{Text: "awaiting_user: 本轮已提交问题，请结束回复，等待用户在问答卡回答。"}}}, nil
+				}
+				name := ""
+				switch p := req.GetParams().(type) {
+				case *mcp.CallToolParamsRaw:
+					name = p.Name
+				case *mcp.CallToolParams:
+					name = p.Name
+				}
+				if !arrangementRecoveryToolAllowed(w.Store.Read(), sessionID, workID, name) {
+					return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{&mcp.TextContent{Text: "后台局部诊断不允许修改曲谱、来源或整曲计划。需要重新规划时先通过第四轮问答卡征求具体范围；局部选择不能用整曲规划工具代替。"}}}, nil
 				}
 				if sessionQuestion(w.Store.Read(), sessionID, "") != nil {
 					name := ""
@@ -72,7 +84,7 @@ func (w *Workbench) registerQuestionTool(server *mcp.Server) {
 					case *mcp.CallToolParams:
 						name = p.Name
 					}
-					if !slices.Contains([]string{"ask_user", "search_resources", "resource_downloads", "arrangement_inventory", "inspect_arrangement", "list_works", "get_work", "list_models", "list_voices", "list_characters", "status", "get_app_status", "get_recent_errors", "get_generation_status", "arrangement_jobs"}, name) {
+					if !slices.Contains([]string{"ask_user", "search_resources", "resource_downloads", "arrangement_inventory", "inspect_arrangement", "arrangement_generation_preflight", "list_works", "get_work", "list_models", "list_voices", "list_characters", "status", "get_app_status", "get_recent_errors", "get_generation_status", "arrangement_jobs"}, name) {
 						return &mcp.CallToolResult{IsError: true, Content: []mcp.Content{&mcp.TextContent{Text: "awaiting_user: 当前会话还有待回答的问题，请先请用户回答或取消问答卡，不能代用户作决定。"}}}, nil
 					}
 				}
@@ -230,6 +242,13 @@ func (w *Workbench) AnswerAssistantQuestion(in AssistantAnswerInput) error {
 	}
 	if !accepted {
 		return nil
+	}
+	if len(next.Selected) == 1 && (next.Selected[0] == 0 || next.Selected[0] == 2) {
+		// 这两项都表示不启动新的规划；解除旧失败事件的后台锁，避免助手续接时
+		// 因保护性拦截反复返回“不能修改整曲计划”。失败素材本身仍保留。
+		if err := w.closeAnsweredArrangementRecovery(next.SessionID); err != nil {
+			return err
+		}
 	}
 	answers := []string{}
 	for _, i := range next.Selected {

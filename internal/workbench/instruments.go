@@ -201,7 +201,13 @@ func (w *Workbench) scoreSources(s schema.Score) (map[string]score.SampleInstrum
 			if hex.EncodeToString(hash[:]) != sample.SHA256 {
 				return nil, fmt.Errorf("音源 %s 的采样校验失败", source.Name)
 			}
-			instrument.Samples = append(instrument.Samples, score.SampleFile{Path: path, RootPitch: sample.RootPitch, Articulation: sample.Articulation, VelocityLow: sample.VelocityLow, VelocityHigh: sample.VelocityHigh})
+			release := max(0, sample.Duration-sample.SustainSeconds)
+			// AI 精确音高采样的释放尾音由生成合同决定，不能被旧的
+			// 0.5 秒上限静默截断。真实/旧采样继续沿用原有上限。
+			if sample.GenerationID == "" {
+				release = min(.5, release)
+			}
+			instrument.Samples = append(instrument.Samples, score.SampleFile{Path: path, RootPitch: sample.RootPitch, Articulation: sample.Articulation, VelocityLow: sample.VelocityLow, VelocityHigh: sample.VelocityHigh, ExactPitch: sample.GenerationID != "" || sample.ExactPitch, Generated: sample.GenerationID != "", SustainSeconds: sample.SustainSeconds, ReleaseSeconds: release, Duration: sample.Duration})
 		}
 		result[track.SourceID] = instrument
 	}

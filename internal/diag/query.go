@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"yovoice/internal/platform"
 )
 
 // Entry 是服务日志里的一条记录；Fields 是除时间、级别、事件名以外的全部字段。
@@ -161,15 +162,7 @@ func Bundle(root, path, version string) error {
 		return err
 	}
 	// 先写临时文件再替换，保存失败时不留下半个压缩包。
-	temporary := path + ".tmp"
-	if err = os.WriteFile(temporary, buffer.Bytes(), 0600); err != nil {
-		return err
-	}
-	if err = os.Rename(temporary, path); err != nil {
-		_ = os.Remove(temporary)
-		return err
-	}
-	return nil
+	return platform.WriteFileAtomic(path, buffer.Bytes(), 0600)
 }
 
 func addFile(archive *zip.Writer, source, name string) error {

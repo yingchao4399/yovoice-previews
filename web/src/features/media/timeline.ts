@@ -1,4 +1,4 @@
-import { stableJSON, projectKind, type AudioClip, type AudioLane, type AudioTimeline, type Draft, type Generation } from '../../shared/workbench';
+import { stableJSON, type AudioClip, type AudioLane, type AudioTimeline, type Draft, type Generation } from '../../shared/workbench';
 
 // 所有剪辑使用源音频范围，不改写生成文件。
 export class Timeline {
@@ -48,12 +48,7 @@ export class Timeline {
   static accept(draft: Draft, history: Generation[]): Draft {
     const accepted = new Set(draft.timeline?.acceptedGenerations ?? []);
     const pending = history.filter(g => g.segment && g.settings.id === draft.id && !accepted.has(g.id)).slice().reverse();
-    if (!pending.length) {
-      // 旧故事的整篇音频作为一个片段保留，不显示历史版本列表。
-      const legacy = !draft.timeline && projectKind(draft) === 'story' ? history.find(g => g.settings.id === draft.id && !g.segment) : undefined;
-      if (!legacy) return draft;
-      return { ...draft, timeline: { tracks: [{ id: `legacy-${legacy.id}`, name: draft.title, muted: false, clips: [{ id: legacy.id, generationId: legacy.id, start: 0, offset: 0, duration: legacy.duration }] }] } };
-    }
+    if (!pending.length) return draft;
     const timeline = structuredClone(draft.timeline ?? { tracks: [] });
     let changed = false;
     for (const g of pending) {

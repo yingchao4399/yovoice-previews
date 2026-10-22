@@ -1,4 +1,5 @@
 import { Button } from '@astryxdesign/core/Button';
+import { Text } from '@astryxdesign/core/Text';
 import { useLocale, useTranslator } from '@astryxdesign/core/i18n';
 import { RefreshCw, Star } from 'lucide-react';
 import { SettingsGroup, SettingsRow } from '../../shared/ui/settings-group';
@@ -26,7 +27,7 @@ export function UpdateSettings() {
               : status === 'disabled' ? t('@yovoice.update.disabled') : t('@yovoice.update.autoHint');
   const hasNotes = !!update.notes && !!update.version;
   return <SettingsGroup title={t('@yovoice.update.group')}>
-    <SettingsRow label={t('@yovoice.update.currentVersion', { version: update.current })} hint={<span data-testid="update-status" data-status={status}>{hint}</span>}>
+    <SettingsRow label={t('@yovoice.update.currentVersion', { version: update.current })} hint={<Text type="inherit" color="inherit" data-testid="update-status" data-status={status}>{hint}</Text>}>
       {hasNotes ? <Button size="sm" variant="ghost" label={t('@yovoice.update.viewNotes')} onClick={showUpdateDialog} /> : null}
       {status === 'ready' || status === 'installing' ? <Button size="sm" variant="primary" label={t('@yovoice.update.restart')} isLoading={status === 'installing'} onClick={() => void installUpdate()} />
         : status !== 'disabled' ? <Button size="sm" icon={<RefreshCw size={15} />} label={t('@yovoice.update.check')} isLoading={status === 'checking'} isDisabled={status === 'downloading' || status === 'verifying'} onClick={() => void checkForUpdate()} /> : null}

@@ -119,7 +119,8 @@ func sampleNoteIssue(part schema.ArrangementPart, note schema.ScoreNote, source 
 	}
 	pitchMatch := false
 	for _, s := range tech {
-		if absInt(s.RootPitch-note.Pitch) <= 7 {
+		low, high := arrangementSamplePitchBounds(s)
+		if note.Pitch >= low && note.Pitch <= high {
 			pitchMatch = true
 			if note.Velocity >= s.VelocityLow && note.Velocity <= s.VelocityHigh {
 				return ""
@@ -138,6 +139,24 @@ func absInt(n int) int {
 		return -n
 	}
 	return n
+}
+
+func generatedSustainIssue(music *schema.Score, part schema.ArrangementPart, n schema.ScoreNote, s schema.InstrumentSource) bool {
+	if music == nil {
+		return false
+	}
+	generated := false
+	length := music.Seconds(n.Bar, n.Beat+n.Length) - music.Seconds(n.Bar, n.Beat)
+	for _, sample := range s.Samples {
+		if sample.GenerationID == "" && !sample.ExactPitch {
+			continue
+		}
+		generated = true
+		if sample.RootPitch == n.Pitch && n.Velocity >= sample.VelocityLow && n.Velocity <= sample.VelocityHigh && sample.Articulation == sampleTechnique(part, n, s) && sample.SustainSeconds+.001 >= length {
+			return false
+		}
+	}
+	return generated
 }
 
 func sourceIdentityIssue(part schema.ArrangementPart, source schema.InstrumentSource) string {
@@ -218,8 +237,12 @@ func inspectionMessage(code string, part schema.ArrangementPart, phrase string, 
 		return fmt.Sprintf("%s 第%d小节 MIDI %d 超出 %s 的可用音域", label, note.Bar, note.Pitch, source.Name)
 	case "AI_MATERIAL_REVIEW_REQUIRED":
 		return label + " 的 AI 乐句已生成，请在音源库试听并确认；条件生成仍需检查演奏与对齐"
+	case "SAMPLE_SUSTAIN_INSUFFICIENT":
+		return fmt.Sprintf("%s 第%d小节的 AI 采样长音覆盖不足，请补充更长采样", label, note.Bar)
 	case "AI_MATERIAL_MISSING":
 		return label + " 尚未准备当前曲谱和模型的 AI 乐句"
+	case "AI_MATERIAL_CORRUPT":
+		return label + " 的 AI 乐句原片或适配文件缺失或已变化，请重新检查或生成；不会使用损坏素材"
 	}
 	return label + " 无法使用音源：" + code
 }
@@ -269,6 +292,10 @@ func (w *Workbench) InspectArrangement(in ArrangementInspectInput) (ArrangementI
 	for si, section := range d.Arrangement.Sections {
 		for pi, phrase := range section.Phrases {
 			for ai, part := range phrase.Parts {
+				materialModel := in.AIModelID
+				if part.Generation != nil && part.Generation.ModelID != "" {
+					materialModel = part.Generation.ModelID
+				}
 				ref := ArrangementPartRef{si, pi, ai}
 				item := ArrangementPartInspection{PartID: part.ID, Ref: ref, Phrase: phrase.Name, Instrument: part.Instrument, SourceID: part.SourceID, Ready: true, Candidates: []ArrangementSourceCandidate{}, Issues: []ArrangementIssueDetail{}}
 				var tracks []schema.ScoreTrack
@@ -305,7 +332,7 @@ func (w *Workbench) InspectArrangement(in ArrangementInspectInput) (ArrangementI
 					}
 					for _, t := range tracks {
 						for _, n := range t.Notes {
-							if sampleNoteIssue(part, n, s) != "" {
+							if sampleNoteIssue(part, n, s) != "" || generatedSustainIssue(d.Score, part, n, s) {
 								ok = false
 							}
 						}
@@ -315,7 +342,7 @@ func (w *Workbench) InspectArrangement(in ArrangementInspectInput) (ArrangementI
 						item.Candidates = append(item.Candidates, ArrangementSourceCandidate{ID: s.ID, Name: s.Name, Instrument: s.Instrument, Ensemble: strings.Contains(s.Name, "组") || strings.Contains(strings.ToLower(s.Name), "ensemble")})
 					}
 				}
-				if selected == nil && part.SourceID == "" && len(item.Candidates) > 0 {
+				if selected == nil && part.SourceID == "" && len(item.Candidates) > 0 && (part.Source != "ai" || generationSettings(part).Method == "sampler" && (generationSettings(part).AssetKind == "instrument" || in.Stage == "audition")) {
 					for _, s := range state.InstrumentSources {
 						if s.ID == item.Candidates[0].ID {
 							copy := s
@@ -323,6 +350,11 @@ func (w *Workbench) InspectArrangement(in ArrangementInspectInput) (ArrangementI
 							break
 						}
 					}
+				}
+				phraseAsset := part.Source == "ai" && generationSettings(part).AssetKind == "phrase" && in.Stage != "audition"
+				if phraseAsset {
+					selected = nil
+					item.SourceID = ""
 				}
 				if selected != nil {
 					item.SourceID = selected.ID
@@ -342,17 +374,27 @@ func (w *Workbench) InspectArrangement(in ArrangementInspectInput) (ArrangementI
 							for _, n := range t.Notes {
 								if code := sampleNoteIssue(part, n, *selected); code != "" {
 									add(code, *selected, n)
+								} else if generatedSustainIssue(d.Score, part, n, *selected) {
+									add("SAMPLE_SUSTAIN_INSUFFICIENT", *selected, n)
 								}
 							}
 						}
 					}
-				} else if part.SourceID != "" {
+				} else if part.SourceID != "" && !phraseAsset {
 					add("SOURCE_MISSING", schema.InstrumentSource{}, schema.ScoreNote{})
 				} else if part.Source == "ai" {
 					ready := false
 					reviewNeeded := false
+					var chosen *schema.ArrangementMaterial
 					for _, m := range state.ArrangementMaterials {
-						if m.ProjectID == d.ID && m.SectionIndex == si && m.PhraseIndex == pi && m.PartIndex == ai && (in.AIModelID == "" || in.AIModelID == m.ModelID) && arrangementMaterialMatches(m, d, ref) {
+						if m.ProjectID == d.ID && m.SectionIndex == si && m.PhraseIndex == pi && m.PartIndex == ai && (materialModel == "" || materialModel == m.ModelID) && arrangementMaterialMatches(m, d, ref) {
+							if m.Generation != nil && (m.Generation.Pitch != nil || m.GenerationResultState() == "rejected") {
+								continue
+							}
+							// 新候选待审核期间继续使用已确认版本，不能让新候选遮蔽可用素材。
+							if ready && !reviewNeeded && !generationMaterialUsable(m) {
+								continue
+							}
 							p, e := w.Store.MediaPath("outputs", m.FileName)
 							if e == nil {
 								info, e := os.Stat(p)
@@ -361,7 +403,9 @@ func (w *Workbench) InspectArrangement(in ArrangementInspectInput) (ArrangementI
 									item.MaterialID = m.ID
 									item.MaterialCondition = m.Condition
 									item.ReviewStatus = m.ReviewStatus
-									reviewNeeded = m.ReviewStatus == "needs_review"
+									reviewNeeded = !generationMaterialUsable(m)
+									candidate := m
+									chosen = &candidate
 								}
 							}
 						}
@@ -371,6 +415,10 @@ func (w *Workbench) InspectArrangement(in ArrangementInspectInput) (ArrangementI
 							add("AI_MATERIAL_MISSING", schema.InstrumentSource{}, schema.ScoreNote{})
 						} else if reviewNeeded {
 							add("AI_MATERIAL_REVIEW_REQUIRED", schema.InstrumentSource{}, schema.ScoreNote{})
+						} else if chosen != nil && chosen.Generation != nil {
+							if _, e := w.verifyGenerationMaterialIntegrity(*chosen); e != nil {
+								add("AI_MATERIAL_CORRUPT", schema.InstrumentSource{}, schema.ScoreNote{})
+							}
 						}
 					}
 

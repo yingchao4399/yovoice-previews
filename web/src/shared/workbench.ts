@@ -1,5 +1,6 @@
 import { draftCopy } from './i18n/draft-copy';
 import { seedLocale, type UiLocale } from './i18n/locale';
+import type { ArrangementGenerationSettings, ArrangementGenerationContract, ArrangementGenerationResult } from './arrangement-generation';
 
 export type Mode = 'speaker' | 'reference' | 'vector' | 'text';
 export interface DurationIntent { mode: 'auto' | 'fixed'; seconds?: number }
@@ -36,8 +37,8 @@ export interface ScoreTrack { id: string; partIds?: string[]; name: string; role
 export interface ScoreSection { name: string; start: number; end: number; tempo?: number }
 export interface Score { tempo: number; timeSignature: number[]; key?: string; sections?: ScoreSection[]; tracks: ScoreTrack[] }
 export type ArrangementSource = 'real' | 'ai' | 'auto';
-export interface ArrangementJob { id: string; projectId: string; mode: string; status: string; error?: string; steps: { partId?: string; instrument: string; source: string; status: string; error?: string }[] }
-export interface ArrangementPart { id?: string; instrument: string; role: string; technique?: string; source: ArrangementSource; sourceId?: string; reason?: string; locked?: boolean; allowSubstitution?: boolean }
+export interface ArrangementJob { id: string; projectId: string; mode: string; status: string; error?: string; steps: { partId?: string; instrument: string; source: string; status: string; error?: string; recoverySession?: string; recoveryQueued?: boolean; recoveryError?: string }[] }
+export interface ArrangementPart { id?: string; instrument: string; role: string; technique?: string; source: ArrangementSource; sourceId?: string; reason?: string; locked?: boolean; allowSubstitution?: boolean; generation?: ArrangementGenerationSettings }
 export interface ArrangementPhrase { id?: string; name: string; startBar: number; endBar: number; parts: ArrangementPart[] }
 export interface ArrangementSection { id?: string; name: string; startBar: number; endBar: number; phrases: ArrangementPhrase[] }
 export interface ArrangementPlan { title: string; tempo: number; timeSignature: number[]; key?: string; seconds: number; sections: ArrangementSection[]; brief?: string; sourceMode?: 'real' | 'ai' | 'hybrid' | 'auto'; approved?: boolean; aiModelId?: string; referenceAbc?: string }
@@ -72,9 +73,9 @@ export interface Voice { referenceText?: string; source?: string; sourceGenerati
 export interface ModelFile { path: string; size: number; sha256: string }
 export interface ModelPackage { voices?: string[]; variant?: string; loadOptions?: Record<string, string>; sessionOptions?: Record<string, string>; files?: ModelFile[]; directory?: string; task?: string; engineMinimum?: string; family: string; id: string; name: string; version: string; precision: string; remotePath: string; size: number; sha256: string }
 export interface InstalledModel { id: string; path: string; managed: boolean }
-export interface InstrumentSample { id: string; fileName: string; sha256: string; rootPitch: number; articulation: string; velocityLow: number; velocityHigh: number; duration: number }
+export interface InstrumentSample { generation?: ArrangementGenerationContract; generationPrompt?: string; generationId?: string; sustainSeconds?: number; exactPitch?: boolean; id: string; fileName: string; sha256: string; rootPitch: number; articulation: string; velocityLow: number; velocityHigh: number; duration: number }
 export interface InstrumentSource { id: string; catalogId?: string; name: string; instrument: string; origin: 'real' | 'ai'; verification?: 'catalog' | 'user' | 'metadata'; defaultArticulation?: string; author?: string; license?: string; licenseUrl?: string; sourceUrl?: string; samples: InstrumentSample[]; provenance?: "recorded" | "synthesized"; health?: "ready" | "missing" | "corrupt" | "unverified"; plugin?: { path: string; name: string; sha256: string; stateData?: string; articulations: string[] } }
-export interface ArrangementMaterial { id: string; projectId: string; planHash: string; scoreHash?: string; partId?: string; condition?: "score_conditioned" | "free_audio"; reviewStatus?: "needs_review" | "confirmed"; peak?: number; clippedFraction?: number; onsetSeconds?: number; alignmentWarning?: string; sectionIndex: number; phraseIndex: number; partIndex: number; instrument: string; role: string; technique?: string; phrase?: string; prompt?: string; tempo?: number; key?: string; modelId: string; fileName: string; duration: number; createdAt: string }
+export interface ArrangementMaterial { retryRequest?: { status: 'queued' | 'running' | 'completed' | 'failed'; feedback?: string; round: number; error?: string }; generation?: ArrangementGenerationContract; generationResult?: ArrangementGenerationResult; id: string; projectId: string; planHash: string; scoreHash?: string; partId?: string; condition?: "score_conditioned" | "free_audio" | "sample_candidate" | "sampler_score"; reviewStatus?: "needs_review" | "confirmed"; peak?: number; clippedFraction?: number; onsetSeconds?: number; alignmentWarning?: string; sectionIndex: number; phraseIndex: number; partIndex: number; instrument: string; role: string; technique?: string; phrase?: string; prompt?: string; userFeedback?: string; tempo?: number; key?: string; modelId: string; fileName: string; duration: number; createdAt: string }
 export interface BandPreset { id: string; name: string; parts: { instrument: string; role: string; technique?: string; source: 'real' | 'ai'; sourceId?: string; allowSubstitution?: boolean }[]; aiModelId?: string; createdAt: string }
 export interface GenerationSegment { cueId: string; speakerId: string; speakerName: string; batchId: string; index: number; targetClipId?: string; placement?: 'ripple' | 'preserve' }
 // 本机 Codex CLI 的检测结果：path 为空表示未安装，login 为 chatgpt、apikey 或空（未登录）。
@@ -84,7 +85,9 @@ export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 export interface LogEntry { time: string; level: LogLevel; event: string; fields?: Record<string, unknown> }
 export interface LogFilter { level?: string; module?: string; text?: string; since?: string; offset?: number; limit?: number }
 export interface LogPage { entries: LogEntry[]; total: number; modules: string[] }
-export interface Generation { segment?: GenerationSegment; id: string; title: string; source?: string; fileName: string; createdAt: string; duration: number; settings: Draft; lyricTimes?: number[] }
+export interface Generation { segment?: GenerationSegment; id: string; title: string; source?: string; fileName: string; createdAt: string; duration: number; settings: Draft; lyricTimes?: number[]; lyricWords?: AlignedWord[] }
+/** 歌词对齐模型给出的逐字时间（秒），和逐行校准互斥，以最近一次为准。 */
+export interface AlignedWord { word: string; start: number; end: number }
 /** UI chrome locale. Distinct from Draft.language (TTS). */
 export type { UiLocale };
 /** Stable product message key. Catalogs and Go constants share this spelling. */
@@ -98,8 +101,8 @@ export interface Activity {
   startedAt?: string | null;
   modelId?: string | null;
   kind: string;
-  // melody 为出谱或扒谱。
-  task?: 'melody';
+  // melody 为出谱或扒谱，align 为歌词对齐。
+  task?: 'melody' | 'align';
   code: MessageCode;
   params: MessageParams | null;
   status: string;
@@ -124,7 +127,13 @@ export interface CleanupReport {
   cleanedCount: number;
   freedBytes: number;
 }
-export interface Preferences { downloadSource: string; backend: string; modelDirectory: string | null; uiLocale: UiLocale; proxyURL?: string; proxyEnabled?: boolean; aiTimeout?: number; introSeen?: boolean; tourSeen?: boolean; assistantQuiet?: boolean }
+export interface Preferences { downloadSource: string; backend: string; modelDirectory: string | null; uiLocale: UiLocale; proxyURL?: string; proxyEnabled?: boolean; aiTimeout?: number; introSeen?: boolean; tourSeen?: boolean; assistantQuiet?: boolean; hiddenFeatures?: Feature[] }
+// 可在设置中隐藏的功能入口：故事配音、音乐生成（含编曲）与 Ocho 助手，默认全部显示。
+export const optionalFeatures = ['story', 'music', 'assistant'] as const;
+export type Feature = typeof optionalFeatures[number];
+export const featureHidden = (preferences: Preferences, feature: Feature) => !!preferences.hiddenFeatures?.includes(feature);
+// AI 服务主要供 Ocho 与音乐创作使用，两者都隐藏时 AI 服务设置与有声书的 AI 分配角色一并隐藏。
+export const aiServiceHidden = (preferences: Preferences) => featureHidden(preferences, 'assistant') && featureHidden(preferences, 'music');
 export interface State {
   arrangementJobs?: ArrangementJob[]; arrangementScores?: { id: string; projectId: string; phraseId: string; conditionHash: string }[];
   characters: Character[]; previews: CharacterPreview[]; drafts: Draft[]; voices: Voice[]; models: InstalledModel[]; history: Generation[]; instrumentSources?: InstrumentSource[]; arrangementMaterials?: ArrangementMaterial[]; bandPresets?: BandPreset[];
@@ -170,7 +179,7 @@ export interface AssistantQuestion { id: string; sessionId: string; turnId: stri
 export interface AssistantBlock { kind: 'text' | 'thinking' | 'tool' | 'question'; text?: string; card?: AssistantToolCard; question?: AssistantQuestion }
 /** 助手消息：blocks 为按顺序的内容块，text 为文本块拼接；tools 只出现在旧版本记录里。 */
 export interface AssistantMessage {
-  id: string; role: AssistantMessageRole; text?: string; blocks?: AssistantBlock[]; tools?: AssistantToolCard[];
+  id: string; role: AssistantMessageRole; text?: string; blocks?: AssistantBlock[];
   status?: 'completed' | 'cancelled' | 'failed'; errorCode?: MessageCode; errorParams?: MessageParams; createdAt: string;
 }
 /** 拼接内容块里的文本块，段与段之间空一行，与 Go 的 blocksText 一致。 */
@@ -248,15 +257,17 @@ export const isKokoroModel = (id: string) => id.startsWith('kokoro-');
 export const isMusicModel = (id: string) => id.startsWith('ace-step-') || id.startsWith('yue2-');
 /** YuE2 由歌词或旋律谱决定长度，没有时长设置。 */
 export const isYuE = (id: string) => id.startsWith('yue2-');
-// 设置里模型按用途分页：语音模型、音乐模型（歌曲生成与扒谱）和编曲音色库。
-const musicFamilies = new Set(['ace_step', 'yue2', 'sheetsage2']);
+// 设置里模型按用途分页：语音模型、音乐模型（歌曲生成、扒谱与歌词对齐）和编曲音色库。
+const musicFamilies = new Set(['ace_step', 'yue2', 'sheetsage2', 'lyric_align']);
 export const modelTab = (family: string) => family === 'soundfont' ? 'soundfonts' : musicFamilies.has(family) ? 'music-models' : 'models';
 export const modelTabs = ['models', 'music-models', 'soundfonts'];
 // 音色库只供编曲作品渲染使用。
 export const isSoundFont = (id: string) => id.endsWith('-sf2');
 // 扒谱模型只用于从歌曲提取旋律谱。
 export const isTranscriber = (id: string) => id.startsWith('sheetsage2-');
-export const isVoiceModel = (id: string) => !isMusicModel(id) && !isSoundFont(id) && !isTranscriber(id);
+// 歌词对齐模型只用于给已生成的歌曲做逐字对齐，可选下载。
+export const isAligner = (id: string) => id.startsWith('lyric-align-');
+export const isVoiceModel = (id: string) => !isMusicModel(id) && !isSoundFont(id) && !isTranscriber(id) && !isAligner(id);
 // 同名模型的不同量化归为一组，保持目录顺序。
 export function groupModels(models: ModelPackage[]) {
   const groups = new Map<string, ModelPackage[]>();
@@ -275,13 +286,4 @@ export const isReferenceModel = (id: string) => id.startsWith('omnivoice-') || i
 export const isBreezeModel = (id: string) => id.startsWith('breeze-tts-');
 export const requiresVoice = (draft: Draft) => isKokoroModel(draft.modelId) || !isVoiceModel(draft.modelId) ? false : draft.modelId.startsWith('qwen3-tts-') ? !/customvoice|voicedesign/.test(draft.modelId) : draft.modelId.startsWith('omnivoice-') || isBreezeModel(draft.modelId) ? draft.voiceMode === 'clone' : !isVoxModel(draft.modelId) || ['clone', 'continuation'].includes(draft.voxMode ?? 'design');
 
-// 旧字幕的身份与 Go 保持一致，编辑后不再依赖数组位置。
 export const emptyScore = (): Score => ({ tempo: 100, timeSignature: [4, 4], key: '', sections: [], tracks: [] });
-
-// 打开或修改作品时统一补齐旧数据：台词补上稳定 ID，缺少乐谱的编曲作品补一份空乐谱，避免渲染时崩溃。
-export function normalizeDraft(draft: Draft): Draft {
-  let next = draft;
-  if (next.kind === 'score' && !Array.isArray(next.score?.tracks)) next = { ...next, score: { ...emptyScore(), ...next.score, tracks: [] } };
-  if (!next.subtitles || next.subtitles.cues.every(c => c.id)) return next;
-  return { ...next, subtitles: { ...next.subtitles, cues: next.subtitles.cues.map((cue, index) => ({ ...cue, id: cue.id ?? `legacy-${next.id}-${index}` })) } };
-}

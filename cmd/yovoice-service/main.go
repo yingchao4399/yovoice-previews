@@ -81,7 +81,8 @@ func run() error {
 		}
 	}()
 	bundled := os.Getenv("WORKBENCH_ENGINE")
-	if runtime.GOOS == "windows" {
+	// Windows 与 Linux 安装包内置 CPU 内核，GPU 内核在设置中另行下载；macOS 内置的 Metal 内核见下方。
+	if runtime.GOOS != "darwin" {
 		if e = wb.UseBundled(bundled); e != nil {
 			return e
 		}

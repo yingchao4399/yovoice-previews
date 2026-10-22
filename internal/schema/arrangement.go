@@ -55,7 +55,8 @@ type ArrangementPart struct {
 	Reason     string `json:"reason,omitempty"`
 	Locked     bool   `json:"locked,omitempty"`
 	// AllowSubstitution 仅由用户明确选择替代音色后设置，固定 ID 本身不代表允许换乐器。
-	AllowSubstitution bool `json:"allowSubstitution,omitempty"`
+	AllowSubstitution bool                           `json:"allowSubstitution,omitempty"`
+	Generation        *ArrangementGenerationSettings `json:"generation,omitempty"`
 }
 
 // ArrangementIssue 限制模型输出大小与区间，避免不完整规划进入工程。

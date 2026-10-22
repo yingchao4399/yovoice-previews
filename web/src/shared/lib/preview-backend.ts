@@ -221,7 +221,28 @@ async function dispatch<T>(method: string, data: unknown): Promise<T> {
     const item = state.history.find(v => v.id === id);
     if (!item) throw new CallError('@yovoice.error.audioMissing');
     if (times.length > 2000 || times.some((t, i) => !(t >= 0) || t > item.duration + 1 || (i > 0 && t < times[i - 1]))) throw new CallError('@yovoice.error.requestInvalid');
-    state.history = state.history.map(v => v.id === id ? { ...v, lyricTimes: times.length ? [...times] : undefined } : v);
+    state.history = state.history.map(v => v.id === id ? { ...v, lyricTimes: times.length ? [...times] : undefined, lyricWords: undefined } : v);
+    publish(); return true as T;
+  }
+  if (method === 'generation.lyricWords') {
+    const { id, words } = data as { id: string; words: { word: string; start: number; end: number }[] };
+    const item = state.history.find(v => v.id === id);
+    if (!item) throw new CallError('@yovoice.error.audioMissing');
+    if (!words.length || words.length > 20000 || words.some((w, i) => !w.word || [...w.word].length > 64 || !(w.start >= 0) || !(w.end >= w.start) || w.end > item.duration + 1 || (i > 0 && w.start < words[i - 1].start))) throw new CallError('@yovoice.error.requestInvalid');
+    state.history = state.history.map(v => v.id === id ? { ...v, lyricWords: words.map(w => ({ ...w })), lyricTimes: undefined } : v);
+    publish(); return true as T;
+  }
+  // 浏览器预览没有推理引擎：装了对齐模型时把歌词里的字均匀铺在歌曲中段，只用来演示界面；桌面端才真正分离人声并对齐。
+  if (method === 'generation.alignLyrics') {
+    const { id } = data as { id: string };
+    const item = state.history.find(v => v.id === id);
+    if (!item) throw new CallError('@yovoice.error.audioMissing');
+    if (!state.models.some(m => m.id.startsWith('lyric-align-'))) throw new CallError('@yovoice.error.alignModelRequired');
+    const letters = item.settings.instrumental ? [] : (item.settings.lyrics ?? '').split('\n').filter(line => !/^\s*\[[^\]]*\]\s*$/.test(line)).join(' ').match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]|[\p{L}\p{N}']+/gu) ?? [];
+    if (!letters.length) throw new CallError('@yovoice.error.alignLyrics');
+    const span = item.duration * .8 / letters.length;
+    const lyricWords = letters.map((word, i) => ({ word, start: +(item.duration * .1 + i * span).toFixed(3), end: +(item.duration * .1 + (i + .8) * span).toFixed(3) }));
+    state.history = state.history.map(v => v.id === id ? { ...v, lyricWords, lyricTimes: undefined } : v);
     publish(); return true as T;
   }
   if (method === 'media.rename' || method === 'media.delete') {

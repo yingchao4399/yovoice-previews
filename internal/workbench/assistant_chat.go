@@ -120,6 +120,11 @@ func (w *Workbench) sendAssistantToSession(sessionID, text string, context Assis
 	if !found {
 		return fmt.Errorf("原会话已删除，不能续接到其他会话")
 	}
+	return w.enqueueAssistantTurn(sessionID, text, context)
+}
+
+// enqueueAssistantTurn 将已持久保存的助手用户消息放入当前运行队列；恢复进程重启前已写入的任务时不重复追加消息。
+func (w *Workbench) enqueueAssistantTurn(sessionID, text string, context AssistantContext) error {
 	w.chat.mu.Lock()
 	if w.chat.stopped {
 		w.chat.mu.Unlock()
@@ -392,6 +397,9 @@ func (w *Workbench) runTurn(parent context.Context, next chatMessage) {
 	diag.Log(w.Store.Root, "assistant.turn_finished", "status", reply.Status, "session_id", next.sessionID, "error", diag.Error(err))
 	// 先写入回复再清除实时状态：界面看到的“空闲”帧一定带着本轮的助手消息。
 	w.appendChat(next.sessionID, reply)
+	if reply.Status == "failed" || reply.Status == "cancelled" {
+		w.recordArrangementRecoveryError(next.sessionID, "Ocho 自动诊断本轮未完成，请检查助手/API 状态后在编曲页重试；失败候选和已完成声部均已保留。")
+	}
 	w.publishLive(func(live *schema.AssistantLive) { live.Turn = nil })
 }
 

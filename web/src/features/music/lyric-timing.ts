@@ -1,12 +1,39 @@
 // 播放页的歌词时间轴。生成模型不返回逐句时间：校准过的版本按记录的时间显示，
 // 否则按每句的音节数在整首时长里按比例分配；没有歌词的段落（如 [intro]、[instrumental]）当作器乐间隔，显示为省略号。
-export interface LyricLine { text: string; start: number; end: number; instrumental?: boolean }
+export interface LyricLine { text: string; start: number; end: number; instrumental?: boolean; words?: LyricWord[] }
+// 逐字（拉丁文逐词）的时间，播放页逐字点亮、导出逐字 LRC 用。
+export interface LyricWord { text: string; start: number; end: number }
 
 // 估算一句的音节数：中日韩文字每字一拍，拉丁文按元音组计，其余符号不计。
 export function syllables(line: string) {
   const cjk = line.match(/[぀-ヿ㐀-鿿가-힯]/g)?.length ?? 0;
   const latin = (line.match(/[\p{Script=Latin}']+/gu) ?? []).reduce((sum, word) => sum + Math.max(1, word.match(/[aeiouyàâäéèêëîïôöùûü]+/gi)?.length ?? 0), 0);
   return cjk + latin;
+}
+
+// 拆成逐字单元：中日韩每字一个，拉丁文每词一个；标点、空格并入前一个单元（句首的并入后一个），weight 是音节数。
+export function lyricTokens(line: string) {
+  const tokens: { text: string; weight: number }[] = [];
+  let prefix = '';
+  for (const part of line.match(/[぀-ヿ㐀-鿿가-힯]|[\p{Script=Latin}'\p{N}]+|[^぀-ヿ㐀-鿿가-힯\p{Script=Latin}'\p{N}]+/gu) ?? []) {
+    const weight = syllables(part) || (/\p{N}/u.test(part) ? 1 : 0);
+    if (weight) { tokens.push({ text: prefix + part, weight }); prefix = ''; }
+    else if (tokens.length) tokens[tokens.length - 1].text += part;
+    else prefix += part;
+  }
+  if (prefix) tokens.push({ text: prefix, weight: 1 });
+  return tokens;
+}
+
+// 没有音频分析时的逐字时间：按音节数在这一行里均分，行尾留出换气；唱得比行短时按每拍约 0.3 秒收住，不把字拖到下一句。
+export function estimateWords(line: LyricLine): LyricWord[] {
+  const tokens = lyricTokens(line.text), total = tokens.reduce((sum, token) => sum + token.weight, 0), span = line.end - line.start;
+  const sung = Math.min(span, Math.max(total * .3, span * .75));
+  let at = 0;
+  return tokens.map(token => {
+    const start = line.start + at / total * sung; at += token.weight;
+    return { text: token.text, start, end: line.start + at / total * sung };
+  });
 }
 
 // 权重单位：每句至少 3 拍外加 1.5 拍换气；器乐段落 12 拍，段落之间 2 拍。
@@ -88,12 +115,15 @@ export function lrcTime(seconds: number) {
 }
 
 // 按播放页的歌词时间导出 LRC：段落标记行已在拆行时去掉；器乐间隔写成空行让播放器清掉上一句，开头的前奏不写。
-export function lyricsToLrc(lines: LyricLine[], title?: string) {
+// words 为真时导出逐字 LRC（增强格式）：行内每个字前加 <mm:ss.xx>，行尾再加一个结束时间。
+export function lyricsToLrc(lines: LyricLine[], title?: string, words = false) {
+  const wordTag = (seconds: number) => `<${lrcTime(seconds).slice(1, -1)}>`;
   const out = title?.trim() ? [`[ti:${title.trim().replace(/[\r\n\]]/g, ' ')}]`] : [];
   let clear = false;
   for (const line of lines) {
     if (line.instrumental) { if (clear) out.push(lrcTime(line.start)); clear = false; continue; }
-    out.push(`${lrcTime(line.start)}${line.text}`); clear = true;
+    const text = words && line.words?.length ? `${line.words.map(word => wordTag(word.start) + word.text).join('')}${wordTag(line.words.at(-1)!.end)}` : line.text;
+    out.push(`${lrcTime(line.start)}${text}`); clear = true;
   }
   return `${out.join('\n')}\n`;
 }

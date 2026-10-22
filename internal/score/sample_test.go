@@ -86,3 +86,39 @@ func TestSampleRenderUsesRecordingAndRejectsMissingArticulation(t *testing.T) {
 		t.Fatalf("缺少轮指采样时应报错，得到 %v", err)
 	}
 }
+
+func TestGeneratedSampleChoosesLongVariantAndUsesReleaseRegion(t *testing.T) {
+	root := t.TempDir()
+	writeConstant := func(name string, seconds, sustain, value float64) string {
+		t.Helper()
+		path := filepath.Join(root, name)
+		frames := int(seconds * SampleRate)
+		left, right := make([]float32, frames), make([]float32, frames)
+		for i := range left {
+			v := float32(value)
+			// Keep a small attack so the file also represents a real signal.
+			if i < SampleRate/100 {
+				v *= float32(i) / float32(SampleRate/100)
+			}
+			left[i], right[i] = v, v
+		}
+		if err := WriteWAV(path, left, right); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	short := writeConstant("short.wav", .5, .4, .2)
+	long := writeConstant("long.wav", 1.2, 1, .7)
+	s := schema.Score{Tempo: 60, TimeSignature: []int{4, 4}, Tracks: []schema.ScoreTrack{{ID: "lead", Name: "AI 乐器", SourceID: "ai", Notes: []schema.ScoreNote{{Bar: 1, Beat: 1, Pitch: 60, Length: .5, Velocity: 100}}}}}
+	instrument := SampleInstrument{Samples: []SampleFile{
+		{Path: short, RootPitch: 60, ExactPitch: true, Generated: true, SustainSeconds: .4, ReleaseSeconds: .1, Duration: .5, Articulation: "normal", VelocityLow: 1, VelocityHigh: 127},
+		{Path: long, RootPitch: 60, ExactPitch: true, Generated: true, SustainSeconds: 1, ReleaseSeconds: .2, Duration: 1.2, Articulation: "normal", VelocityLow: 1, VelocityHigh: 127},
+	}}
+	left, _, err := renderSampleTrack(context.Background(), s, s.Tracks[0], instrument, SampleRate*3)
+	if err != nil {
+		t.Fatalf("应选用覆盖时长的长采样，而不是短采样: %v", err)
+	}
+	if got := left[int(.55*SampleRate)]; got < .35 {
+		t.Fatalf("释放区没有从采样的释放段读取，得到 %.3f", got)
+	}
+}

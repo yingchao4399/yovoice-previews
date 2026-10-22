@@ -3,16 +3,16 @@ import { lyricRows } from '../src/features/music/lyric-timing';
 // 测试用的合成歌曲，验证按音频定位歌词。
 export const songLyrics = '[intro]\n\n[verse]\n夏夜的风吹过便利店\n玻璃门外霓虹在闪烁\n我数着零钱等你出现\n\n[interlude]\n\n[chorus]\n就这样一起走到天亮\n夏天不会太长\n我们慢慢地唱\n\n[outro]';
 
-// 合成一首带前奏、间奏的歌：鼓、贝斯、宽声场铺底、略偏右的钢琴，加上居中、带共振峰和音节起伏的人声。返回每行实际开始时间。
+// 合成一首带前奏、间奏的歌：鼓、贝斯、宽声场铺底、略偏右的钢琴，加上居中、带共振峰和音节起伏的人声。返回每行和每个字实际开始的时间。
 export function syntheticSong(lyrics: string, vocal: number) {
   let seed = 7;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
-  const rate = 16000, rows = lyricRows(lyrics), starts: number[] = [], phrases: { start: number; count: number; length: number }[] = [];
+  const rate = 16000, rows = lyricRows(lyrics), starts: number[] = [], words: number[][] = [], phrases: { start: number; count: number; length: number }[] = [];
   let at = 8;
   rows.forEach((row, index) => {
-    if (row.instrumental) { starts.push(index ? at : 0); if (index) at += 7; return; }
+    if (row.instrumental) { starts.push(index ? at : 0); words.push([]); if (index) at += 7; return; }
     const count = [...row.text].length, length = count / 4.5 + .5;
-    starts.push(at); phrases.push({ start: at, count, length }); at += length + .3 + random() * .5;
+    starts.push(at); words.push(Array.from({ length: count }, (_, i) => at + i * length / count)); phrases.push({ start: at, count, length }); at += length + .3 + random() * .5;
   });
   const duration = at + 6, size = Math.floor(duration * rate), left = new Float32Array(size), right = new Float32Array(size);
   const beat = 60 / 92, chords = [[220, 277, 330], [196, 247, 294], [175, 220, 262], [196, 247, 311]];
@@ -44,7 +44,7 @@ export function syntheticSong(lyrics: string, vocal: number) {
       value *= vocal * envelope * .4; left[offset + k] += value; right[offset + k] += value;
     }
   }
-  return { rows, starts, duration, left, right, rate };
+  return { rows, starts, words, duration, left, right, rate };
 }
 
 // 编码成 16 位立体声 WAV。

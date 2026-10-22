@@ -148,25 +148,6 @@ func TestRuntimeVersionMismatch(t *testing.T) {
 	}
 }
 
-// 旧版本下载的内核未记录版本，启动时从安装目录名补记，满足最低版本即可继续使用。
-func TestLegacyRuntimeVersion(t *testing.T) {
-	root := t.TempDir()
-	w, err := New(root)
-	must(t, err)
-	path := writeBundled(t, filepath.Join(root, "runtime", catalog.EngineMinimum+"-cuda-123", "bin"), "", "")
-	must(t, w.Store.Update(func(s *schema.State) {
-		s.Preferences.Backend = "cuda"
-		s.RuntimePath, s.RuntimeBackend, s.RuntimeVersion = ptr(path), ptr("cuda"), nil
-	}, true))
-	w.Close()
-	w, err = New(root)
-	must(t, err)
-	defer w.Close()
-	if s := w.Store.Read(); value(s.RuntimeVersion) != catalog.EngineMinimum || !RuntimeReady(s) {
-		t.Fatal("应从安装目录名补记旧内核版本")
-	}
-}
-
 // 切到 CPU 再切回时复用已下载的 GPU 内核，重启时也不把它当作残留删除（#25）。
 func TestSwitchBackendKeepsInstalledRuntime(t *testing.T) {
 	gpu := map[string]string{"windows": "cuda", "linux": "vulkan"}[runtime.GOOS]

@@ -157,6 +157,18 @@ func TestMediaPersistenceAndRollback(t *testing.T) {
 	if w.Store.Read().History[len(w.Store.Read().History)-1].LyricTimes != nil {
 		t.Fatal("歌词时间未清除")
 	}
+	// 逐字编辑：保存后替换逐行校准；空列表、乱序、结束早于开始或超过时长时拒绝。
+	must(t, w.SetLyricTimes(id, []float64{0.1}))
+	words := []schema.LyricWord{{Word: "晚", Start: 0.1, End: 0.3}, {Word: "风", Start: 0.3, End: 0.8}}
+	must(t, w.SetLyricWords(id, words))
+	if g := w.Store.Read().History[len(w.Store.Read().History)-1]; g.LyricTimes != nil || !slices.Equal(g.LyricWords, words) {
+		t.Fatal("逐字时间未保存", g.LyricTimes, g.LyricWords)
+	}
+	for _, bad := range [][]schema.LyricWord{nil, {{Word: "a", Start: 0.5, End: 0.6}, {Word: "b", Start: 0.2, End: 0.3}}, {{Word: "a", Start: 0.5, End: 0.4}}, {{Word: "a", Start: 0, End: 3}}, {{Word: "", Start: 0, End: 0.1}}} {
+		if w.SetLyricWords(id, bad) == nil {
+			t.Fatal("未拒绝逐字时间", bad)
+		}
+	}
 	must(t, w.DeleteMedia("outputs", id))
 	if len(w.Store.Read().History) != 0 {
 		t.Fatal("历史未删除")

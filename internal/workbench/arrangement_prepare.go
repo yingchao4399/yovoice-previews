@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 	"yovoice/internal/schema"
 )
@@ -118,7 +119,14 @@ func (w *Workbench) PrepareArrangement(in ArrangementPrepareInput) (schema.Arran
 	}
 	workerJob := cloneArrangementJob(job)
 	go func() {
-		defer func() { cancel(); w.mu.Lock(); w.arrangementCancel = nil; close(done); w.mu.Unlock() }()
+		defer func() {
+			cancel()
+			w.mu.Lock()
+			w.arrangementCancel = nil
+			close(done)
+			w.mu.Unlock()
+			_, _ = w.requestArrangementRecovery(workerJob.ProjectID)
+		}()
 		w.runArrangementJob(ctx, workerJob)
 	}()
 	return job, nil
@@ -160,10 +168,12 @@ func (w *Workbench) runArrangementJob(ctx context.Context, job schema.Arrangemen
 			return
 		}
 		err := ctx.Err()
+		stale := false
 		if err == nil {
 			current := w.Store.Read()
 			idx := slices.IndexFunc(current.Drafts, func(d schema.Draft) bool { return d.ID == job.ProjectID })
 			if idx < 0 || arrangementRevision(current.Drafts[idx]) != job.Revision {
+				stale = true
 				err = fmt.Errorf("作品已变更，已完成素材保留；请为新修订准备")
 			}
 		}
@@ -185,24 +195,60 @@ func (w *Workbench) runArrangementJob(ctx context.Context, job schema.Arrangemen
 		if err != nil {
 			step.Status = "failed"
 			step.Error = err.Error()
-			job.Status = "failed"
-			job.Error = err.Error()
+			job.Status, job.Error = "running", ""
 			if ctx.Err() != nil {
 				job.Status = "interrupted"
 				step.Status = "queued"
+				job.Error = err.Error()
+			} else if stale {
+				job.Status, job.Error = "failed", err.Error()
 			}
 			_ = w.updateArrangementJob(job)
-			return
+			if ctx.Err() != nil || stale {
+				return
+			}
+			// 独立声部失败不阻塞后续生成；保留失败原因，批次末尾统一汇总。
+			continue
 		}
 		step.Status = "ready"
 		step.Error = ""
+		if step.Source == "ai" {
+			ref := ArrangementPartRef{step.SectionIndex, step.PhraseIndex, step.PartIndex}
+			inspection, e := w.InspectArrangement(ArrangementInspectInput{Draft: job.Draft, AIModelID: job.ModelID, Stage: "render"})
+			ready := e == nil && slices.ContainsFunc(inspection.Parts, func(p ArrangementPartInspection) bool { return p.Ref == ref && p.Ready })
+			setArrangementAIStepReview(step, ready, e)
+		}
 		if w.updateArrangementJob(job) != nil {
 			return
 		}
 	}
 	job.Status = "ready"
+	if slices.ContainsFunc(job.Steps, func(s schema.ArrangementJobStep) bool { return s.Status != "ready" }) {
+		job.Status = "needs_review"
+	}
 	job.Error = ""
+	var failures []string
+	for _, step := range job.Steps {
+		if step.Status == "failed" {
+			failures = append(failures, step.Instrument+"："+step.Error)
+		}
+	}
+	if len(failures) > 0 {
+		job.Status, job.Error = "failed", strings.Join(failures, "；")
+	}
 	_ = w.updateArrangementJob(job)
+}
+
+func setArrangementAIStepReview(step *schema.ArrangementJobStep, ready bool, inspectErr error) {
+	step.Status = "ready"
+	step.Error = ""
+	if inspectErr != nil {
+		step.Status = "needs_review"
+		step.Error = inspectErr.Error()
+	} else if !ready {
+		step.Status = "needs_review"
+		step.Error = "AI 素材已生成，但本句尚未通过可演奏检查或试听确认"
+	}
 }
 
 func (w *Workbench) waitArrangementOperation(ctx context.Context, download bool) error {

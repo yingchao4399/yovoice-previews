@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { CheckboxInput } from '@astryxdesign/core/CheckboxInput';
 import { DropdownMenu } from '@astryxdesign/core/DropdownMenu';
@@ -18,6 +18,9 @@ import { WaveRing } from './wave-ring';
 import { overflowTitle } from '../../shared/ui/overflow-title';
 import { historyForProject } from './history-version-menu';
 
+// 版本记录一次先渲染的条数，更早的点“显示更早的”再展开，记录很多时打开页面和状态推送都不用重建整张列表。
+const historyBatch = 30;
+
 // 存根用的短时长：不足一小时显示 m:ss。
 const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
 
@@ -34,15 +37,25 @@ export function MediaLibrary({ page, state, query, onQueryChange, track, auditio
   const voices = page === 'voices';
   // 语音生成是临时生成：历史生成列出所有语音作品的结果，不分版本；音乐与编曲的版本记录只属于当前作品，按版本编号。
   const kind = projectKind(project), quick = kind === 'text';
-  const history = historyForProject(project, state);
+  const drafts = useMemo(() => new Map(state.drafts.map(d => [d.id, d])), [state.drafts]);
+  const history = useMemo(() => historyForProject(project, { drafts: state.drafts, history: state.history }), [project, state.drafts, state.history]);
+  const versions = useMemo(() => new Map(history.map((item, index) => [item.id, history.length - index])), [history]);
   // 改过名的音频以名称为标题，否则显示正文（音乐是风格）。
   const heading = (item: Generation) => item.title !== item.settings.title ? item.title : item.settings.text.trim() || item.title;
   const count = voices ? state.voices.length : history.length;
   const search = query.trim().toLocaleLowerCase();
   const filteredVoices = state.voices.filter(voice => voice.name.toLocaleLowerCase().includes(search));
-  const speakerName = (item: Generation) => item.segment?.speakerName || state.characters.find(c => c.id === item.settings.characterId)?.name || t('@yovoice.library.narrator');
-  const filteredHistory = history.filter(item => [item.title, item.settings.text, speakerName(item), state.drafts.find(d => d.id === item.settings.id)?.title ?? ''].some(value => value.toLocaleLowerCase().includes(search)))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const narrator = t('@yovoice.library.narrator');
+  const filteredHistory = useMemo(() => {
+    if (!search) return history;
+    const characters = new Map(state.characters.map(c => [c.id, c.name]));
+    const speakerName = (item: Generation) => item.segment?.speakerName || characters.get(item.settings.characterId ?? '') || narrator;
+    return history.filter(item => [item.title, item.settings.text, speakerName(item), drafts.get(item.settings.id)?.title ?? ''].some(value => value.toLocaleLowerCase().includes(search)));
+  }, [history, search, state.characters, drafts, narrator]);
+  // 展开的条数随搜索词与列表切换重置。
+  const listKey = `${page}/${project.id}/${search}`;
+  const [shown, setShown] = useState({ key: listKey, count: historyBatch });
+  const shownCount = shown.key === listKey ? shown.count : historyBatch;
   // 批量删除参考音频：null 表示未进入选择模式。
   // 正在试听的语音历史，用来让磁带卷轴转动。
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -95,10 +108,10 @@ export function MediaLibrary({ page, state, query, onQueryChange, track, auditio
       actions={picked ? <CheckboxInput label={t('@yovoice.library.pickVoice', { name: voice.name })} isLabelHidden value={picked.has(voice.id)} onChange={checked => toggle(voice.id, checked)} />
         : <MediaActions onEdit={() => editVoice(voice)} item={{ ...voice, kind: 'voices' }} beforeDelete={stop} onError={onError} />} />)
       // 历史也用票根：音乐与编曲是唱片（点唱片中心试听，播放时转动），语音是写着正文的磁带（试听时卷轴转动）。
-      : filteredHistory.map((item, index) => {
+      : filteredHistory.slice(0, shownCount).map((item, index) => {
         const name = heading(item), selected = track?.id === item.id;
         const scoreTake = kind === 'music' && item.source === 'score';
-        const version = t('@yovoice.app.historyVersion', { n: history.length - history.indexOf(item) });
+        const version = t('@yovoice.app.historyVersion', { n: versions.get(item.id) ?? 0 });
         const date = new Date(item.createdAt).toLocaleString(locale, dateOptions);
         const listen = () => audition({ id: item.id, name: item.title, fileName: item.fileName, kind: 'outputs', subtitle: t('@yovoice.app.subtitleOutput') });
         const firstLyric = item.settings.lyrics?.split('\n').map(line => line.trim()).find(line => line && !/^\[[^\]]*\]$/.test(line));
@@ -122,6 +135,8 @@ export function MediaLibrary({ page, state, query, onQueryChange, track, auditio
             <MediaActions item={{ id: item.id, kind: 'outputs', name: item.title }} beforeDelete={stop} onError={onError} />
           </>} />;
       })}
+    {!voices && filteredHistory.length > shownCount ? <Button className="history-more" label={t('@yovoice.library.showEarlier', { n: Math.min(historyBatch, filteredHistory.length - shownCount) })} variant="secondary" size="sm"
+      onClick={() => setShown({ key: listKey, count: shownCount + historyBatch })} /> : null}
 
     {confirming ? <ConfirmDelete title={t('@yovoice.library.deletePickedTitle', { n: visiblePicked.length })}
       description={t('@yovoice.library.deletePickedBody') + t('@yovoice.media.deleteVoiceExtra')}

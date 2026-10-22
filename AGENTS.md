@@ -36,7 +36,7 @@ MORE CLI:
 
 - 前端工程位于 `web/`，依赖方向为 `app → features → shared`；浏览器测试位于 `web/browser-tests/`。
 - 前端文件名统一使用小写 kebab-case，例如 `voice-editor.tsx`、`call-error.ts`；组件和类型名仍使用 PascalCase。
-- 原生宿主按 `desktop/windows/`、`desktop/macos/` 分平台；本地服务入口归 `cmd/`，Go 实现归 `internal/` 下按职责划分的子包（传输 `desktop`/`remote` → 应用 `workbench` → 基础 `engine`/`store`/`download`/`audio` → 模型 `schema`/`catalog` → 叶子 `msg`/`diag`/`platform`，只允许向下依赖），构建与原生验证脚本归 `scripts/desktop/`。
+- 原生宿主按 `desktop/windows/`、`desktop/macos/`、`desktop/linux/` 分平台（Linux 宿主是独立 Go 模块，经 purego 加载 GTK 3 与 WebKitGTK，不用 cgo）；本地服务入口归 `cmd/`，Go 实现归 `internal/` 下按职责划分的子包（传输 `desktop`/`remote` → 应用 `workbench` → 基础 `engine`/`store`/`download`/`audio` → 模型 `schema`/`catalog` → 叶子 `msg`/`diag`/`platform`，只允许向下依赖），构建与原生验证脚本归 `scripts/desktop/`。
 - 始终用中文回复，代码注释使用中文。
 - Go 按对象职责划分，Windows C# 只处理原生窗口与文件对话框；避免仅有一个实现的接口和预留架构。
 - 修改推理映射或下载逻辑后运行 `go test -race ./...`。
@@ -44,6 +44,9 @@ MORE CLI:
 - 浏览器测试较耗时，日常调试优先定向执行相关用例（如 `pnpm --dir web exec playwright test browser-tests/<file>.spec.ts`），提交前再运行 `pnpm --dir web test`。
 - 功能稳定的用例在 `web/playwright.config.ts` 的 `sealed` 列表中封存，`pnpm --dir web test` 和日常 CI 不跑；改到这些功能或发布前运行 `pnpm --dir web run test:all`（CI 每周一全量跑一次）。功能重新频繁改动时移出列表。
 - 不将浏览器预览和交叉编译视为 Windows 实机推理已验证。
+- 公共实现只保留一处，不再各写一份：Go 写文件用 `platform.WriteFileAtomic`；界面偏好读写用 `shared/lib/local-store`；音频解码与峰值用 `shared/lib/sound`，波形用 `features/media/waveform`；`mediaUrl` 的结果用 `releaseMediaUrl` 释放；任务计时用 `useElapsed`。
+- 不使用“闪光星星”（Sparkles、Sparkle、WandSparkles 等）图标，按功能选具体的图标；eslint 已禁止从 lucide-react 引入这些图标。
+- 状态库格式变化（建表、改字段、旧数据补齐）只在 `internal/store/migrate.go` 末尾追加升级步骤，已发布的步骤不改；读取代码和界面只认当前格式，不再各自兼容旧数据。外部输入（保存、作品包导入）统一经 `Draft.Normalize` 补齐。
 
 ## 版本记录
 

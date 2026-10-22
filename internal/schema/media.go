@@ -35,6 +35,9 @@ func (s State) MediaRefs() map[string]map[string]bool {
 	}
 	for _, material := range s.ArrangementMaterials {
 		outputs[material.FileName] = true
+		if material.GenerationResult != nil {
+			outputs[material.GenerationResult.DerivedFile] = true
+		}
 	}
 	for _, c := range s.Characters {
 		if c.Preview != nil {

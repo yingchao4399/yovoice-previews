@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { seedState } from './seed';
 import { emptyState } from '../src/shared/workbench';
 import { createMusicDraft } from '../src/features/music/music-draft';
@@ -191,10 +191,13 @@ test('音乐历史版本：工具栏进入历史页，播放页、复用和删�
   state.history = [take('v3', 12, '[verse]\n第三版的歌词'), take('v2', 11, '[verse]\n第二版的第一句\n第二版的第二句'), take('v1', 10, '[verse]\n第一版的歌词')];
   await page.addInitScript(value => { if (!localStorage.getItem('voice-workbench-v1')) localStorage.setItem('voice-workbench-v1', value); }, JSON.stringify(state));
   await page.goto('/');
-  // 编辑区不再有版本列表；播放器工具栏只放导出、播放页和历史版本入口。
+  // 编辑区不再有版本列表；播放器工具栏只放打开位置、播放页和历史版本入口，导出在“音频操作”菜单里。
   await expect(page.locator('.music-take-row')).toHaveCount(0);
   const transport = page.locator('.player .transport');
-  await expect(transport.getByRole('button', { name: '导出音频', exact: true })).toBeVisible();
+  await expect(transport.getByRole('button', { name: '打开位置', exact: true })).toBeVisible();
+  await transport.getByRole('button', { name: '音频操作', exact: true }).click();
+  await expect(page.getByRole('menuitem')).toHaveText(['导出音频']);
+  await page.keyboard.press('Escape');
   await expect(transport.getByRole('button', { name: '播放页', exact: true })).toBeVisible();
   await transport.getByRole('button', { name: '历史版本', exact: true }).click();
   await expect(page.getByRole('heading', { name: `${draft.title} · 历史版本` })).toBeVisible();
@@ -211,7 +214,7 @@ test('音乐历史版本：工具栏进入历史页，播放页、复用和删�
   const playing = page.getByRole('dialog', { name: `${draft.title} · 播放页` });
   await expect(playing).toBeVisible();
   await expect(playing.getByRole('list', { name: '歌词' }).getByRole('listitem')).toHaveText(['• • •', '第二版的第一句', '第二版的第二句']);
-  await expect(playing.getByText('歌词时间按歌曲时长估算')).toBeVisible();
+  await lyricTools(page, playing, '歌词时间按歌曲时长估算');
   // 对比试听：顶栏切换到同一作品的其他版本，歌词随版本变化；切回上一版可以点按钮或按 B。
   await playing.getByRole('button', { name: '版本 2', exact: true }).click();
   await expect(page.getByRole('menuitem')).toHaveCount(3);
@@ -257,6 +260,15 @@ test('音乐历史版本：工具栏进入历史页，播放页、复用和删�
   await expect(transport.getByRole('button', { name: '历史版本', exact: true })).toBeVisible();
 });
 
+// 播放页的歌词时间状态、校准、对齐、逐字编辑和导出都收在顶栏的“歌词工具”菜单里；status 是菜单分组标题里的时间来源说明。
+async function lyricTools(page: Page, playing: Locator, status?: string, item?: RegExp) {
+  await playing.getByRole('button', { name: '歌词工具', exact: true }).click();
+  const menu = page.getByRole('menu');
+  if (status) await expect(menu).toContainText(status);
+  if (item) await menu.getByRole('menuitem', { name: item }).click(); else await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+}
+
 test('播放页逐行校准歌词：按键标记、撤销，校准结果随版本保存并可清除', async ({ page }) => {
   const draft = { ...createMusicDraft('zh-CN'), id: 'f'.repeat(32) };
   const state = emptyState();
@@ -281,8 +293,7 @@ test('播放页逐行校准歌词：按键标记、撤销，校准结果随版�
   const playing = page.getByRole('dialog', { name: `${draft.title} · 播放页` });
   // 打开时焦点不落在关闭按钮上，避免一进来就出现焦点框和提示。
   await expect(playing.getByRole('button', { name: '关闭播放页', exact: true })).not.toBeFocused();
-  await expect(playing.getByText('歌词时间按歌曲时长估算')).toBeVisible();
-  await playing.getByRole('button', { name: '校准歌词', exact: true }).click();
+  await lyricTools(page, playing, '歌词时间按歌曲时长估算', /^校准歌词/);
   const sync = playing.getByRole('group', { name: '校准歌词' });
   // 开头的器乐段落从 0 秒开始，自动标好；之后每按一次 ↓ 标记下一行，退格撤销。
   await expect(sync).toContainText('1 / 4 行');
@@ -295,18 +306,117 @@ test('播放页逐行校准歌词：按键标记、撤销，校准结果随版�
   await sync.getByRole('button', { name: '下一行', exact: true }).click();
   await page.keyboard.press('ArrowDown');
   await expect(sync).toHaveCount(0);
-  await expect(playing.getByText('歌词时间已校准')).toBeVisible();
+  await lyricTools(page, playing, '歌词时间已校准');
   await expect(playing.getByRole('list', { name: '歌词' }).getByRole('listitem')).toHaveText(['• • •', '第一句', '第二句', '第三句']);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).history[0].lyricTimes as number[]);
   expect(saved).toHaveLength(4);
   expect(saved[0]).toBe(0);
   expect([...saved].sort((a, b) => a - b)).toEqual(saved);
   // 清除校准后不再使用保存的时间。
-  await playing.getByRole('button', { name: '清除校准', exact: true }).click();
-  await expect(playing.getByText('歌词时间按歌曲时长估算')).toBeVisible();
+  await lyricTools(page, playing, undefined, /^清除校准/);
+  await lyricTools(page, playing, '歌词时间按歌曲时长估算');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).history[0].lyricTimes)).toBeUndefined();
   await playing.getByRole('button', { name: '关闭播放页', exact: true }).click();
   await expect(playing).toHaveCount(0);
+});
+
+test('播放页智能对齐歌词：没装对齐模型时去设置下载，装好后逐字对齐并随版本保存，清除校准一并清除', async ({ page }) => {
+  const song = syntheticSong(songLyrics, .3);
+  const draft = { ...createMusicDraft('zh-CN'), id: 'd'.repeat(32) };
+  const state = emptyState();
+  state.drafts = [draft];
+  state.history = [{ id: 'song', title: draft.title, fileName: 'song.wav', createdAt: '2026-09-15T12:00:00Z', duration: song.duration, settings: { ...draft, lyrics: songLyrics } }];
+  await page.goto('/');
+  await page.evaluate(async (data: string) => {
+    const bytes = Uint8Array.from(atob(data), char => char.charCodeAt(0));
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('voice-workbench-audio', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('audio');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => { const db = request.result; const tx = db.transaction('audio', 'readwrite'); tx.objectStore('audio').put(new Blob([bytes], { type: 'audio/wav' }), 'song.wav'); tx.oncomplete = () => { db.close(); resolve(); }; };
+    });
+  }, Buffer.from(wavBytes(song.left, song.right, song.rate)).toString('base64'));
+  await seedState(page, state); await page.reload();
+  const open = async () => {
+    await page.locator('.player .transport').getByRole('button', { name: '播放页', exact: true }).click();
+    return page.getByRole('dialog', { name: `${draft.title} · 播放页` });
+  };
+  let playing = await open();
+  // 对齐模型是可选下载：没装时按钮带去设置里的音乐模型页。
+  await lyricTools(page, playing, undefined, /^智能对齐/);
+  await expect(playing).toHaveCount(0);
+  await expect(page.getByRole('tabpanel', { name: '音乐模型' })).toContainText('Lyric Aligner');
+  await seedState(page, { ...state, models: [{ id: 'lyric-align-q8', path: 'Lyric-Align-GGUF', managed: true }] }); await page.reload();
+  playing = await open();
+  await lyricTools(page, playing, undefined, /^智能对齐/);
+  await lyricTools(page, playing, '歌词已按演唱逐字对齐，可再手动校准');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).history[0].lyricWords as { word: string }[]);
+  expect(saved.map(word => word.word).join('')).toBe(songLyrics.split('\n').filter(line => !/^\[.*\]$/.test(line.trim())).join('').replace(/\s/g, ''));
+  // 清除后回到按人声自动定位。
+  await lyricTools(page, playing, undefined, /^清除校准/);
+  await lyricTools(page, playing, '歌词时间按人声自动定位，可再校准');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).history[0].lyricWords)).toBeUndefined();
+});
+
+test('播放页调整歌词时间：整句前后微调（后面跟着移或只改这一句）、逐字微调、跟唱打点，保存后随版本记录', async ({ page }) => {
+  const draft = { ...createMusicDraft('zh-CN'), id: 'c'.repeat(32) };
+  const state = emptyState();
+  state.drafts = [draft];
+  state.history = [{ id: 'song', title: draft.title, fileName: 'song.wav', createdAt: '2026-10-18T12:00:00Z', duration: 6, lyricTimes: [0, 1, 3, 4.5], settings: { ...draft, lyrics: '[intro]\n\n[verse]\n第一句\n第二句\n\n[chorus]\n第三句' } }];
+  await page.goto('/');
+  await page.evaluate(async () => {
+    const rate = 8000, seconds = 6, bytes = new Uint8Array(44 + rate * seconds * 2); const view = new DataView(bytes.buffer);
+    const text = (offset: number, value: string) => bytes.set(new TextEncoder().encode(value), offset);
+    text(0, 'RIFF'); view.setUint32(4, bytes.length - 8, true); text(8, 'WAVEfmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+    view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true); view.setUint16(32, 2, true); view.setUint16(34, 16, true); text(36, 'data'); view.setUint32(40, rate * seconds * 2, true);
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('voice-workbench-audio', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('audio');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => { const db = request.result; const tx = db.transaction('audio', 'readwrite'); tx.objectStore('audio').put(new Blob([bytes], { type: 'audio/wav' }), 'song.wav'); tx.oncomplete = () => { db.close(); resolve(); }; };
+    });
+  });
+  await seedState(page, state); await page.reload();
+  await page.locator('.player .transport').getByRole('button', { name: '播放页', exact: true }).click();
+  const playing = page.getByRole('dialog', { name: `${draft.title} · 播放页` });
+  await playing.locator('audio').evaluate((audio: HTMLAudioElement) => { audio.pause(); audio.currentTime = 0; });
+  await lyricTools(page, playing, undefined, /^调整歌词时间/);
+  const editor = playing.getByRole('group', { name: '歌词时间调整' });
+  await expect(editor).toContainText('第 1/3 句');
+  await expect(playing.locator('.now-playing-line[data-editing]')).toHaveText('第一句');
+  await expect(editor).toContainText('0:01.00');
+  // → 整句推后 0.1 秒，默认后面的句子跟着移；换成“只改这一句”后再推后 0.1 秒，后面的句子不动。
+  await page.keyboard.press('ArrowRight');
+  await expect(editor).toContainText('0:01.10');
+  await editor.getByRole('radio', { name: '只改这一句' }).click();
+  await editor.getByRole('button', { name: '推后 0.1 秒', exact: true }).click();
+  await expect(editor).toContainText('0:01.20');
+  // 选中“一”，→ 往后挪 0.05 秒、Shift+← 往前挪 0.01 秒，只改这个字。
+  const word = editor.getByRole('button', { name: '一', exact: true });
+  await word.focus();
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Shift+ArrowLeft');
+  await expect(word).toHaveAttribute('aria-pressed', 'true');
+  // 暂停时点歌词里的一句只是选中它；换到下一句后可以跟唱打点。
+  await playing.getByRole('list', { name: '歌词' }).getByText('第二句', { exact: true }).click();
+  await expect(editor).toContainText('第 2/3 句');
+  await editor.getByRole('button', { name: '跟唱打点', exact: true }).click();
+  await expect(editor.getByRole('button', { name: '停止打点', exact: true })).toBeVisible();
+  await page.keyboard.press('ArrowDown');
+  await expect(editor.getByRole('button', { name: '二', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await editor.getByRole('button', { name: '停止打点', exact: true }).click();
+  await editor.getByRole('button', { name: '保存', exact: true }).click();
+  await expect(editor).toHaveCount(0);
+  await lyricTools(page, playing, '歌词已按演唱逐字对齐，可再手动校准');
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('voice-workbench-v1')!).history[0]);
+  expect(saved.lyricTimes).toBeUndefined();
+  expect(saved.lyricWords.map((entry: { word: string }) => entry.word).join('')).toBe('第一句第二句第三句');
+  const starts = saved.lyricWords.map((entry: { start: number }) => entry.start);
+  expect([...starts].sort((a: number, b: number) => a - b)).toEqual(starts);
+  // 第一句从 1 秒推后到 1.2 秒，“一”多晚 0.04 秒；第三句只跟着第一次推后了 0.1 秒。
+  expect(starts[0]).toBeCloseTo(1.2, 3);
+  expect(Math.round((saved.lyricWords[1].start - saved.lyricWords[0].end) * 100)).toBe(4);
+  expect(starts[6]).toBeCloseTo(4.6, 3);
 });
 
 test('播放页按音频里的人声自动定位歌词，点歌词跳到这一句实际开始唱的位置', async ({ page }) => {
@@ -328,13 +438,55 @@ test('播放页按音频里的人声自动定位歌词，点歌词跳到这一�
   await seedState(page, state); await page.reload();
   await page.locator('.player .transport').getByRole('button', { name: '播放页', exact: true }).click();
   const playing = page.getByRole('dialog', { name: `${draft.title} · 播放页` });
-  await expect(playing.getByText('歌词时间按人声自动定位，可再校准')).toBeVisible();
+  await lyricTools(page, playing, '歌词时间按人声自动定位，可再校准');
   // 点副歌第一句，播放位置跳到它实际开始唱的时间附近；点击后会继续播放，所以记录跳转那一刻的位置。
   const index = song.rows.findIndex(row => row.text === '就这样一起走到天亮');
   await playing.locator('audio').evaluate((audio: HTMLAudioElement) => audio.addEventListener('seeking', () => { audio.dataset.seekedTo = String(audio.currentTime); }));
   await playing.getByRole('list', { name: '歌词' }).getByText('就这样一起走到天亮', { exact: true }).click();
   await expect.poll(() => playing.locator('audio').evaluate((audio: HTMLAudioElement) => Number(audio.dataset.seekedTo ?? -1))).toBeGreaterThan(song.starts[index] - .6);
   expect(Number(await playing.locator('audio').getAttribute('data-seeked-to'))).toBeLessThan(song.starts[index] + .6);
+});
+
+test('播放页当前句逐字点亮，可切换到一句一屏的浮光样式，选择记在本机', async ({ page }) => {
+  const song = syntheticSong(songLyrics, .3);
+  const draft = { ...createMusicDraft('zh-CN'), id: 'e'.repeat(32) };
+  const state = emptyState();
+  state.drafts = [draft];
+  state.history = [{ id: 'song', title: draft.title, fileName: 'song.wav', createdAt: '2026-09-15T12:00:00Z', duration: song.duration, settings: { ...draft, lyrics: songLyrics } }];
+  await page.goto('/');
+  await page.evaluate(async (data: string) => {
+    const bytes = Uint8Array.from(atob(data), char => char.charCodeAt(0));
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('voice-workbench-audio', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('audio');
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => { const db = request.result; const tx = db.transaction('audio', 'readwrite'); tx.objectStore('audio').put(new Blob([bytes], { type: 'audio/wav' }), 'song.wav'); tx.oncomplete = () => { db.close(); resolve(); }; };
+    });
+  }, Buffer.from(wavBytes(song.left, song.right, song.rate)).toString('base64'));
+  await seedState(page, state); await page.reload();
+  await page.locator('.player .transport').getByRole('button', { name: '播放页', exact: true }).click();
+  const playing = page.getByRole('dialog', { name: `${draft.title} · 播放页` });
+  await lyricTools(page, playing, '歌词时间按人声自动定位，可再校准');
+  // 停在副歌第一句唱到一半：前面的字已唱过，后面的字还没唱。
+  const index = song.rows.findIndex(row => row.text === '就这样一起走到天亮');
+  await playing.locator('audio').evaluate((audio: HTMLAudioElement, time: number) => { audio.pause(); audio.currentTime = time; }, song.words[index][5] - .1);
+  const words = playing.locator('.now-playing-line[data-state="current"] .now-playing-word');
+  await expect(words).toHaveText([...'就这样一起走到天亮']);
+  await expect(words.first()).toHaveAttribute('data-sung', 'done');
+  await expect(words.last()).toHaveAttribute('data-sung', 'waiting');
+  // 换成浮光：只显示当前句和下一句预告，校准时仍回到滚动歌词。
+  await playing.getByRole('button', { name: '滚动歌词', exact: true }).click();
+  await page.getByRole('menuitem', { name: /浮光/ }).click();
+  await expect(playing.getByRole('list', { name: '歌词' })).toHaveCount(0);
+  const current = playing.locator('.now-playing-phrase[data-slot="current"]');
+  await expect(current).toHaveText('就这样一起走到天亮');
+  await expect(current.locator('.now-playing-glyph').first()).toHaveAttribute('data-sung', 'done');
+  await expect(playing.locator('.now-playing-phrase[data-slot="next"]')).toHaveText('夏天不会太长');
+  await lyricTools(page, playing, undefined, /^校准歌词/);
+  await expect(playing.getByRole('list', { name: '歌词' })).toBeVisible();
+  await playing.getByRole('button', { name: '取消校准', exact: true }).click();
+  await expect(current).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('yovoice-lyric-style'))).toBe('stage');
 });
 
 test('新建作品默认用已下载的模型，并沿用上一次同类作品的选择', async ({ page }) => {

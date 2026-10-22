@@ -255,26 +255,3 @@ func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
-
-// recordLegacyRuntimeVersion 为旧版本安装、未记录版本的内核补记版本：数据目录中的
-// 内核安装目录以“版本-后端-随机数”命名，可直接取得版本，用户无需重新下载。
-func (w *Workbench) recordLegacyRuntimeVersion() error {
-	s := w.Store.Read()
-	if s.RuntimePath == nil || s.RuntimeVersion != nil {
-		return nil
-	}
-	rel, err := filepath.Rel(filepath.Join(w.Store.Root, "runtime"), *s.RuntimePath)
-	if err != nil {
-		return nil
-	}
-	dir, _, _ := strings.Cut(filepath.ToSlash(rel), "/")
-	if !runtimeDir.MatchString(dir) {
-		return nil
-	}
-	version, _, _ := strings.Cut(dir, "-")
-	return w.Store.Update(func(s *schema.State) {
-		if s.RuntimeVersion == nil {
-			s.RuntimeVersion = ptr(version)
-		}
-	}, true)
-}

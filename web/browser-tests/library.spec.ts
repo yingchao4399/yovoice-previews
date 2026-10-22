@@ -71,7 +71,8 @@ test('从生成记录保存参考音频，删除生成记录后仍保留素材�
   await expect(page.getByRole('button', { name: '保存为参考音频', exact: true })).toHaveCount(0);
   await page.locator('.recent-projects .project-link').first().click();
   const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: '导出音频', exact: true }).click();
+  await page.locator('.player .transport').getByRole('button', { name: '音频操作', exact: true }).click();
+  await page.getByRole('menuitem', { name: '导出音频', exact: true }).click();
   expect(await (await download).failure()).toBeNull();
   await openProjectHistory(page);
   await page.getByRole('button', { name: '音频操作', exact: true }).click();

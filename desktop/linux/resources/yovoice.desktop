@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=yovoice
+GenericName=Voice and Music Studio
+GenericName[zh_CN]=语音与音乐创作
+Comment=Local speech, voice cloning and music creation
+Comment[zh_CN]=本地语音合成、音色克隆与音乐创作
+Exec=@EXEC@
+Icon=yovoice
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=tts;speech;voice;music;
+StartupNotify=true
+StartupWMClass=yovoice

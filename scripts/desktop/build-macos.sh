@@ -42,7 +42,6 @@ if [[ "$actual" != "$digest" ]]; then echo 'audio.cpp 校验失败，请删除�
 tar -xzf "$archive" -C "$app/Contents/Resources/engine" ./audiocpp_server ./model_specs ./LICENSE
 chmod +x "$app/Contents/Resources/engine/audiocpp_server"
 python3 scripts/build-ffmpeg.py "$app/Contents/Resources/tools"
-python3 scripts/package-kokoro-runtime.py "$app/Contents/Resources/tools/kokoro"
 python3 scripts/package-ocho.py "$app/Contents/Resources/tools/ocho"
 cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
 cat > "$app/Contents/Info.plist" <<'PLIST'
@@ -54,7 +53,7 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIconFile</key><string>AppIcon.icns</string>
 <key>CFBundleExecutable</key><string>VoiceWorkbenchMac</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.3.1</string>
+<key>CFBundleShortVersionString</key><string>0.4.1</string>
 <key>CFBundleVersion</key><string>1</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSHighResolutionCapable</key><true/>

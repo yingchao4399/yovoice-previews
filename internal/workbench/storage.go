@@ -33,7 +33,8 @@ func (w *Workbench) StorageInfo() (StorageInfo, error) {
 	info.ModelsBytes = dirSize(filepath.Join(root, "models"))
 	info.OutputsBytes = dirSize(filepath.Join(root, "outputs"))
 	info.VoicesBytes = dirSize(filepath.Join(root, "voices"))
-	info.DownloadsBytes = dirSize(filepath.Join(root, "downloads"))
+	// WebView2 缓存同样是可再生的缓存，计入“缓存”一项，与总计保持一致。
+	info.DownloadsBytes = dirSize(filepath.Join(root, "downloads")) + dirSize(filepath.Join(root, store.WebCacheDir))
 	info.TotalBytes = dirSize(root)
 
 	return info, nil
@@ -82,7 +83,7 @@ func (w *Workbench) RelocateStorage(targetPath string) error {
 		}
 	}
 
-	totalBytes := dirSize(currentRoot)
+	totalBytes := relocateSize(currentRoot)
 	_ = w.Store.Update(func(s *schema.State) {
 		s.Activity = &schema.Activity{Kind: "relocate", Code: msg.ActivityRelocate, Status: "running", Total: totalBytes, StartedAt: time.Now().UTC()}
 	}, false)
@@ -227,12 +228,33 @@ func detectInstallDir() string {
 	return ""
 }
 
+// relocateSize 统计迁移需要复制的字节数，跳过的条目不计入进度总量。
+func relocateSize(root string) int64 {
+	var total int64
+	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info == nil {
+			return nil
+		}
+		if rel, e := filepath.Rel(root, path); e == nil && rel != "." && skipRelocate(rel, info) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !info.IsDir() {
+			total += info.Size()
+		}
+		return nil
+	})
+	return total
+}
+
 // skipRelocate 列出不复制到新目录的条目：锁文件属于当前进程，状态文件由内存快照重新生成，
-// 待删除标记与未保存试听在重启时本就会被清理。
+// 待删除标记与未保存试听在重启时本就会被清理；WebView2 缓存被宿主占用无法复制，在新目录启动时自动重建。
 func skipRelocate(rel string, info os.FileInfo) bool {
 	name := info.Name()
 	switch rel {
-	case "service.lock", store.DatabaseFile, store.DatabaseFile + "-journal", "yovoice.backup.db", "state.json", "state.backup.json", "local-api.json", "secrets.json":
+	case store.WebCacheDir, "service.lock", store.DatabaseFile, store.DatabaseFile + "-journal", "yovoice.backup.db", "state.json", "state.backup.json", "local-api.json", "secrets.json":
 		return true
 	}
 	if strings.HasSuffix(name, ".deleted") || strings.HasPrefix(name, ".yovoice-") || strings.HasPrefix(name, ".tmp-") {

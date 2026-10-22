@@ -4,9 +4,10 @@ import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
 import { useTranslator } from '@astryxdesign/core/i18n';
 import { AudioLines, ChevronRight, FolderOpen, ListMusic, Mic, Music, Pencil, Settings2, Trash2 } from 'lucide-react';
-import { projectKind, type Draft, type State } from '../shared/workbench';
+import { featureHidden, projectKind, type Draft, type State } from '../shared/workbench';
 import { overflowTitle } from '../shared/ui/overflow-title';
 import { UpdateSidebarCard } from '../features/update/update-notice';
+import { readLocal, writeLocal } from '../shared/lib/local-store';
 
 // 侧栏：保留官方音乐生成入口，智能编曲和音源库作为独立工作流入口。
 export function SidebarNav(props: {
@@ -21,12 +22,12 @@ export function SidebarNav(props: {
 }) {
   const t = useTranslator();
   const { page, setPage, newDraft, state, draft, selectDraft, removeDraft, resizable } = props;
-  const [recentOpen, setRecentOpen] = useState(() => localStorage.getItem('yovoice-recent-open') !== 'false');
+  const [recentOpen, setRecentOpen] = useState(() => readLocal('yovoice-recent-open') !== 'false');
   const projectActive = page === 'create' || page === 'history';
   return <VStack as="nav" className="sidebar" aria-label={t('@yovoice.nav.main')} gap={6} data-testid="sidebar">
     {newDraft}
     <VStack className="sidebar-destinations" gap={2}>
-      {(['text', 'story', 'music'] as const).map(kind => {
+      {(['text', 'story', 'music'] as const).filter(kind => kind === 'text' || !featureHidden(state.preferences, kind)).map(kind => {
         // 编曲生成并入音乐生成：两类作品都高亮「音乐生成」。
         const group = (k: string) => k === 'score' ? 'music' : k;
         const selected = group(page) === kind || (projectActive && group(projectKind(draft)) === kind);
@@ -37,7 +38,7 @@ export function SidebarNav(props: {
       <Button data-testid="nav-instruments" label={t('@yovoice.instruments.title')} variant="ghost" icon={<FolderOpen />} className={`nav-item ${page === 'instruments' ? 'selected' : ''}`} aria-current={page === 'instruments' ? 'page' : undefined} onClick={() => setPage('instruments')} />
     </VStack>
     <details className="recent-projects" open={recentOpen}>
-      <summary onClick={event => { event.preventDefault(); const open = !recentOpen; setRecentOpen(open); localStorage.setItem('yovoice-recent-open', String(open)); }}><ChevronRight aria-hidden />{t('@yovoice.nav.recent')}</summary>
+      <summary onClick={event => { event.preventDefault(); const open = !recentOpen; setRecentOpen(open); writeLocal('yovoice-recent-open', String(open)); }}><ChevronRight aria-hidden />{t('@yovoice.nav.recent')}</summary>
       <VStack className="project-list" gap={1}>{[...state.drafts].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')).slice(0, 5).map(item => <HStack key={item.id} className={`project-row ${item.id === draft.id && page === 'create' ? 'current' : ''}`} gap={0}>
         <Button label={item.id === draft.id ? draft.title : item.title} variant="ghost" size="sm" className="project-link grow" onPointerEnter={overflowTitle} aria-current={item.id === draft.id && page === 'create' ? 'page' : undefined} onClick={() => selectDraft(item)} />
         <Button className="project-quick-delete" label={t('@yovoice.nav.deleteProject', { title: item.id === draft.id ? draft.title : item.title })} icon={<Trash2 />} isIconOnly size="sm" variant="ghost" onClick={() => removeDraft(item.id === draft.id ? draft : item)} />

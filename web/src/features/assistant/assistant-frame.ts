@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { readLocal, writeLocal } from '../../shared/lib/local-store';
 
 // 助手浮窗的位置与尺寸：以视口右下角为锚点（窗口缩放时贴着右下角走），可拖动标题栏移动、拖动边角缩放，
 // 结果存到本机；每次变化都夹回视口内，保证标题栏始终够得着。
@@ -34,9 +35,9 @@ function defaultRect(): PanelRect {
 
 function readRect(): PanelRect {
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) ?? 'null') as PanelRect | null;
+    const saved = JSON.parse(readLocal(storageKey) ?? 'null') as PanelRect | null;
     if (saved && [saved.right, saved.bottom, saved.width, saved.height].every(Number.isFinite)) return saved;
-  } catch { /* 存储不可用或内容损坏时用默认值 */ }
+  } catch { /* 内容损坏时用默认值 */ }
   return defaultRect();
 }
 
@@ -64,7 +65,7 @@ export function usePanelFrame() {
   }, []);
   useEffect(() => {
     if (moving) return;
-    try { localStorage.setItem(storageKey, JSON.stringify(rect)); } catch { /* 存储不可用时只在本次生效 */ }
+    writeLocal(storageKey, JSON.stringify(rect));
   }, [rect, moving]);
 
   const begin = useCallback((edge: ResizeEdge | 'move') => (event: ReactPointerEvent<HTMLElement>) => {
