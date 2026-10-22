@@ -196,7 +196,7 @@ export function MelodyScore({ draft, state, change, onError }: {
       </HStack> : null}
       {view === 'staff' && !inspection?.issue ? <MelodyStaff abc={abc} label={t('@yovoice.melody.viewStaff')} time={preview.time} active={preview.status !== 'idle'} seek={preview.seek} />
         : view === 'tracks' && score ? <ScoreArrangement readOnly score={score} selected={selected} select={setSelected} updateTrack={() => {}}
-          playhead={preview.status !== 'idle' ? { time: preview.time, playing } : undefined} seek={preview.seek}
+          playhead={preview.status !== 'idle' ? { time: preview.time, duration: preview.duration, playing } : undefined} seek={preview.seek}
           label={t('@yovoice.melody.tracksLabel', { bars: inspection?.bars ?? 0 })} />
         : <TextArea className="melody-source" label={t('@yovoice.melody.source')} isLabelHidden value={abc} rows={16} hasSpellCheck={false}
           onChange={value => change({ abc: value.slice(0, maxLength) })} />}

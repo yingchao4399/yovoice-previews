@@ -68,7 +68,7 @@ function ScoreLane({ score, track, zoom }: { score: Score; track: ScoreTrack; zo
 // 只读时（如由旋律谱换算的轨道）轨头只显示名称，改动回到谱面本身。
 export function ScoreArrangement({ score, selected, select, label, updateTrack, playhead, seek, readOnly }: {
   score: Score; selected?: string; select: (id: string) => void; label: string; updateTrack: (id: string, patch: Partial<ScoreTrack>) => void;
-  playhead?: { time: number; playing: boolean }; seek: (time: number) => void; readOnly?: boolean;
+  playhead?: { time: number; duration?: number; playing: boolean }; seek: (time: number) => void; readOnly?: boolean;
 }) {
   const t = useTranslator();
   const total = Math.max(1, scoreDuration(score));
@@ -82,7 +82,8 @@ export function ScoreArrangement({ score, selected, select, label, updateTrack, 
   const naturalLaneWidth = Math.round(Math.max(bars * 54, total * 20));
   const laneWidth = Math.round(naturalLaneWidth * zoom);
   const laneExpr = `max(calc(100% - var(--score-head)), ${laneWidth}px)`;
-  const progress = playhead ? Math.min(1, playhead.time / total) : 0;
+  // 音频渲染长度与谱面计算长度可能不同；使用音频自身的归一化进度驱动指针，避免播放时提前结束或滞后。
+  const progress = playhead ? Math.min(1, playhead.time / Math.max(0.001, playhead.duration ?? total)) : 0;
   const [scrollLeft, setScrollLeft] = useState(0);
   const [scrollerMetrics, setScrollerMetrics] = useState({ scrollWidth: 0, clientWidth: 0, headWidth: 0 });
   useEffect(() => {
@@ -154,7 +155,8 @@ export function ScoreArrangement({ score, selected, select, label, updateTrack, 
   }, []);
   const seekAt = (event: ReactPointerEvent<HTMLElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    seek(Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) * total);
+    const position = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    seek(position * (playhead?.duration ?? total));
   };
   const laneActual = Math.max(0, scrollerMetrics.scrollWidth - scrollerMetrics.headWidth);
   const playheadOffset = progress * laneActual;
@@ -208,7 +210,7 @@ export function ScoreArrangement({ score, selected, select, label, updateTrack, 
 
 // 底部轨道区：和下方音轨一样横向贯穿整个工作区（含检查器下方），播放器紧随其下。
 export function ScoreDock({ draft, change, playhead, seek }: {
-  draft: Draft; change: (patch: Partial<Draft>) => void; playhead?: { time: number; playing: boolean }; seek: (time: number) => void;
+  draft: Draft; change: (patch: Partial<Draft>) => void; playhead?: { time: number; duration?: number; playing: boolean }; seek: (time: number) => void;
 }) {
   const t = useTranslator();
   const [selected, setSelected] = useState<string>();

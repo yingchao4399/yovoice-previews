@@ -1,4 +1,4 @@
-import { PlaybackToolbar, TrackZoom } from './playback-toolbar';
+import { PlaybackToolbar, TrackZoom, usePlaybackMode } from './playback-toolbar';
 import { lazy, Suspense, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@astryxdesign/core/Button';
 import { HStack, VStack } from '@astryxdesign/core/Layout';
@@ -17,7 +17,7 @@ import { TrackPanButton, useTrackViewport } from './use-track-viewport';
 const SeededAvatar = lazy(() => import('../../shared/ui/seeded-avatar').then(module => ({ default: module.SeededAvatar })));
 
 // reveal=false 时由调用方在自己的工具栏或菜单里提供“打开位置”，工具栏不再单独放文件夹按钮。
-export function Player({ track, onError, suspended, compact = false, actions, avatar, inline, onProgress, seekRequest, reveal = true }: { reveal?: boolean; onProgress?: (time: number, playing: boolean) => void; seekRequest?: { time: number; nonce: number }; inline?: { label: string; select: () => void }; avatar?: { seed: string; label: string; disabled?: boolean; select: () => void }; actions?: ReactNode; compact?: boolean; suspended: boolean; track: Track | null; onError: (message: string) => void }) {
+export function Player({ track, onError, suspended, compact = false, actions, avatar, inline, onProgress, seekRequest, reveal = true, playlist, onTrackChange }: { reveal?: boolean; onProgress?: (time: number, playing: boolean, duration: number) => void; seekRequest?: { time: number; nonce: number }; inline?: { label: string; select: () => void }; avatar?: { seed: string; label: string; disabled?: boolean; select: () => void }; actions?: ReactNode; compact?: boolean; suspended: boolean; track: Track | null; onError: (message: string) => void; playlist?: Track[]; onTrackChange?: (track: Track) => void }) {
   const t = useTranslator();
   const audio = useRef<HTMLAudioElement>(null);
   const lane = useRef<HTMLElement>(null);
@@ -26,6 +26,7 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   const [zoom, setZoom] = useState(1);
   const [volume, setVolume] = useState(1);
   const [playing, setPlaying] = useState(false);
+  const [playbackMode] = usePlaybackMode();
   const [time, setTime] = useState(0); const [duration, setDuration] = useState(0); const [peaks, setPeaks] = useState<number[]>([]);
   const kind = track?.kind, fileName = track?.fileName, playRequest = track?.playRequest;
   const key = track && kind && fileName ? `${kind}/${track.id}/${fileName}` : '';
@@ -83,6 +84,7 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   useEffect(() => { pending.current = !!playRequest; }, [playRequest, key]);
   useEffect(() => startPending(), [playRequest, key, url, failure]);
   useEffect(() => { if (suspended) { pending.current = false; audio.current?.pause(); } }, [suspended]);
+  useEffect(() => { if (audio.current) audio.current.loop = !compact && !inline && !avatar && !!playlist?.length && playbackMode === 'loop'; }, [playbackMode, url, compact, inline, avatar, playlist]);
   // 缩放后让播放位置保持在视口中央，播放进度变化本身不触发滚动。
   const centerPlayhead = useEffectEvent(() => {
     const viewport = lane.current;
@@ -103,8 +105,8 @@ export function Player({ track, onError, suspended, compact = false, actions, av
     return Array.from({ length: Math.ceil(peaks.length / group) }, (_, i) => Math.max(...peaks.slice(i * group, (i + 1) * group)));
   }, [peaks, zoom]);
   // 编曲视图跟随播放位置显示指针，也可以点标尺跳转。
-  const reportProgress = useEffectEvent(() => onProgress?.(time, playing));
-  useEffect(() => reportProgress(), [time, playing]);
+  const reportProgress = useEffectEvent(() => onProgress?.(time, playing, duration));
+  useEffect(() => reportProgress(), [time, playing, duration]);
   useEffect(() => { if (seekRequest && audio.current) { audio.current.currentTime = seekRequest.time; setTime(seekRequest.time); } }, [seekRequest]);
   const toggle = () => {
     const element = audio.current;
@@ -126,11 +128,25 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   const tickBase = 10 ** Math.floor(Math.log10(scale / zoom / 10));
   const tickStep = [1, 2, 5, 10].map(n => n * tickBase).find(n => n >= scale / zoom / 10)!;
   const ticks = Array.from({ length: Math.ceil(scale / tickStep) }, (_, i) => i * tickStep);
+  const finishTrack = () => {
+    if (audio.current?.loop) return;
+    const candidates = playlist?.filter(item => item.fileName && item.id) ?? [];
+    if (!onTrackChange || candidates.length < 2 || !track) { setPlaying(false); return; }
+    const current = candidates.findIndex(item => item.id === track.id && item.kind === track.kind);
+    if (current < 0) { setPlaying(false); return; }
+    let next = current + 1;
+    if (playbackMode === 'shuffle') {
+      const choices = candidates.filter((_, index) => index !== current);
+      next = candidates.indexOf(choices[Math.floor(Math.random() * choices.length)]);
+    }
+    if (next >= candidates.length) { setPlaying(false); return; }
+    onTrackChange({ ...candidates[next], playRequest: performance.now() });
+  };
   // 只预读时长等元数据，整段音频在播放时再读取。
   const media = <audio hidden ref={audio} src={url || undefined} preload="metadata"
     onLoadedMetadata={() => { const value = audio.current?.duration; if (value && Number.isFinite(value)) { setDuration(value); const start = Math.min(track?.startTime ?? 0, Math.max(0, value - .01)); if (audio.current) audio.current.currentTime = start; setTime(start); } }}
     onTimeUpdate={() => setTime(audio.current?.currentTime ?? 0)}
-    onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)}
+    onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => finishTrack()}
     onError={() => { if (url) markFailed('@yovoice.error.audioPlayFailed'); }} />;
   if (inline) return <>
     {media}
@@ -155,7 +171,7 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   return <VStack as="footer" className="player audio-panel player-single" gap={0} style={{ height: panel.size }}>
     <ResizeHandle label={t('@yovoice.player.resizePanel')} direction="vertical" pillPlacement="center" isReversed resizable={panel.props} />
     {media}
-    <PlaybackToolbar time={time} duration={duration} playing={playing} disabled={!url || !!failure || suspended} toggle={toggle}
+    <PlaybackToolbar time={time} duration={duration} playing={playing} disabled={!url || !!failure || suspended} toggle={toggle} mode={playbackMode}
       beforePlay={<Button label={t('@yovoice.player.skipStart')} isIconOnly icon={<SkipBack size={16} />} size="sm" variant="ghost" isDisabled={!url || !!failure} onClick={() => seek(0)} />}
       afterPlay={<Button label={t('@yovoice.player.skipEnd')} isIconOnly icon={<SkipForward size={16} />} size="sm" variant="ghost" isDisabled={!duration} onClick={() => seek(duration)} />}>
         <HStack className="volume-control" gap={2} vAlign="center">

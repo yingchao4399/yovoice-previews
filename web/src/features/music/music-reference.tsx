@@ -7,7 +7,7 @@ import { call, importMusicReferenceFile } from '../../shared/lib/client';
 import { formatCallError } from '../../shared/i18n/format';
 import { ResourceAudioPreview, ResourcePicker } from '../../shared/ui/resource-picker';
 import type { ResourceItem } from '../../shared/resource';
-import type { AudioAsset, AudioTimeline, Draft } from '../../shared/workbench';
+import { isYuE, type AudioAsset, type AudioTimeline, type Draft } from '../../shared/workbench';
 
 // 参考仅产生描述条件；加入素材是另一项显式操作，不能偷偷混入成曲。
 export function MusicReference({ draft, kind, change }: { draft: Draft; kind: 'voice' | 'accompaniment'; change: (patch: Partial<Draft>) => void }) {
@@ -18,6 +18,7 @@ export function MusicReference({ draft, kind, change }: { draft: Draft; kind: 'v
   const [library, setLibrary] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [expanded, setExpanded] = useState(false);
   const voice = kind === 'voice';
+  const unsupportedModel = isYuE(draft.modelId);
   const id = voice ? draft.music?.voiceReferenceAssetId : draft.music?.accompanimentAssetId;
   const description = (voice ? draft.music?.voiceReferenceDescription : draft.music?.accompanimentDescription) ?? '';
   const asset = draft.timeline?.assets?.find(item => item.id === id);
@@ -46,7 +47,7 @@ export function MusicReference({ draft, kind, change }: { draft: Draft; kind: 'v
   return <VStack className="music-reference" gap={2}>
     {voice ? <h3>{t('@yovoice.music.referenceVoice')}</h3> : <Button size="sm" variant="ghost" label={t('@yovoice.music.referenceAccompaniment')} aria-expanded={expanded} onClick={() => setExpanded(!expanded)} />}
     {voice || expanded ? <>
-    <small>{t('@yovoice.music.referenceSemanticHint')}</small>
+    {unsupportedModel ? <small role="status">{t('@yovoice.music.referenceUnsupportedModel')}</small> : <small>{t('@yovoice.music.referenceSemanticHint')}</small>}
     <input ref={picker} type="file" accept="audio/*" hidden onChange={event => { const file = event.target.files?.[0]; if (file) void upload(file); event.target.value = ''; }} />
     <HStack gap={2} wrap="wrap">
       <Button size="sm" variant="secondary" label={t('@yovoice.music.referenceLibrary')} isDisabled={busy} onClick={() => setLibrary(true)} />

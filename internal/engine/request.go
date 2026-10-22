@@ -21,10 +21,19 @@ func melodyError(e error) error {
 }
 
 func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error) {
+	return BuildRequestWithMusicReference(d, voice, emotion, "")
+}
+
+// BuildRequestWithMusicReference 可选地把音乐参考音频作为 ACE-Step 的源音频输入。
+// audio.cpp 的 text2music 路线会忽略源音频；complete 路线将其作为上下文，但不保证克隆音色。
+func BuildRequestWithMusicReference(d schema.Draft, voice, emotion, musicReference string) (map[string]any, error) {
 	if e := schema.Validate(d); e != nil {
 		return nil, e
 	}
 	m, _ := catalog.Lookup(d.ModelID)
+	if musicReference != "" && m.Family != "ace_step" {
+		return nil, msg.Err(msg.ErrMusicParams, msg.Params{"detail": "当前所选模型不支持接收参考音频；请选择 ACE-Step，或移除参考音频"})
+	}
 	if m.Family == "ace_step" {
 		o, _ := d.GenerationOptions(m.Family)
 		if d.Music != nil {
@@ -33,7 +42,20 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 				o["duration_seconds"] = d.Music.Duration.Seconds
 			}
 		}
-		o["route"] = "text2music"
+		// Users commonly type a tempo in the style field (for example "60 BPM").
+		// ACE-Step only receives that tempo when it is sent as its numeric option;
+		// keep an explicit advanced BPM authoritative, then promote the style tempo
+		// when the numeric field is automatic or absent.
+		if _, ok := o["bpm"]; !ok {
+			if bpm, ok := schema.MusicStyleBPM(d); ok {
+				o["bpm"] = float64(bpm)
+			}
+		}
+		route := "text2music"
+		if musicReference != "" {
+			route = "complete"
+		}
+		o["route"] = route
 		// ACE-Step 以 [Instrumental] 标记纯音乐；保存的歌词不随开关丢失。
 		o["lyrics"] = strings.TrimSpace(d.Lyrics)
 		if d.Instrumental {
@@ -43,6 +65,9 @@ func BuildRequest(d schema.Draft, voice, emotion string) (map[string]any, error)
 			o["seed"] = *d.Seed
 		}
 		r := map[string]any{"text": schema.MusicStyle(d), "options": o}
+		if musicReference != "" {
+			r["audio"] = musicReference
+		}
 		if d.SynthesisLanguage != "" {
 			r["language"] = d.SynthesisLanguage
 		}

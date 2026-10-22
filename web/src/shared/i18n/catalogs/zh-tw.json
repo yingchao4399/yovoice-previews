@@ -713,6 +713,10 @@
   "@yovoice.player.play": {
     "defaultMessage": "播放"
   },
+  "@yovoice.player.playbackMode": { "defaultMessage": "播放方式" },
+  "@yovoice.player.playbackMode.loop": { "defaultMessage": "循環播放" },
+  "@yovoice.player.playbackMode.sequential": { "defaultMessage": "順序播放" },
+  "@yovoice.player.playbackMode.shuffle": { "defaultMessage": "隨機播放" },
   "@yovoice.player.progress": {
     "defaultMessage": "播放進度"
   },
@@ -1899,7 +1903,7 @@
     "defaultMessage": "歌詞最多 4000 字。"
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "時長需為 10–300 秒，速度需為 30–300 BPM。"
+    "defaultMessage": "音樂生成設定需要調整。"
   },
   "@yovoice.project.music": {
     "defaultMessage": "音樂生成"
@@ -5065,6 +5069,9 @@
   },
   "@yovoice.music.referenceSemanticHint": {
     "defaultMessage": "当前音乐模型按下方描述参考风格，不直接读取此音频，也不保证克隆原音色。参考文件不会自动混入成曲。"
+  },
+  "@yovoice.music.referenceUnsupportedModel": {
+    "defaultMessage": "目前模型不能接收參考音訊，請選擇 ACE-Step 或移除參考音訊。"
   },
   "@yovoice.music.referenceLibrary": {
     "defaultMessage": "从库中选择"

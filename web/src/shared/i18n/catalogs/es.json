@@ -713,6 +713,10 @@
   "@yovoice.player.play": {
     "defaultMessage": "Reproducir"
   },
+  "@yovoice.player.playbackMode": { "defaultMessage": "Modo de reproducción" },
+  "@yovoice.player.playbackMode.loop": { "defaultMessage": "Repetir" },
+  "@yovoice.player.playbackMode.sequential": { "defaultMessage": "En orden" },
+  "@yovoice.player.playbackMode.shuffle": { "defaultMessage": "Aleatorio" },
   "@yovoice.player.progress": {
     "defaultMessage": "Progreso de reproducción"
   },
@@ -1899,7 +1903,7 @@
     "defaultMessage": "La letra puede tener hasta 4000 caracteres."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "La duración debe ser de 10 a 300 segundos y el tempo de 30 a 300 BPM."
+    "defaultMessage": "Hay que revisar los ajustes de generación musical."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Generación de música"
@@ -5064,7 +5068,10 @@
     "defaultMessage": "Accompaniment reference"
   },
   "@yovoice.music.referenceSemanticHint": {
-    "defaultMessage": "The music model uses the description below as style guidance, not the audio as a native condition or voice clone. References are not mixed automatically."
+    "defaultMessage": "ACE-Step uses this audio as generation context and the description to guide the target voice or accompaniment. This is not voice cloning and does not guarantee a match. Reference audio is not mixed into the result automatically."
+  },
+  "@yovoice.music.referenceUnsupportedModel": {
+    "defaultMessage": "This model cannot receive reference audio; choose ACE-Step or remove the reference."
   },
   "@yovoice.music.referenceLibrary": {
     "defaultMessage": "Choose from library"

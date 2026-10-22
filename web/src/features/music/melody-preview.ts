@@ -10,11 +10,12 @@ export function useMelodyPreview(abc: string, onError: (e: unknown) => void) {
   const rendered = useRef<string | null>(null);
   const [status, setStatus] = useState<PreviewStatus>('idle');
   const [time, setTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const stop = () => {
     audio.current?.pause();
     audio.current = null; rendered.current = null;
-    setStatus('idle'); setTime(0);
+    setStatus('idle'); setTime(0); setDuration(0);
   };
   useEffect(() => stop, [abc]);
 
@@ -42,6 +43,7 @@ export function useMelodyPreview(abc: string, onError: (e: unknown) => void) {
       next.onpause = () => setStatus(next.ended ? 'idle' : 'paused');
       next.onended = () => { setStatus('idle'); setTime(0); next.currentTime = 0; };
       audio.current = next; rendered.current = abc;
+      next.onloadedmetadata = () => { if (Number.isFinite(next.duration)) setDuration(next.duration); };
       start(next);
     } catch (e) {
       setStatus('idle'); onError(e);
@@ -52,5 +54,5 @@ export function useMelodyPreview(abc: string, onError: (e: unknown) => void) {
     if (!element) return;
     element.currentTime = seconds; setTime(seconds);
   };
-  return { status, time, audio, toggle, seek };
+  return { status, time, duration, audio, toggle, seek };
 }

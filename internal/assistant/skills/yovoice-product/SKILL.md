@@ -141,7 +141,7 @@ Errors reach you as stable codes (in <ui_context>, get_generation_status, get_re
 - `error.legacyRestore` 旧数据无法读取。
 - `error.musicStyle` 请用 1–512 字描述风格。
 - `error.musicLyrics` 歌词最多 4000 字。
-- `error.musicParams` 时长需为 10–300 秒，速度需为 30–300 BPM。
+- `error.musicParams` 音乐生成设置需要调整。
 - `error.musicLyricsRequired` YuE2 生成带人声的歌曲需要歌词；不写歌词可以切到纯音乐。
 - `arrangement.blocked` {detail}
 - `error.scoreInvalid` 乐谱格式不正确：请检查速度、拍号、声部和音符位置（最多 512 小节、32 个声部、20000 个音符、10 分钟）。

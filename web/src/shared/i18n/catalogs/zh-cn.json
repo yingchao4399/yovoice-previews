@@ -719,6 +719,18 @@
   "@yovoice.player.progressValue": {
     "defaultMessage": "{current}，共 {total}"
   },
+  "@yovoice.player.playbackMode": {
+    "defaultMessage": "播放方式"
+  },
+  "@yovoice.player.playbackMode.loop": {
+    "defaultMessage": "循环播放"
+  },
+  "@yovoice.player.playbackMode.sequential": {
+    "defaultMessage": "顺序播放"
+  },
+  "@yovoice.player.playbackMode.shuffle": {
+    "defaultMessage": "随机播放"
+  },
   "@yovoice.player.reveal": {
     "defaultMessage": "打开位置"
   },
@@ -1899,7 +1911,7 @@
     "defaultMessage": "歌词最多 4000 字。"
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "时长需为 10–300 秒，速度需为 30–300 BPM。"
+    "defaultMessage": "音乐生成设置需要调整。"
   },
   "@yovoice.project.music": {
     "defaultMessage": "音乐生成"
@@ -5064,7 +5076,10 @@
     "defaultMessage": "参考配乐"
   },
   "@yovoice.music.referenceSemanticHint": {
-    "defaultMessage": "当前音乐模型按下方描述参考风格，不直接读取此音频，也不保证克隆原音色。参考文件不会自动混入成曲。"
+    "defaultMessage": "ACE-Step 会将此音频作为生成上下文，描述用于补充目标音色或配乐方向；这不是人声音色克隆，也不保证复刻。参考文件不会自动混入成曲。"
+  },
+  "@yovoice.music.referenceUnsupportedModel": {
+    "defaultMessage": "当前模型不能接收参考音频，请选择 ACE-Step 或移除参考音频。"
   },
   "@yovoice.music.referenceLibrary": {
     "defaultMessage": "从库中选择"

@@ -18,6 +18,7 @@ import { backdropScene, phraseLayout, useKineticLyrics, useLyricFollow } from '.
 import { coverPalette, SongCover } from './song-cover';
 import { readLocal, writeLocal } from '../../shared/lib/local-store';
 import { decodeAudio } from '../../shared/lib/sound';
+import { PlaybackModeSelector, usePlaybackMode } from '../media/playback-toolbar';
 
 // 包络的时间分辨率（秒）：封面与背景随响度起伏。
 const envelopeStep = 0.05;
@@ -80,6 +81,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
   const lyricsBox = useRef<HTMLElement>(null);
   const [url, setUrl] = useState('');
   const [playing, setPlaying] = useState(false);
+  const [playbackMode] = usePlaybackMode();
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(item.duration);
   const [idle, setIdle] = useState(false);
@@ -115,6 +117,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
   const tags = splitTags(item.settings.text).slice(0, 4);
   const scene = useMemo(() => backdropScene(item.id), [item.id]);
 
+
   const switchTo = (next: Generation) => {
     if (next.id === item.id) return;
     const element = audio.current;
@@ -122,6 +125,19 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
     envelope.current = [];
     setPrevious(item); setItem(next); setTimes(next.lyricTimes); setAligned(next.lyricWords); setVoice(null); setSync(null); setEdit(null); setDuration(next.duration);
   };
+  const finishPlayback = () => {
+    if (playbackMode === 'loop' || ordered.length < 2) { setPlaying(false); return; }
+    const current = ordered.findIndex(entry => entry.id === item.id);
+    if (current < 0) { setPlaying(false); return; }
+    let next = current + 1;
+    if (playbackMode === 'shuffle') {
+      const choices = ordered.filter((_, index) => index !== current);
+      next = ordered.indexOf(choices[Math.floor(Math.random() * choices.length)]);
+    }
+    if (next >= ordered.length) { setPlaying(false); return; }
+    switchTo(ordered[next]);
+  };
+  useEffect(() => { if (audio.current) audio.current.loop = playbackMode === 'loop'; }, [playbackMode, item.id]);
   // 对齐在后台完成后版本记录随状态更新，这里同步最新结果。
   const saved = versions.find(entry => entry.id === item.id);
   const savedKey = saved ? JSON.stringify([saved.lyricWords ?? null, saved.lyricTimes ?? null]) : '';
@@ -317,7 +333,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
           if (!saved.play) element.pause();
         }}
         onTimeUpdate={() => setTime(audio.current?.currentTime ?? 0)}
-        onPlay={() => setPlaying(true)} onPause={() => { setPlaying(false); setIdle(false); }} onEnded={() => setPlaying(false)} />
+        onPlay={() => setPlaying(true)} onPause={() => { setPlaying(false); setIdle(false); }} onEnded={() => finishPlayback()} />
       <HStack className="now-playing-bar now-playing-chrome" gap={2} hAlign="between" vAlign="center">
         <Button className="now-playing-glass now-playing-round" label={t('@yovoice.music.closeNowPlaying')} isIconOnly variant="ghost" icon={<ChevronDown />} onClick={leave} />
         {ordered.length > 1 ? <HStack className="now-playing-versions" gap={1} vAlign="center">
@@ -367,6 +383,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
           <VStack className="now-playing-controls now-playing-chrome" gap={2}>
             <input className="now-playing-progress" aria-label={t('@yovoice.player.progress')} aria-valuetext={t('@yovoice.player.progressValue', { current: formatTime(time), total: formatTime(duration) })} type="range" min={0} max={duration || 1} step={0.01} value={time} disabled={!url} onChange={event => seek(Number(event.target.value))} style={{ '--now-playing-progress': `${progress}%` } as CSSProperties} />
             <HStack className="now-playing-times" hAlign="between"><small>{formatTime(time)}</small><small>-{formatTime(Math.max(0, duration - time))}</small></HStack>
+            <PlaybackModeSelector disabled={!url} compact />
             <HStack className="now-playing-transport" gap={6} hAlign="center" vAlign="center">
               <Button className="now-playing-skip" label={t('@yovoice.music.rewind', { n: skipStep })} isIconOnly variant="ghost" icon={<Rewind fill="currentColor" />} isDisabled={!url} onClick={() => seek(time - skipStep)} />
               <Button className="now-playing-toggle" label={playing ? t('@yovoice.player.pause') : t('@yovoice.player.play')} isIconOnly variant="ghost" icon={playing ? <Pause fill="currentColor" /> : <Play fill="currentColor" />} isDisabled={!url} onClick={toggle} />

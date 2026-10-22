@@ -14,11 +14,12 @@ import (
 )
 
 type synthesisPart struct {
-	draft   schema.Draft
-	model   schema.InstalledModel
-	voice   string
-	emotion string
-	segment *schema.GenerationSegment
+	draft          schema.Draft
+	model          schema.InstalledModel
+	voice          string
+	emotion        string
+	musicReference string
+	segment        *schema.GenerationSegment
 }
 
 // prepareSynthesis 在启动前检查所有句子，避免生成到一半才发现角色缺少模型或音色。
@@ -59,7 +60,32 @@ func (w *Workbench) prepareSynthesis(d schema.Draft, state schema.State) ([]synt
 		if draft.EmotionVoiceID != nil {
 			part.emotion, _ = w.MediaFile("voices", *draft.EmotionVoiceID)
 		}
-		if _, err = engine.BuildRequest(draft, part.voice, part.emotion); err != nil {
+		if draft.Music != nil {
+			assetID := ""
+			if !draft.Instrumental && draft.Music.Voice == "reference" {
+				assetID = draft.Music.VoiceReferenceAssetID
+			}
+			if assetID == "" {
+				assetID = draft.Music.AccompanimentAssetID
+			}
+			if assetID != "" {
+				if draft.Timeline == nil {
+					return nil, msg.Err(msg.ErrAudioMissing, nil)
+				}
+				assetIndex := slices.IndexFunc(draft.Timeline.Assets, func(asset schema.AudioAsset) bool { return asset.ID == assetID })
+				if assetIndex < 0 {
+					return nil, msg.Err(msg.ErrAudioMissing, nil)
+				}
+				part.musicReference, err = w.Store.MediaPath("outputs", draft.Timeline.Assets[assetIndex].FileName)
+				if err != nil {
+					return nil, err
+				}
+				if _, err = os.Stat(part.musicReference); err != nil {
+					return nil, msg.Err(msg.ErrAudioMissing, nil)
+				}
+			}
+		}
+		if _, err = engine.BuildRequestWithMusicReference(draft, part.voice, part.emotion, part.musicReference); err != nil {
 			return nil, err
 		}
 		parts = append(parts, part)
@@ -91,7 +117,7 @@ func (w *Workbench) generateSegments(ctx context.Context, state schema.State, pa
 			return err
 		}
 		diag.Log(w.Store.Root, "segment.started", "project_id", part.draft.ID, "batch_id", batch, "cue_id", part.segment.CueID, "generation_id", id, "model_id", part.model.ID, "index", index)
-		_, err = w.engine.Generate(ctx, *state.RuntimePath, part.model, state.Preferences.Backend, part.draft, part.voice, part.emotion, path, func(_ msg.Code, _ msg.Params) {
+		_, err = w.engine.GenerateWithMusicReference(ctx, *state.RuntimePath, part.model, state.Preferences.Backend, part.draft, part.voice, part.emotion, part.musicReference, path, func(_ msg.Code, _ msg.Params) {
 			w.progress(msg.ActivitySubtitle, msg.Params{"n": index + 1, "total": len(parts)}, int64(index), int64(len(parts)))
 		})
 		if err != nil {

@@ -23,6 +23,7 @@ export function formatMelodyIssue(t: TranslatorFn, issue: MelodyIssue): string {
 function translate(t: TranslatorFn, code: MessageCode, params?: MessageParams | null): string {
   if (code === '@yovoice.error.melodyInvalid') return t(code, { issue: formatMelodyIssue(t, (params ?? {}) as unknown as MelodyIssue) });
   const message = t(code, params ?? undefined);
+  if (code === '@yovoice.error.musicParams' && params?.detail) return `${message} (${String(params.detail)})`;
   return code === unknownCode && params?.detail ? `${message} (${String(params.detail)})` : message;
 }
 

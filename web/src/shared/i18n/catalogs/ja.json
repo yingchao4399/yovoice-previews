@@ -713,6 +713,10 @@
   "@yovoice.player.play": {
     "defaultMessage": "再生"
   },
+  "@yovoice.player.playbackMode": { "defaultMessage": "再生モード" },
+  "@yovoice.player.playbackMode.loop": { "defaultMessage": "ループ" },
+  "@yovoice.player.playbackMode.sequential": { "defaultMessage": "順番に再生" },
+  "@yovoice.player.playbackMode.shuffle": { "defaultMessage": "シャッフル" },
   "@yovoice.player.progress": {
     "defaultMessage": "再生位置"
   },
@@ -1899,7 +1903,7 @@
     "defaultMessage": "歌詞は 4000 文字までです。"
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "長さは 10〜300 秒、テンポは 30〜300 BPM にしてください。"
+    "defaultMessage": "音楽生成の設定を確認してください。"
   },
   "@yovoice.project.music": {
     "defaultMessage": "音楽生成"
@@ -5064,7 +5068,10 @@
     "defaultMessage": "Accompaniment reference"
   },
   "@yovoice.music.referenceSemanticHint": {
-    "defaultMessage": "The music model uses the description below as style guidance, not the audio as a native condition or voice clone. References are not mixed automatically."
+    "defaultMessage": "ACE-Step uses this audio as generation context and the description to guide the target voice or accompaniment. This is not voice cloning and does not guarantee a match. Reference audio is not mixed into the result automatically."
+  },
+  "@yovoice.music.referenceUnsupportedModel": {
+    "defaultMessage": "This model cannot receive reference audio; choose ACE-Step or remove the reference."
   },
   "@yovoice.music.referenceLibrary": {
     "defaultMessage": "Choose from library"

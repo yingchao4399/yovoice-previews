@@ -260,21 +260,26 @@ func (e *Engine) start(ctx context.Context, executable, model string, definition
 
 // Generate 生成音频写入 output；YuE2 自己规划旋律时一并返回这次所用的旋律谱，其余模型返回空串。
 func (e *Engine) Generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, output string, progress func(msg.Code, msg.Params)) (score string, err error) {
-	return e.generate(ctx, executable, m, backend, d, voice, emotion, output, progress, nil, nil)
+	return e.GenerateWithMusicReference(ctx, executable, m, backend, d, voice, emotion, "", output, progress)
+}
+
+// GenerateWithMusicReference 仅用于音乐作品：将单条参考音频作为 ACE-Step complete 上下文。
+func (e *Engine) GenerateWithMusicReference(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, musicReference, output string, progress func(msg.Code, msg.Params)) (score string, err error) {
+	return e.generate(ctx, executable, m, backend, d, voice, emotion, musicReference, output, progress, nil, nil)
 }
 
 // GenerateArrangement 仅编曲任务使用专用合同，并返回实际请求和语义产物信息。
 func (e *Engine) GenerateArrangement(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, c schema.ArrangementGenerationContract, output string, progress func(msg.Code, msg.Params)) (schema.ArrangementGenerationResult, error) {
 	r := schema.ArrangementGenerationResult{State: "generating"}
 	started := time.Now()
-	_, err := e.generate(ctx, executable, m, backend, d, "", "", output, progress, &c, &r)
+	_, err := e.generate(ctx, executable, m, backend, d, "", "", "", output, progress, &c, &r)
 	if err != nil {
 		err = arrangementEngineFailure(e.root, started, err)
 	}
 	return r, err
 }
 
-func (e *Engine) generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, output string, progress func(msg.Code, msg.Params), contract *schema.ArrangementGenerationContract, report *schema.ArrangementGenerationResult) (score string, err error) {
+func (e *Engine) generate(ctx context.Context, executable string, m schema.InstalledModel, backend string, d schema.Draft, voice, emotion, musicReference, output string, progress func(msg.Code, msg.Params), contract *schema.ArrangementGenerationContract, report *schema.ArrangementGenerationResult) (score string, err error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	defer func() {
@@ -283,7 +288,7 @@ func (e *Engine) generate(ctx context.Context, executable string, m schema.Insta
 		}
 		_ = os.Remove(output + ".part")
 	}()
-	payload, err := BuildRequest(d, voice, emotion)
+	payload, err := BuildRequestWithMusicReference(d, voice, emotion, musicReference)
 	if contract != nil {
 		payload, err = BuildArrangementRequest(d, *contract)
 	}

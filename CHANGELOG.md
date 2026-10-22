@@ -6,15 +6,33 @@
 
 ### English
 
+### 简体中文
+
+## [0.4.1-preview.2] - 2026-10-23
+
+### English
+
+- Pass an explicit BPM from the music style prompt to ACE-Step and clear stale fixed-duration options when AI duration is selected.
+- Show the music model's actual validation detail instead of misreporting a missing voice-reference description as a duration or BPM error.
+- Fix Windows startup after moving data to a folder with Chinese characters by decoding the storage configuration path as UTF-8.
 - Let the user adopt an AI arrangement candidate without having to play it first or pass automatic pitch, identity, ending and fit checks. Keep every check and warning in the material record for traceability, and still reject missing or changed audio files.
 - Release stale arrangement-recovery locks after an answered “keep current result” or “wait” question, including locks left by earlier builds, so Ocho can continue or end the diagnosis instead of repeating protected-tool errors.
 - Let users interrupt arrangement work, start or switch Ocho sessions, open history and send follow-up instructions while a turn is running; keep the three-round repair limit and ask before a fourth-round local or full replan.
+- Pass a single imported music reference to ACE-Step's audio-context route and surface that it guides the generation without guaranteeing a voice clone; reject missing files, multiple references and unsupported YuE2 inputs before generation.
+- Add loop, sequential and shuffle playback to the audio player and song playback page; synchronize score playback heads and seeking to the rendered audio duration.
 
 ### 简体中文
 
+- 修复音乐生成中把样式里的明确 BPM（例如 `60 BPM`）只留在提示文字、没有真正提交给 ACE-Step 的问题；AI 自动时长不会再把旧的固定时长参数带入请求。
+- 音乐生成参数错误会显示后端返回的具体原因，不再把参考音色缺项误认为时长或 BPM 错误。
+- 播放器增加循环、顺序、随机播放方式；有播放列表时顺序和随机模式会自动切换下一项。
+- 编曲谱面与旋律试听使用实际音频时长归一化播放指针，修复音轨和编曲图示的帧与播放不同步。
+- 修复 Windows 将数据迁移到含中文字符的目录后，因存储配置路径解码错误而无法启动的问题。
 - AI 编曲候选不再要求先播放，也不再因为自动音高、身份、结尾或适配检查未通过而锁死“确认采用”；所有检查和风险仍保留在素材记录中追溯，缺失或被篡改的音频文件仍会被拒绝。
 - 用户回答“保留现状”或“暂不重规划”后，释放包括旧版本遗留在内的编曲诊断锁，避免 Ocho 反复遇到受保护工具错误，能够继续处理或结束诊断。
 - 编曲后台运行时可直接中断；Ocho 运行中可新建或切换会话、打开历史并继续输入。保留最多三轮自动修复，第四轮局部或整曲重规划仍先征求用户同意。
+- 音乐生成会把一条已导入参考音频传入 ACE-Step 上下文路线，并明确这不保证克隆人声音色；缺失文件、多条参考及 YuE2 不支持的组合在生成前说明原因。
+- 播放器与歌曲播放页增加循环、顺序、随机模式；曲谱播放指针和点击跳转按实际渲染音频时长同步。
 
 ## [0.4.1-preview.1] - 2026-10-22
 

@@ -713,6 +713,10 @@
   "@yovoice.player.play": {
     "defaultMessage": "Phát"
   },
+  "@yovoice.player.playbackMode": { "defaultMessage": "Chế độ phát" },
+  "@yovoice.player.playbackMode.loop": { "defaultMessage": "Lặp lại" },
+  "@yovoice.player.playbackMode.sequential": { "defaultMessage": "Theo thứ tự" },
+  "@yovoice.player.playbackMode.shuffle": { "defaultMessage": "Ngẫu nhiên" },
   "@yovoice.player.progress": {
     "defaultMessage": "Tiến trình phát"
   },
@@ -1899,7 +1903,7 @@
     "defaultMessage": "Lời bài hát tối đa 4000 ký tự."
   },
   "@yovoice.error.musicParams": {
-    "defaultMessage": "Thời lượng phải từ 10–300 giây và nhịp độ từ 30–300 BPM."
+    "defaultMessage": "Vui lòng kiểm tra cài đặt tạo nhạc."
   },
   "@yovoice.project.music": {
     "defaultMessage": "Tạo nhạc"
@@ -5064,7 +5068,10 @@
     "defaultMessage": "Accompaniment reference"
   },
   "@yovoice.music.referenceSemanticHint": {
-    "defaultMessage": "The music model uses the description below as style guidance, not the audio as a native condition or voice clone. References are not mixed automatically."
+    "defaultMessage": "ACE-Step uses this audio as generation context and the description to guide the target voice or accompaniment. This is not voice cloning and does not guarantee a match. Reference audio is not mixed into the result automatically."
+  },
+  "@yovoice.music.referenceUnsupportedModel": {
+    "defaultMessage": "This model cannot receive reference audio; choose ACE-Step or remove the reference."
   },
   "@yovoice.music.referenceLibrary": {
     "defaultMessage": "Choose from library"

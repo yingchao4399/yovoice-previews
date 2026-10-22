@@ -1,6 +1,12 @@
 package schema
 
-import "strings"
+import (
+	"regexp"
+	"strconv"
+	"strings"
+)
+
+var musicStyleBPMPattern = regexp.MustCompile(`(?i)(?:^|[^0-9])([0-9]{1,3})\s*bpm(?:$|[^a-z])`)
 
 // DurationIntent 保存创作目标；它不意味着模型会输出精确长度，定长导出另行处理。
 type DurationIntent struct {
@@ -40,10 +46,26 @@ func MusicCreationIssue(d Draft, family string) string {
 	if TextLen(in.AccompanimentDescription) > 1500 {
 		return "参考配乐描述过长"
 	}
-	if !d.Instrumental && in.Voice == "reference" && (in.VoiceReferenceAssetID == "" || strings.TrimSpace(in.VoiceReferenceDescription) == "") {
-		return "请选择参考音频并填写音色参考描述，当前音乐模型不支持直接音色克隆"
+	activeVoiceReference := !d.Instrumental && in.Voice == "reference" && in.VoiceReferenceAssetID != ""
+	if activeVoiceReference && in.AccompanimentAssetID != "" {
+		return "当前音乐模型一次只能接收一条参考音频，请保留参考人声或参考配乐其中一项"
 	}
-	for _, id := range []string{in.VoiceReferenceAssetID, in.AccompanimentAssetID} {
+	if (activeVoiceReference || in.AccompanimentAssetID != "") && family != "ace_step" {
+		return "当前所选模型不支持把参考音频作为生成条件，请切换到 ACE-Step；仅填写文字描述仍可用于风格引导"
+	}
+	if !d.Instrumental && in.Voice == "reference" {
+		if in.VoiceReferenceAssetID == "" {
+			return "请选择参考音频"
+		}
+		if strings.TrimSpace(in.VoiceReferenceDescription) == "" {
+			return "请填写希望参考的音色特点；ACE-Step 会将参考音频作为生成上下文，但不保证克隆原音色"
+		}
+	}
+	voiceReferenceID := ""
+	if activeVoiceReference {
+		voiceReferenceID = in.VoiceReferenceAssetID
+	}
+	for _, id := range []string{voiceReferenceID, in.AccompanimentAssetID} {
 		if id == "" {
 			continue
 		}
@@ -63,7 +85,7 @@ func MusicCreationIssue(d Draft, family string) string {
 	return ""
 }
 
-// MusicStyle 只传语义演唱方向；参考描述不被当作已实现音色克隆。
+// MusicStyle 传风格与音色文字条件；音频参考由引擎通过 ACE-Step complete 路线单独提供。
 func MusicStyle(d Draft) string {
 	style := strings.TrimSpace(d.Text)
 	if d.Music != nil && strings.TrimSpace(d.Music.AccompanimentDescription) != "" {
@@ -83,4 +105,22 @@ func MusicStyle(d Draft) string {
 		}
 	}
 	return style
+}
+
+// MusicStyleBPM extracts an explicitly written tempo from the user's style text.
+// The style field is the natural place users enter values such as "60 BPM", but
+// a model adapter still needs the numeric option to actually receive that value.
+// Out-of-range values are ignored and are left to the model's automatic tempo
+// selection; numeric model options remain authoritative when supplied separately.
+func MusicStyleBPM(d Draft) (int, bool) {
+	style := strings.TrimSpace(d.Text)
+	match := musicStyleBPMPattern.FindStringSubmatch(style)
+	if len(match) != 2 {
+		return 0, false
+	}
+	value, err := strconv.Atoi(match[1])
+	if err != nil || value < 30 || value > 300 {
+		return 0, false
+	}
+	return value, true
 }

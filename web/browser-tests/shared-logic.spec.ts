@@ -68,9 +68,11 @@ test('错误码与底层原因在保存为提示文本后仍可翻译并保留�
   expect(formatNotice(t, '@yovoice.error.unknown::a::b')).toBe('[@yovoice.error.unknown] (a::b)');
   expect(formatNotice(t, notice)).toBe('[@yovoice.error.unknown] (文件被占用。)');
   expect(formatNotice(t, noticeMessage(new CallError('@yovoice.request.invalid')))).toBe('[@yovoice.request.invalid]');
+  expect(formatNotice(t, noticeMessage(new CallError('@yovoice.error.musicParams', { detail: '参考音色描述为空' })))).toBe('[@yovoice.error.musicParams] (参考音色描述为空)');
   expect(formatNotice(t, noticeMessage(new Error('普通错误')))).toBe('普通错误');
   expect(formatCallError(t, hostFailure)).toBe('[@yovoice.error.unknown] (文件被占用。)');
   expect(formatCallError(t, new Error('崩溃'))).toBe('[@yovoice.error.unknown] (崩溃)');
+  expect(formatCallError(t, new CallError('@yovoice.error.musicParams', { detail: '参考音色描述为空' }))).toBe('[@yovoice.error.musicParams] (参考音色描述为空)');
 });
 
 test('独听优先于普通轨，静音轨不参与播放；素材与生成音频的源标识不冲突', () => {
