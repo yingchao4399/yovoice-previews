@@ -107,3 +107,25 @@ func TestQueuedAuditionRetryCanBeDeletedWhileIdle(t *testing.T) {
 		t.Fatal("空闲时应能放弃未执行的排队候选")
 	}
 }
+
+func TestAnsweredCloseQuestionReleasesRecoveryLock(t *testing.T) {
+	w, err := New(t.TempDir())
+	must(t, err)
+	defer w.Close()
+	d := schema.DefaultDraft()
+	d.ID = "recovery-project"
+	q := schema.AssistantQuestion{ID: "close-question", SessionID: "recovery-session", WorkID: d.ID, Revision: questionRevision(d), Options: append([]string(nil), arrangementRecoveryOptions...), State: "answered", Selected: []int{0}}
+	m := schema.ArrangementMaterial{ID: "failed-material", ProjectID: d.ID, GenerationResult: &schema.ArrangementGenerationResult{State: "failed", RecoveryQueued: true, RecoverySession: q.SessionID}}
+	job := schema.ArrangementJob{ID: "failed-job", ProjectID: d.ID, Steps: []schema.ArrangementJobStep{{Status: "failed", RecoveryQueued: true, RecoverySession: q.SessionID}}}
+	must(t, w.Store.Update(func(s *schema.State) {
+		s.Drafts = []schema.Draft{d}
+		s.ArrangementMaterials = []schema.ArrangementMaterial{m}
+		s.ArrangementJobs = []schema.ArrangementJob{job}
+		s.AssistantSessions = &schema.AssistantSessions{Sessions: []schema.AssistantSession{{ID: q.SessionID, Messages: []schema.AssistantMessage{{Blocks: []schema.AssistantBlock{{Question: &q}}}}}}}
+	}, true))
+	w.reconcileAnsweredArrangementRecoveries()
+	s := w.Store.Read()
+	if s.ArrangementMaterials[0].GenerationResult.RecoveryQueued || s.ArrangementMaterials[0].GenerationResult.RecoverySession != "" || s.ArrangementJobs[0].Steps[0].RecoveryQueued || s.ArrangementJobs[0].Steps[0].RecoverySession != "" {
+		t.Fatal("已选择结束诊断，后台锁仍然存在")
+	}
+}

@@ -90,6 +90,7 @@ func New(root string) (*Workbench, error) {
 	}
 	w.removeStale()
 	w.startResourceDownloadWorker()
+	w.reconcileAnsweredArrangementRecoveries()
 	go w.resumePendingArrangementRecoveries()
 	return w, nil
 }

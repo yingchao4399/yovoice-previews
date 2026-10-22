@@ -69,6 +69,13 @@ func TestAISampleConfirmPlayReuseAndArchive(t *testing.T) {
 		if fitted.GenerationResult.State != "needs_review" {
 			t.Fatal("原片健康时无法修复丢失的派生文件")
 		}
+		if i == 0 {
+			// 用户确认不依赖播放事件或稳定根音识别；检查仍可处于 checking，
+			// 只要原片和适配片完整，确认动作应保留用户决定。
+			fitted.GenerationResult.State = "checking"
+			fitted.GenerationResult.DetectedPitch = nil
+			must(t, w.persistGenerationMaterial(fitted))
+		}
 		must(t, w.ReviewArrangementMaterial(id, true))
 	}
 	pre, e := w.ArrangementGenerationPreflight(ArrangementAIPrepareInput{Draft: d, ModelID: "ace-step-1.5-turbo-q8", Target: &ref})

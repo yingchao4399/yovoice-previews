@@ -10,6 +10,56 @@ import (
 
 var arrangementRecoveryOptions = []string{"只重新规划并生成这个声部，保留其他已完成部分", "重新规划整首编曲", "先查看失败原因和可选方案，暂不重规划"}
 
+// closeAnsweredArrangementRecovery 结束不需要重规划的诊断会话。问答卡回答“保留现状”或
+// “暂不重规划”后，失败素材仍保留在历史中，但不再带着 RecoveryQueued 锁住后续助手对话。
+func (w *Workbench) closeAnsweredArrangementRecovery(sessionID string) error {
+	if sessionID == "" {
+		return nil
+	}
+	return w.Store.Update(func(s *schema.State) {
+		for i := range s.ArrangementMaterials {
+			m := &s.ArrangementMaterials[i]
+			if m.GenerationResult != nil && m.GenerationResult.RecoverySession == sessionID {
+				m.GenerationResult.RecoveryQueued = false
+				m.GenerationResult.RecoverySession = ""
+			}
+		}
+		for i := range s.ArrangementJobs {
+			for j := range s.ArrangementJobs[i].Steps {
+				step := &s.ArrangementJobs[i].Steps[j]
+				if step.RecoverySession == sessionID {
+					step.RecoveryQueued = false
+					step.RecoverySession = ""
+				}
+			}
+		}
+	}, true)
+}
+
+// reconcileAnsweredArrangementRecoveries 修复旧版本留下的“问答已回答但失败诊断仍锁定”状态。
+// 只处理明确选择结束/暂不重规划的问答；选择重新规划整首仍保留会话约束。
+func (w *Workbench) reconcileAnsweredArrangementRecoveries() {
+	s := w.Store.Read()
+	closeSessions := map[string]bool{}
+	if s.AssistantSessions == nil {
+		return
+	}
+	for _, session := range s.AssistantSessions.Sessions {
+		for _, message := range session.Messages {
+			for _, block := range message.Blocks {
+				q := block.Question
+				if q == nil || q.State != "answered" || len(q.Selected) != 1 || (q.Selected[0] != 0 && q.Selected[0] != 2) {
+					continue
+				}
+				closeSessions[session.ID] = true
+			}
+		}
+	}
+	for sessionID := range closeSessions {
+		_ = w.closeAnsweredArrangementRecovery(sessionID)
+	}
+}
+
 // 后台诊断回合的写操作受限；不能把“主动修复”当成改写整曲或替换来源的许可。
 func arrangementRecoveryToolAllowed(s schema.State, sessionID, workID, tool string) bool {
 	if sessionID == "" {

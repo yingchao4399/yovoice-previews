@@ -243,6 +243,13 @@ func (w *Workbench) AnswerAssistantQuestion(in AssistantAnswerInput) error {
 	if !accepted {
 		return nil
 	}
+	if len(next.Selected) == 1 && (next.Selected[0] == 0 || next.Selected[0] == 2) {
+		// 这两项都表示不启动新的规划；解除旧失败事件的后台锁，避免助手续接时
+		// 因保护性拦截反复返回“不能修改整曲计划”。失败素材本身仍保留。
+		if err := w.closeAnsweredArrangementRecovery(next.SessionID); err != nil {
+			return err
+		}
+	}
 	answers := []string{}
 	for _, i := range next.Selected {
 		answers = append(answers, next.Options[i])
