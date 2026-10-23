@@ -5076,7 +5076,7 @@
     "defaultMessage": "参考配乐"
   },
   "@yovoice.music.referenceSemanticHint": {
-    "defaultMessage": "ACE-Step 会将此音频作为生成上下文，描述用于补充目标音色或配乐方向；这不是人声音色克隆，也不保证复刻。参考文件不会自动混入成曲。"
+    "defaultMessage": "ACE-Step 会将此音频作为生成上下文；选了参考音频后，文字描述可选，用来补充目标音色或配乐方向。这不是人声音色克隆，也不保证复刻。参考文件不会自动混入成曲。"
   },
   "@yovoice.music.referenceUnsupportedModel": {
     "defaultMessage": "当前模型不能接收参考音频，请选择 ACE-Step 或移除参考音频。"

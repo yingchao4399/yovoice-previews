@@ -8,6 +8,20 @@
 
 ### 简体中文
 
+## [0.4.1-preview.3] - 2026-10-23
+
+### English
+
+- Allow an ACE-Step music reference to be supplied as audio only or text only; show the actual requirement when both are missing.
+- Add an explicit negative vocal condition for instrumental ACE-Step requests and keep the user’s style, BPM, duration and reference context in the request.
+- Keep score and melody preview playheads moving when browser animation frames are throttled by also consuming native audio time updates.
+
+### 简体中文
+
+- ACE-Step 参考音频现在可以只选音频或只写文字描述；两者都没有时才提示补充条件。
+- 纯音乐 ACE-Step 请求增加明确的去人声条件，同时保留用户的风格、BPM、时长和参考上下文。
+- 浏览器节能或后台限帧时，曲谱与旋律试听仍通过音频原生时间事件更新播放指针。
+
 ## [0.4.1-preview.2] - 2026-10-23
 
 ### English

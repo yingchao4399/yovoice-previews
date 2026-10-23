@@ -60,6 +60,9 @@ func BuildRequestWithMusicReference(d schema.Draft, voice, emotion, musicReferen
 		o["lyrics"] = strings.TrimSpace(d.Lyrics)
 		if d.Instrumental {
 			o["lyrics"] = "[Instrumental]"
+			// 纯音乐只用歌词标记仍可能被规划器补出人声，补充负向条件并保留
+			// 用户原有风格文字，避免把“无歌声”误当成未提交创作要求。
+			o["negative_prompt"] = "vocals, singing, speech, lyrics"
 		}
 		if d.Seed != nil {
 			o["seed"] = *d.Seed

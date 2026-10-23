@@ -54,11 +54,10 @@ func MusicCreationIssue(d Draft, family string) string {
 		return "当前所选模型不支持把参考音频作为生成条件，请切换到 ACE-Step；仅填写文字描述仍可用于风格引导"
 	}
 	if !d.Instrumental && in.Voice == "reference" {
-		if in.VoiceReferenceAssetID == "" {
-			return "请选择参考音频"
-		}
-		if strings.TrimSpace(in.VoiceReferenceDescription) == "" {
-			return "请填写希望参考的音色特点；ACE-Step 会将参考音频作为生成上下文，但不保证克隆原音色"
+		// 音频和文字是两种独立的参考条件：从声音库选了音频后不应再强制填写
+		// 描述；只有两者都为空时才拦截，否则用户无法直接使用已选参考音频。
+		if in.VoiceReferenceAssetID == "" && strings.TrimSpace(in.VoiceReferenceDescription) == "" {
+			return "请选择参考音频，或填写希望参考的音色特点；ACE-Step 会将参考音频作为生成上下文，但不保证克隆原音色"
 		}
 	}
 	voiceReferenceID := ""

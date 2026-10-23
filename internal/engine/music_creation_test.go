@@ -24,6 +24,9 @@ func TestMusicDurationUsesNativeACEAndAdvisoryYuE(t *testing.T) {
 	if options["duration_seconds"] != 90 || strings.Contains(req["text"].(string), "female vocals") {
 		t.Fatal("时长没有进入原生参数或纯音乐混入演唱约束")
 	}
+	if options["negative_prompt"] != "vocals, singing, speech, lyrics" {
+		t.Fatalf("纯音乐请求没有提交去人声条件: %#v", options)
+	}
 	d.Music.Duration.Mode = "auto"
 	r, e = BuildRequest(d, "", "")
 	if e != nil {
@@ -74,15 +77,24 @@ func TestACEPromotesStyleBPMAndKeepsAutoDuration(t *testing.T) {
 	}
 }
 
-func TestACEExplainsMissingReferenceVoiceDescription(t *testing.T) {
+func TestACEReferenceNeedsAudioOrDescription(t *testing.T) {
 	d := schema.DefaultDraft()
 	d.Kind, d.ModelID, d.Text, d.Lyrics = "music", "ace-step-1.5-turbo-bf16", "slow folk, 60 bpm", "[Verse]\n山风入弦"
-	d.Music = &schema.MusicCreationOptions{Duration: schema.DurationIntent{Mode: "auto"}, Voice: "reference", VoiceReferenceAssetID: "ref"}
+	d.Music = &schema.MusicCreationOptions{Duration: schema.DurationIntent{Mode: "auto"}, Voice: "reference"}
 	d.Timeline = &schema.AudioTimeline{Assets: []schema.AudioAsset{{ID: "ref", Name: "参考音色", FileName: "ref.wav"}}}
 	_, err := BuildRequest(d, "", "")
 	var callError *msg.CallError
-	if !errors.As(err, &callError) || callError.Params["detail"] != "请填写希望参考的音色特点；ACE-Step 会将参考音频作为生成上下文，但不保证克隆原音色" {
+	if !errors.As(err, &callError) || callError.Params["detail"] != "请选择参考音频，或填写希望参考的音色特点；ACE-Step 会将参考音频作为生成上下文，但不保证克隆原音色" {
 		t.Fatalf("应指出缺少音色描述及模型限制，实际错误: %#v", err)
+	}
+	d.Music.VoiceReferenceAssetID = "ref"
+	if _, err = BuildRequest(d, "", ""); err != nil {
+		t.Fatalf("已选择参考音频时不应再要求文字描述: %v", err)
+	}
+	d.Music.VoiceReferenceAssetID = ""
+	d.Music.VoiceReferenceDescription = "温暖、气息自然的女声"
+	if _, err = BuildRequest(d, "", ""); err != nil {
+		t.Fatalf("仅填写文字参考时不应被拦截: %v", err)
 	}
 }
 

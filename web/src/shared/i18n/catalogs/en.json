@@ -5076,7 +5076,7 @@
     "defaultMessage": "Accompaniment reference"
   },
   "@yovoice.music.referenceSemanticHint": {
-    "defaultMessage": "ACE-Step uses this audio as generation context and the description to guide the target voice or accompaniment. This is not voice cloning and does not guarantee a match. Reference audio is not mixed into the result automatically."
+    "defaultMessage": "ACE-Step uses this audio as generation context. After choosing reference audio, the text description is optional and can refine the target voice or accompaniment. This is not voice cloning and does not guarantee a match. Reference audio is not mixed into the result automatically."
   },
   "@yovoice.music.referenceUnsupportedModel": {
     "defaultMessage": "This model cannot receive reference audio; choose ACE-Step or remove the reference."

@@ -33,13 +33,20 @@ export function useMelodyPreview(abc: string, onError: (e: unknown) => void) {
     try {
       const { fileName } = await call<{ fileName: string }>('melody.listen', { abc });
       const next = new Audio(await mediaUrl('outputs', fileName));
-      // 播放时逐帧读取进度，音符高亮比 timeupdate 更跟手；变化不足 50ms 不重绘。
+      // 播放时逐帧读取进度，音符高亮比 timeupdate 更跟手；变化不足 20ms 不重绘。
       let last = -1;
+      const reportTime = () => {
+        const current = Number.isFinite(next.currentTime) ? next.currentTime : 0;
+        if (Math.abs(current - last) >= 0.02) { last = current; setTime(current); }
+      };
       const tick = () => {
-        if (Math.abs(next.currentTime - last) >= 0.05) { last = next.currentTime; setTime(last); }
+        reportTime();
         if (!next.paused) requestAnimationFrame(tick);
       };
       next.onplay = () => { setStatus('playing'); requestAnimationFrame(tick); };
+      // 后台标签页或系统节能模式会暂停 requestAnimationFrame；保留原生事件，
+      // 这样曲谱和音轨的播放帧仍会随着音频时间推进。
+      next.ontimeupdate = reportTime;
       next.onpause = () => setStatus(next.ended ? 'idle' : 'paused');
       next.onended = () => { setStatus('idle'); setTime(0); next.currentTime = 0; };
       audio.current = next; rendered.current = abc;
