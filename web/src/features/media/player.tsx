@@ -84,7 +84,7 @@ export function Player({ track, onError, suspended, compact = false, actions, av
   useEffect(() => { pending.current = !!playRequest; }, [playRequest, key]);
   useEffect(() => startPending(), [playRequest, key, url, failure]);
   useEffect(() => { if (suspended) { pending.current = false; audio.current?.pause(); } }, [suspended]);
-  useEffect(() => { if (audio.current) audio.current.loop = !compact && !inline && !avatar && !!playlist?.length && playbackMode === 'loop'; }, [playbackMode, url, compact, inline, avatar, playlist]);
+  useEffect(() => { if (audio.current) audio.current.loop = !compact && !inline && !avatar && playbackMode === 'loop'; }, [playbackMode, url, compact, inline, avatar]);
   // 缩放后让播放位置保持在视口中央，播放进度变化本身不触发滚动。
   const centerPlayhead = useEffectEvent(() => {
     const viewport = lane.current;

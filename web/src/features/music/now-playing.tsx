@@ -118,10 +118,11 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
   const scene = useMemo(() => backdropScene(item.id), [item.id]);
 
 
-  const switchTo = (next: Generation) => {
+  const switchTo = (next: Generation, automatic = false) => {
     if (next.id === item.id) return;
     const element = audio.current;
-    resume.current = { time: element?.currentTime ?? time, play: !!element && !element.paused };
+    // 手动对比版本保留播放位置；自动换曲必须从头播放，不能沿用 ended 后的暂停状态。
+    resume.current = automatic ? { time: 0, play: true } : { time: element?.currentTime ?? time, play: !!element && !element.paused };
     envelope.current = [];
     setPrevious(item); setItem(next); setTimes(next.lyricTimes); setAligned(next.lyricWords); setVoice(null); setSync(null); setEdit(null); setDuration(next.duration);
   };
@@ -135,7 +136,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
       next = ordered.indexOf(choices[Math.floor(Math.random() * choices.length)]);
     }
     if (next >= ordered.length) { setPlaying(false); return; }
-    switchTo(ordered[next]);
+    switchTo(ordered[next], true);
   };
   useEffect(() => { if (audio.current) audio.current.loop = playbackMode === 'loop'; }, [playbackMode, item.id]);
   // 对齐在后台完成后版本记录随状态更新，这里同步最新结果。
@@ -330,7 +331,7 @@ export function NowPlaying({ item: opened, title: openedTitle, versions = [], al
           const saved = resume.current; resume.current = null;
           if (!element || !saved) return;
           element.currentTime = Math.min(saved.time, value && Number.isFinite(value) ? value : saved.time);
-          if (!saved.play) element.pause();
+          if (!saved.play) element.pause(); else void play();
         }}
         onTimeUpdate={() => setTime(audio.current?.currentTime ?? 0)}
         onPlay={() => setPlaying(true)} onPause={() => { setPlaying(false); setIdle(false); }} onEnded={() => finishPlayback()} />

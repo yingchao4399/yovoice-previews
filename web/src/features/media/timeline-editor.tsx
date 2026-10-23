@@ -1,4 +1,4 @@
-import { PlaybackToolbar, TrackZoom } from './playback-toolbar';
+import { PlaybackToolbar, TrackZoom, usePlaybackMode } from './playback-toolbar';
 import { TrackPanButton, useTrackViewport } from './use-track-viewport';
 import { formatNotice } from '../../shared/i18n/format';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState, useReducer, type PointerEvent as ReactPointerEvent } from 'react';
@@ -69,6 +69,9 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
   const [regenerating, setRegenerating] = useState(false);
   const [time, setTime] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [playbackMode] = usePlaybackMode();
+  const currentMode = useRef(playbackMode);
+  useEffect(() => { currentMode.current = playbackMode; }, [playbackMode]);
   const [loading, setLoading] = useState(false);
   const [peaks, setPeaks] = useState<Record<string, number[]>>({});
   // 读不到的音频源：片段上直接标出，不主动弹出提示；播放时仍会读取并说明原因。
@@ -79,6 +82,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
   const waves = useRef(new Map<string, Waveform>());
   const sources = useRef<AudioBufferSourceNode[]>([]);
   const frame = useRef(0);
+  const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const operation = useRef(0);
   const abort = useRef<AbortController | null>(null);
   const duration = Timeline.duration(value);
@@ -127,6 +131,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
   const stop = () => {
     operation.current++;
     cancelAnimationFrame(frame.current);
+    if (progressTimer.current !== null) { clearInterval(progressTimer.current); progressTimer.current = null; }
     for (const source of sources.current) { source.stop(); source.disconnect(); }
     sources.current = [];
     setPlaying(false); setLoading(false); playbackCue?.(-1);
@@ -134,6 +139,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
   // 卸载时释放播放节点、拖动帧、解码缓存与音频上下文。
   const release = useEffectEvent(() => {
     operation.current++; cancelAnimationFrame(frame.current); abort.current?.abort();
+    if (progressTimer.current !== null) { clearInterval(progressTimer.current); progressTimer.current = null; }
     if (gesture.current) cancelAnimationFrame(gesture.current.raf); gesture.current = null;
     for (const source of sources.current) { source.stop(); source.disconnect(); }
     sources.current = []; buffers.current.clear();
@@ -269,15 +275,23 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
       sources.current.push(...nodes);
       setLoading(false); setPlaying(true);
       const tick = () => {
+        if (token !== operation.current) return;
         const next = Math.min(to, from + Math.max(0, audio.currentTime - start));
         setTime(next);
         const active = clips.find(c => c.start <= next && c.start + c.duration > next);
         const id = history.find(g => g.id === active?.generationId)?.segment?.cueId;
         playbackCue?.(draft.subtitles?.cues.findIndex(c => c.id === id) ?? -1);
-        if (next >= to) stop();
-        else frame.current = requestAnimationFrame(tick);
+        if (next >= to) {
+          const repeat = currentMode.current === 'loop' && to > from;
+          stop();
+          // 时间线作为一个整体循环，绝不随机打乱同时演奏的声部和片段。
+          if (repeat) void play(target ?? { start: 0, end: duration });
+        }
       };
-      tick();
+      const animate = () => { tick(); if (token === operation.current) frame.current = requestAnimationFrame(animate); };
+      // 后台窗口暂停动画帧时仍按音频时钟推进；暂停和卸载都会清理两个更新入口。
+      progressTimer.current = setInterval(tick, 250);
+      animate();
     } catch (error) { if (token === operation.current) { stop(); onError((error as Error).message); } }
   };
   const seek = (next: number) => { stop(); setTime(next); };
@@ -399,7 +413,7 @@ export function TimelineEditor({ draft, busy, regenerate, exportProject, selectC
       </VStack>
     </AppDialog> : null}
     <ResizeHandle label={t('@yovoice.timeline.resize')} direction="vertical" pillPlacement="center" isReversed resizable={panel.props} />
-    <PlaybackToolbar time={time} duration={duration} playing={playing} disabled={!duration || suspended || exporting} loading={loading} toggle={() => void play()}>
+    <PlaybackToolbar time={time} duration={duration} playing={playing} disabled={!duration || suspended || exporting} loading={loading} toggle={() => void play()} mode={playbackMode}>
       <Button size="sm" variant="ghost" isIconOnly icon={<Undo2 />} label={t('@yovoice.timeline.undo')} tooltip={`${t('@yovoice.timeline.undo')} (⌘/Ctrl+Z)`} aria-keyshortcuts="Meta+Z Control+Z" isDisabled={historyBlocked || !!trimPreview || !edits.canUndo} onClick={() => restoreEdit('undo')} />
       <Button size="sm" variant="ghost" isIconOnly icon={<Redo2 />} label={t('@yovoice.timeline.redo')} tooltip={`${t('@yovoice.timeline.redo')} (⌘/Ctrl+Shift+Z)`} aria-keyshortcuts="Meta+Shift+Z Control+Shift+Z Control+Y" isDisabled={historyBlocked || !!trimPreview || !edits.canRedo} onClick={() => restoreEdit('redo')} />
       <Button className="timeline-extra" size="sm" variant="ghost" isIconOnly tooltip={t('@yovoice.timeline.split')} label={t('@yovoice.timeline.split')} icon={<Scissors />} isDisabled={!editable || !clip || time - clip.start < 0.01 || clip.start + clip.duration - time < 0.01} onClick={split} />

@@ -47,13 +47,13 @@ export function PlaybackToolbar({ time, duration, playing, disabled, loading, to
   const t = useTranslator();
   return <HStack className="transport" vAlign="center" gap={4} wrap="wrap">
     <small className="transport-time">{formatTime(time)} <em>/ {formatTime(duration)}</em></small>
+    {mode ? <PlaybackModeSelector disabled={disabled} /> : null}
     <HStack className="transport-controls" gap={2} vAlign="center">
       {beforePlay}
       <Button label={t(playing ? '@yovoice.player.pause' : '@yovoice.player.play')} isIconOnly icon={playing ? <Pause /> : <Play fill="currentColor" />} size="sm" variant="primary" className="play-main" isDisabled={disabled} isLoading={loading} onClick={toggle} />
       {afterPlay}
     </HStack>
     <HStack className="transport-end" gap={3} vAlign="center" wrap="wrap">
-      {mode ? <PlaybackModeSelector disabled={disabled} /> : null}
       {children}
     </HStack>
   </HStack>;

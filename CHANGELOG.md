@@ -8,6 +8,20 @@
 
 ### 简体中文
 
+## [0.4.1-preview.4] - 2026-10-23
+
+### English
+
+- Fix looping for individual audio files without a playlist; place the playback-mode selector immediately after the time display.
+- Start automatically selected tracks from the beginning and keep playing, while manual version comparisons preserve their current position.
+- Add playback modes to multitrack timelines, loop the whole timeline or selected range, and keep progress updating when animation frames are throttled. Timeline tracks retain their arrangement order.
+
+### 简体中文
+
+- 修复没有播放列表的单条音频无法循环；播放方式选择移到时间标记后面。
+- 顺序和随机自动换曲从头继续播放，手动版本对比仍保留当前位置。
+- 多轨时间线增加播放方式，支持整体或选区循环，后台动画限帧时继续更新进度；保持各声部与片段的编排关系。
+
 ## [0.4.1-preview.3] - 2026-10-23
 
 ### English
